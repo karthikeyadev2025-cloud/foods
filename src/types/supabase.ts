@@ -422,6 +422,12 @@ export type Database = {
           {
             foreignKeyName: "batch_ingredients_ingredient_id_fkey"
             columns: ["ingredient_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
             referencedRelation: "v_item_profit"
             referencedColumns: ["item_id"]
           },
@@ -581,6 +587,12 @@ export type Database = {
           {
             foreignKeyName: "challan_items_item_id_fkey"
             columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challan_items_item_id_fkey"
+            columns: ["item_id"]
             referencedRelation: "v_item_profit"
             referencedColumns: ["item_id"]
           },
@@ -664,6 +676,12 @@ export type Database = {
             foreignKeyName: "cheques_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
             referencedColumns: ["id"]
           },
           {
@@ -842,6 +860,12 @@ export type Database = {
           {
             foreignKeyName: "delivery_challans_customer_id_fkey"
             columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_challans_customer_id_fkey"
+            columns: ["customer_id"]
             referencedRelation: "v_customer_outstanding"
             referencedColumns: ["customer_id"]
           },
@@ -873,6 +897,12 @@ export type Database = {
             foreignKeyName: "delivery_challans_trip_id_fkey"
             columns: ["trip_id"]
             referencedRelation: "vehicle_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_challans_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "v_vehicle_list"
             referencedColumns: ["id"]
           },
           {
@@ -928,6 +958,12 @@ export type Database = {
             foreignKeyName: "discount_schemes_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_schemes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
             referencedColumns: ["id"]
           },
           {
@@ -1104,6 +1140,12 @@ export type Database = {
           {
             foreignKeyName: "inbound_orders_customer_id_fkey"
             columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_customer_id_fkey"
+            columns: ["customer_id"]
             referencedRelation: "v_customer_outstanding"
             referencedColumns: ["customer_id"]
           },
@@ -1175,6 +1217,12 @@ export type Database = {
             foreignKeyName: "invoice_items_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
             referencedColumns: ["id"]
           },
           {
@@ -1268,6 +1316,12 @@ export type Database = {
           {
             foreignKeyName: "invoices_customer_id_fkey"
             columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
             referencedRelation: "v_customer_outstanding"
             referencedColumns: ["customer_id"]
           },
@@ -1293,6 +1347,12 @@ export type Database = {
             foreignKeyName: "invoices_trip_id_fkey"
             columns: ["trip_id"]
             referencedRelation: "vehicle_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "v_vehicle_list"
             referencedColumns: ["id"]
           },
           {
@@ -1330,6 +1390,12 @@ export type Database = {
             foreignKeyName: "item_barcodes_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_barcodes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
             referencedColumns: ["id"]
           },
           {
@@ -1391,6 +1457,12 @@ export type Database = {
             foreignKeyName: "item_batches_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
             referencedColumns: ["id"]
           },
           {
@@ -1497,6 +1569,12 @@ export type Database = {
           {
             foreignKeyName: "item_price_overrides_customer_id_fkey"
             columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_price_overrides_customer_id_fkey"
+            columns: ["customer_id"]
             referencedRelation: "v_customer_outstanding"
             referencedColumns: ["customer_id"]
           },
@@ -1504,6 +1582,12 @@ export type Database = {
             foreignKeyName: "item_price_overrides_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_price_overrides_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
             referencedColumns: ["id"]
           },
           {
@@ -1571,7 +1655,7 @@ export type Database = {
           shelf_life_days?: number | null
           type?: Database["public"]["Enums"]["item_type"]
           unit_rate?: number
-          units_per_box?: number
+          units_per_box: number
         }
         Update: {
           base_uom_id?: string | null
@@ -1807,6 +1891,12 @@ export type Database = {
           {
             foreignKeyName: "ledger_accounts_customer_id_fkey"
             columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_customer_id_fkey"
+            columns: ["customer_id"]
             referencedRelation: "v_customer_outstanding"
             referencedColumns: ["customer_id"]
           },
@@ -1893,6 +1983,12 @@ export type Database = {
             foreignKeyName: "message_log_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
             referencedColumns: ["id"]
           },
           {
@@ -2069,6 +2165,12 @@ export type Database = {
           {
             foreignKeyName: "order_items_item_id_fkey"
             columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_item_id_fkey"
+            columns: ["item_id"]
             referencedRelation: "v_item_profit"
             referencedColumns: ["item_id"]
           },
@@ -2152,6 +2254,12 @@ export type Database = {
             foreignKeyName: "orders_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
             referencedColumns: ["id"]
           },
           {
@@ -2421,6 +2529,12 @@ export type Database = {
           {
             foreignKeyName: "price_list_items_item_id_fkey"
             columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_list_items_item_id_fkey"
+            columns: ["item_id"]
             referencedRelation: "v_item_profit"
             referencedColumns: ["item_id"]
           },
@@ -2637,6 +2751,12 @@ export type Database = {
           {
             foreignKeyName: "production_batches_item_id_fkey"
             columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_item_id_fkey"
+            columns: ["item_id"]
             referencedRelation: "v_item_profit"
             referencedColumns: ["item_id"]
           },
@@ -2707,6 +2827,12 @@ export type Database = {
           {
             foreignKeyName: "purchase_items_item_id_fkey"
             columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_item_id_fkey"
+            columns: ["item_id"]
             referencedRelation: "v_item_profit"
             referencedColumns: ["item_id"]
           },
@@ -2760,6 +2886,12 @@ export type Database = {
             foreignKeyName: "purchase_return_items_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_return_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
             referencedColumns: ["id"]
           },
           {
@@ -2996,6 +3128,12 @@ export type Database = {
           {
             foreignKeyName: "quotation_items_item_id_fkey"
             columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_items_item_id_fkey"
+            columns: ["item_id"]
             referencedRelation: "v_item_profit"
             referencedColumns: ["item_id"]
           },
@@ -3094,6 +3232,12 @@ export type Database = {
             foreignKeyName: "quotations_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
             referencedColumns: ["id"]
           },
           {
@@ -3316,6 +3460,12 @@ export type Database = {
           {
             foreignKeyName: "receipts_customer_id_fkey"
             columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_customer_id_fkey"
+            columns: ["customer_id"]
             referencedRelation: "v_customer_outstanding"
             referencedColumns: ["customer_id"]
           },
@@ -3335,6 +3485,12 @@ export type Database = {
             foreignKeyName: "receipts_trip_id_fkey"
             columns: ["trip_id"]
             referencedRelation: "vehicle_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "v_vehicle_list"
             referencedColumns: ["id"]
           },
           {
@@ -3372,6 +3528,12 @@ export type Database = {
             foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
             columns: ["ingredient_id"]
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "v_item_list"
             referencedColumns: ["id"]
           },
           {
@@ -3427,6 +3589,12 @@ export type Database = {
             foreignKeyName: "recipes_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
             referencedColumns: ["id"]
           },
           {
@@ -3628,6 +3796,12 @@ export type Database = {
           {
             foreignKeyName: "sales_return_items_item_id_fkey"
             columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_item_id_fkey"
+            columns: ["item_id"]
             referencedRelation: "v_item_profit"
             referencedColumns: ["item_id"]
           },
@@ -3705,6 +3879,12 @@ export type Database = {
             foreignKeyName: "sales_returns_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
             referencedColumns: ["id"]
           },
           {
@@ -3918,6 +4098,12 @@ export type Database = {
             foreignKeyName: "stock_ledger_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_ledger_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
             referencedColumns: ["id"]
           },
           {
@@ -4195,6 +4381,12 @@ export type Database = {
           {
             foreignKeyName: "vehicle_trips_vehicle_id_fkey"
             columns: ["vehicle_id"]
+            referencedRelation: "v_vehicle_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
@@ -4301,6 +4493,55 @@ export type Database = {
           },
         ]
       }
+      v_customer_list: {
+        Row: {
+          address: string | null
+          code: string | null
+          created_at: string | null
+          credit_limit: number | null
+          id: string | null
+          is_active: boolean | null
+          mobile1: string | null
+          mobile2: string | null
+          mobile3: string | null
+          name: string | null
+          opening_balance: number | null
+          org_id: string | null
+          outstanding: number | null
+          price_group: string | null
+          price_list_id: string | null
+          route_id: string | null
+          route_name: string | null
+          town: string | null
+          whatsapp_opt_in: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "customers_price_list_id_fkey"
+            columns: ["price_list_id"]
+            referencedRelation: "price_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_route_id_fkey"
+            columns: ["route_id"]
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_customer_outstanding: {
         Row: {
           code: string | null
@@ -4347,6 +4588,68 @@ export type Database = {
           party_id: string | null
         }
         Relationships: []
+      }
+      v_item_list: {
+        Row: {
+          base_uom_code: string | null
+          base_uom_id: string | null
+          box_rate: number | null
+          created_at: string | null
+          has_stock_movement: boolean | null
+          id: string | null
+          is_active: boolean | null
+          item_code: string | null
+          mrp_per_piece: number | null
+          name: string | null
+          net_weight_g: number | null
+          org_id: string | null
+          pack_code: string | null
+          pack_type_id: string | null
+          pieces_per_unit: number | null
+          purchase_rate: number | null
+          reorder_level: number | null
+          section_code: string | null
+          section_id: string | null
+          section_name: string | null
+          section_sort: number | null
+          shelf_life_days: number | null
+          stock_base: number | null
+          type: Database["public"]["Enums"]["item_type"] | null
+          unit_rate: number | null
+          units_per_box: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_base_uom_id_fkey"
+            columns: ["base_uom_id"]
+            referencedRelation: "uoms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "items_pack_type_id_fkey"
+            columns: ["pack_type_id"]
+            referencedRelation: "pack_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_section_id_fkey"
+            columns: ["section_id"]
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_item_profit: {
         Row: {
@@ -4455,6 +4758,12 @@ export type Database = {
           {
             foreignKeyName: "stock_ledger_item_id_fkey"
             columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_ledger_item_id_fkey"
+            columns: ["item_id"]
             referencedRelation: "v_item_profit"
             referencedColumns: ["item_id"]
           },
@@ -4501,6 +4810,61 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      v_vehicle_list: {
+        Row: {
+          capacity_boxes: number | null
+          created_at: string | null
+          driver_id: string | null
+          driver_name: string | null
+          id: string | null
+          is_active: boolean | null
+          location_id: string | null
+          location_name: string | null
+          org_id: string | null
+          owner_name: string | null
+          route_id: string | null
+          route_name: string | null
+          vehicle_number: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_driver_id_fkey"
+            columns: ["driver_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_driver_id_fkey"
+            columns: ["driver_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "vehicles_location_id_fkey"
+            columns: ["location_id"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "vehicles_route_id_fkey"
+            columns: ["route_id"]
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4614,6 +4978,7 @@ export type Database = {
         Args: { p_invoice: string }
         Returns: undefined
       }
+      reorder_sections: { Args: { p_ids: string[] }; Returns: undefined }
       seed_role_permissions: { Args: { p_org: string }; Returns: undefined }
       show_limit: { Args: Record<PropertyKey, never>; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }

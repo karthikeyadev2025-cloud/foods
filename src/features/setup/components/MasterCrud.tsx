@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Download, GripVertical, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useForm, type DefaultValues, type FieldValues, type Path } from 'react-hook-form';
 import type { ZodType, ZodTypeDef } from 'zod';
@@ -71,6 +71,8 @@ export interface MasterConfig<R extends { id: string }, F extends FieldValues> {
   remove?: (id: string) => Promise<unknown>;
   /** "Add the standard set" — rows the client can accept in one click and then edit. */
   suggestions?: { label: string; rows: F[]; isPresent: (existing: R[], suggested: F) => boolean };
+  /** Drag (or arrow) to reorder; receives every row id in the new order. Shown only when the list is unfiltered. */
+  reorder?: (ids: string[]) => Promise<unknown>;
   canEdit: boolean;
   canDelete: boolean;
 }
@@ -104,8 +106,26 @@ export function MasterCrud<R extends { id: string }, F extends FieldValues>({
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<{ mode: 'create' } | { mode: 'edit'; row: R } | null>(null);
   const [deleting, setDeleting] = useState<R | null>(null);
+  const [dragging, setDragging] = useState<string | null>(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey });
+
+  const reorder = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (!config.reorder) return;
+      await config.reorder(ids);
+    },
+    onSuccess: () => invalidate(),
+    onError: (err) => toastError(err, 'Could not reorder'),
+  });
+
+  const moveRow = (fromId: string, toIndex: number) => {
+    const ids = (rows.data ?? []).map((r) => r.id);
+    const from = ids.indexOf(fromId);
+    if (from < 0 || toIndex < 0 || toIndex >= ids.length || from === toIndex) return;
+    ids.splice(toIndex, 0, ids.splice(from, 1)[0] as string);
+    reorder.mutate(ids);
+  };
 
   const save = useMutation({
     mutationFn: async (values: F) => {
@@ -160,6 +180,8 @@ export function MasterCrud<R extends { id: string }, F extends FieldValues>({
       }),
     );
   }, [rows.data, search, config.columns]);
+
+  const canReorder = Boolean(config.reorder) && config.canEdit && search.trim() === '';
 
   const onExport = () => {
     const data = filtered.map((row) => {
@@ -224,6 +246,7 @@ export function MasterCrud<R extends { id: string }, F extends FieldValues>({
           <Table>
             <TableHeader>
               <TableRow>
+                {canReorder && <TableHead className="w-20">Order</TableHead>}
                 {config.columns.map((c) => (
                   <TableHead key={c.key} className={cn(c.align === 'right' && 'text-right')}>
                     {c.label}
@@ -233,8 +256,35 @@ export function MasterCrud<R extends { id: string }, F extends FieldValues>({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((row) => (
-                <TableRow key={row.id}>
+              {filtered.map((row, index) => (
+                <TableRow
+                  key={row.id}
+                  draggable={canReorder}
+                  onDragStart={canReorder ? () => setDragging(row.id) : undefined}
+                  onDragOver={canReorder ? (e) => e.preventDefault() : undefined}
+                  onDrop={
+                    canReorder
+                      ? () => {
+                          if (dragging) moveRow(dragging, index);
+                          setDragging(null);
+                        }
+                      : undefined
+                  }
+                  className={cn(dragging === row.id && 'opacity-50')}
+                >
+                  {canReorder && (
+                    <TableCell className="whitespace-nowrap">
+                      <span className="inline-flex items-center gap-0.5">
+                        <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground" aria-hidden />
+                        <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Move up" disabled={index === 0 || reorder.isPending} onClick={() => moveRow(row.id, index - 1)}>
+                          <ArrowUp className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Move down" disabled={index === filtered.length - 1 || reorder.isPending} onClick={() => moveRow(row.id, index + 1)}>
+                          <ArrowDown className="h-3 w-3" />
+                        </Button>
+                      </span>
+                    </TableCell>
+                  )}
                   {config.columns.map((c) => (
                     <TableCell key={c.key} className={cn(c.align === 'right' && 'num')}>
                       {c.render ? c.render(row) : defaultRender(cellValue(row, c.key))}

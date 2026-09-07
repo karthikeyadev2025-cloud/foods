@@ -74,6 +74,13 @@ export const stockLocationSchema = z.object({
 });
 export type StockLocationInput = z.infer<typeof stockLocationSchema>;
 
+export const routeSchema = z.object({
+  name,
+  towns: z.string().trim().max(500),
+  is_active: z.boolean(),
+});
+export type RouteInput = z.infer<typeof routeSchema>;
+
 export const DOC_TYPES = [
   { value: 'invoice', label: 'Sales invoice' },
   { value: 'receipt', label: 'Receipt' },

@@ -6,6 +6,8 @@ import {
   numberSeriesApi,
   packTypesApi,
   receiptModesApi,
+  reorderSections,
+  routesApi,
   sectionsApi,
   stockLocationsApi,
   uomsApi,
@@ -21,6 +23,7 @@ import {
   orNull,
   packTypeSchema,
   receiptModeSchema,
+  routeSchema,
   sectionSchema,
   stockLocationSchema,
   uomSchema,
@@ -28,6 +31,7 @@ import {
   type NumberSeriesInput,
   type PackTypeInput,
   type ReceiptModeInput,
+  type RouteInput,
   type SectionInput,
   type StockLocationInput,
   type UomInput,
@@ -315,9 +319,51 @@ export function SectionsPanel({ compact }: { compact?: boolean }) {
     create: (v) => sectionsApi.create({ ...v, code: orNull(v.code)?.toUpperCase() ?? null, mestri_id: orNull(v.mestri_id) }),
     update: (id, v) => sectionsApi.update(id, { ...v, code: orNull(v.code)?.toUpperCase() ?? null, mestri_id: orNull(v.mestri_id) }),
     remove: sectionsApi.remove,
+    reorder: reorderSections,
     ...rights,
   };
   return <MasterCrud config={config} compact={compact} />;
+}
+
+// ------------------------------------------------------------------
+// Routes (van lines)
+// ------------------------------------------------------------------
+export function RoutesPanel({ compact }: { compact?: boolean }) {
+  const rights = useSetupRights();
+  const config: MasterConfig<Row<'routes'>, RouteInput> = {
+    key: 'routes',
+    title: 'Routes',
+    singular: 'Route',
+    exportName: 'routes',
+    description: 'Van routes. Customers and vehicles are assigned to a route; reports and reminders can be filtered by it.',
+    columns: [
+      { key: 'name', label: 'Route' },
+      { key: 'towns', label: 'Towns', render: (r) => (r.towns ?? []).join(', ') || '—', exportValue: (r) => (r.towns ?? []).join(', ') },
+      activeCol,
+    ],
+    fields: [
+      { name: 'name', label: 'Route name', autoFocus: true, placeholder: 'Macherla line' },
+      { name: 'towns', label: 'Towns on this route', type: 'textarea', help: 'Comma separated.' },
+      { name: 'is_active', label: 'Active', type: 'checkbox' },
+    ],
+    schema: routeSchema,
+    defaults: { name: '', towns: '', is_active: true },
+    toForm: (r) => ({ name: r.name, towns: (r.towns ?? []).join(', '), is_active: r.is_active }),
+    rowLabel: (r) => r.name,
+    list: routesApi.list,
+    create: (v) => routesApi.create({ name: v.name, towns: splitTowns(v.towns), is_active: v.is_active }),
+    update: (id, v) => routesApi.update(id, { name: v.name, towns: splitTowns(v.towns), is_active: v.is_active }),
+    remove: routesApi.remove,
+    ...rights,
+  };
+  return <MasterCrud config={config} compact={compact} />;
+}
+
+function splitTowns(s: string): string[] {
+  return s
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
 }
 
 // ------------------------------------------------------------------

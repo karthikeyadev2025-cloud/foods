@@ -12,7 +12,8 @@ export type MasterTable =
   | 'expense_heads'
   | 'sections'
   | 'stock_locations'
-  | 'number_series';
+  | 'number_series'
+  | 'routes';
 
 export type Row<T extends MasterTable> = Tables[T]['Row'];
 export type Insert<T extends MasterTable> = Tables[T]['Insert'];
@@ -82,6 +83,20 @@ export const stockLocationsApi: MasterApi<'stock_locations'> = {
   update: (id, v) => expectOne(supabase.from('stock_locations').update(v).eq('id', id).select('*').single()),
   remove: (id) => expectOk(supabase.from('stock_locations').delete().eq('id', id)),
 };
+
+export const routesApi: MasterApi<'routes'> = {
+  table: 'routes',
+  list: () => expectRows(supabase.from('routes').select('*').order('name')),
+  create: async (v) => expectOne(supabase.from('routes').insert({ ...v, org_id: await currentOrgId() }).select('*').single()),
+  update: (id, v) => expectOne(supabase.from('routes').update(v).eq('id', id).select('*').single()),
+  remove: (id) => expectOk(supabase.from('routes').delete().eq('id', id)),
+};
+
+/** Drag-to-reorder: sort_order becomes the position in `ids` (db/08_masters.sql). */
+export async function reorderSections(ids: string[]): Promise<void> {
+  const { error } = await supabase.rpc('reorder_sections', { p_ids: ids });
+  if (error) throw error;
+}
 
 export const numberSeriesApi: MasterApi<'number_series'> = {
   table: 'number_series',

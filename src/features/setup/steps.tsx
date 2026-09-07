@@ -8,6 +8,7 @@ import {
   NumberSeriesPanel,
   PackTypesPanel,
   ReceiptModesPanel,
+  RoutesPanel,
   SectionsPanel,
   StockLocationsPanel,
   UomsPanel,
@@ -73,6 +74,12 @@ export const SETUP_STEPS: SetupStep[] = [
     label: 'Locations',
     why: 'Godowns and the production floor. Vehicles add their own location when created.',
     Component: StockLocationsPanel,
+  },
+  {
+    slug: 'routes',
+    label: 'Routes',
+    why: 'The van lines customers and vehicles are assigned to.',
+    Component: RoutesPanel,
   },
   {
     slug: 'numbering',

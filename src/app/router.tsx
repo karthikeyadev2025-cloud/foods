@@ -7,6 +7,7 @@ import { RequireModule } from '@/features/auth/components/RequireModule';
 import { LoginPage } from '@/features/auth/routes/LoginPage';
 import { WelcomePage } from '@/features/auth/routes/WelcomePage';
 import { CustomersPage } from '@/features/customers/routes/CustomersPage';
+import { DashboardPage } from '@/features/dashboard/routes/DashboardPage';
 import { InvoiceEditPage } from '@/features/invoices/routes/InvoiceEditPage';
 import { InvoicePrintPage } from '@/features/invoices/routes/InvoicePrintPage';
 import { InvoicesPage } from '@/features/invoices/routes/InvoicesPage';
@@ -17,6 +18,7 @@ import { BatchPage } from '@/features/production/routes/BatchPage';
 import { ProductionPage } from '@/features/production/routes/ProductionPage';
 import { PurchaseNewPage, PurchaseViewPage, PurchasesPage } from '@/features/purchases/routes/PurchasesPage';
 import { ReceiptNewPage, ReceiptViewPage, ReceiptsPage } from '@/features/receipts/routes/ReceiptsPage';
+import { ReportsPage } from '@/features/reports/routes/ReportsPage';
 import { ReturnNewPage, ReturnViewPage, ReturnsPage } from '@/features/returns/routes/ReturnsPage';
 import { SetupPage } from '@/features/setup/routes/SetupPage';
 import { SetupWizard } from '@/features/setup/routes/SetupWizard';
@@ -50,7 +52,7 @@ export const router = createBrowserRouter([
         path: '/',
         element: <AppShell />,
         children: [
-          { index: true, element: <Placeholder title="Dashboard" task="T5.1" /> },
+          { index: true, element: <DashboardPage /> },
           guarded('items', [
             { path: 'items', element: <ItemsPage /> },
             { path: 'items/new', element: <ItemEditPage /> },
@@ -96,7 +98,14 @@ export const router = createBrowserRouter([
             { path: 'vehicles/trips/:id', element: <TripDetailPage /> },
           ]),
           guarded('messaging', [{ path: 'messaging', element: <Placeholder title="Messaging" task="T6.1" /> }]),
-          guarded('reports', [{ path: 'reports', element: <Placeholder title="Reports" task="T5.2" /> }]),
+          guarded('reports', [
+            { path: 'reports', element: <ReportsPage /> },
+            { path: 'reports/ledger', element: <ReportsPage tab="ledger" /> },
+            { path: 'reports/ageing', element: <ReportsPage tab="ageing" /> },
+            { path: 'reports/modes', element: <ReportsPage tab="modes" /> },
+            { path: 'reports/routes', element: <ReportsPage tab="routes" /> },
+            { path: 'reports/sales', element: <ReportsPage tab="sales" /> },
+          ]),
           guarded('setup', [
             { path: 'setup', element: <SetupPage /> },
             { path: 'setup/wizard', element: <SetupWizard /> },

@@ -2440,6 +2440,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_source_inbound_id_fkey"
+            columns: ["source_inbound_id"]
+            referencedRelation: "v_inbound_orders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_supplier_id_fkey"
             columns: ["supplier_id"]
             referencedRelation: "suppliers"
@@ -5094,6 +5100,73 @@ export type Database = {
         }
         Relationships: []
       }
+      v_inbound_orders: {
+        Row: {
+          audio_url: string | null
+          created_at: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_town: string | null
+          id: string | null
+          invoice_id: string | null
+          mobile1: string | null
+          org_id: string | null
+          parsed_items: Json | null
+          raw_text: string | null
+          source: Database["public"]["Enums"]["order_source"] | null
+          status: Database["public"]["Enums"]["order_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbound_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_outstanding"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_balance"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       v_invoice_balance: {
         Row: {
           balance: number | null
@@ -6558,7 +6631,43 @@ export type Database = {
           units_per_box: number
         }[]
       }
+      collection_by_mode: {
+        Args: { p_from: string; p_org: string; p_route?: string; p_to: string }
+        Returns: {
+          amount: number
+          code: string
+          is_collection: boolean
+          mode_id: string
+          name: string
+          receipts: number
+        }[]
+      }
       create_trip: { Args: { p: Json }; Returns: string }
+      customer_ledger: {
+        Args: { p_customer: string; p_from?: string; p_to?: string }
+        Returns: {
+          balance: number
+          credit: number
+          debit: number
+          doc: string
+          doc_id: string
+          doc_no: string
+          entry_date: string
+          particulars: string
+        }[]
+      }
+      dashboard_activity: {
+        Args: { p_date?: string; p_limit?: number; p_org: string }
+        Returns: {
+          amount: number
+          at: string
+          detail: string
+          doc_id: string
+          doc_no: string
+          kind: string
+          party: string
+        }[]
+      }
       dashboard_summary: {
         Args: { p_date?: string; p_org: string }
         Returns: Json
@@ -6597,6 +6706,24 @@ export type Database = {
       normalize_code: { Args: { p: string }; Returns: string }
       normalize_item_code: { Args: { p: string }; Returns: string }
       open_production_batch: { Args: { p: Json }; Returns: string }
+      outstanding_ageing: {
+        Args: { p_as_on?: string; p_org: string; p_route?: string }
+        Returns: {
+          b0_15: number
+          b16_30: number
+          b31_60: number
+          b60p: number
+          customer_id: string
+          mobile1: string
+          name: string
+          oldest_days: number
+          on_account: number
+          opening_balance: number
+          outstanding: number
+          route_name: string
+          town: string
+        }[]
+      }
       pgp_armor_headers: {
         Args: { "": string }
         Returns: Record<string, unknown>[]
@@ -6652,6 +6779,7 @@ export type Database = {
           name: string
           rate_difference: number
           remaining_outstanding: number
+          route_name: string
           sno: number
           total_outstanding: number
           town: string
@@ -6671,6 +6799,30 @@ export type Database = {
           p_ref_table: string
         }
         Returns: number
+      }
+      route_collection: {
+        Args: { p_from: string; p_org: string; p_to: string }
+        Returns: {
+          collected: number
+          customers: number
+          invoices: number
+          outstanding: number
+          returned: number
+          route_id: string
+          route_name: string
+          sales: number
+        }[]
+      }
+      sales_summary: {
+        Args: { p_from: string; p_group?: string; p_org: string; p_to: string }
+        Returns: {
+          amount: number
+          boxes: number
+          group_key: string
+          group_label: string
+          invoices: number
+          qty: number
+        }[]
       }
       save_invoice: { Args: { p_header: Json; p_lines: Json }; Returns: string }
       save_payment: { Args: { p: Json }; Returns: string }

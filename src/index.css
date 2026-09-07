@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* shadcn/ui tokens. Warm, ledger-like palette — this is a sweets manufacturer's
+   book-keeping tool used on 1366×768 shop machines, so contrast beats flair. */
+@layer base {
+  :root {
+    --background: 40 33% 98%;
+    --foreground: 20 14% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14% 10%;
+    --primary: 17 78% 30%;
+    --primary-foreground: 40 33% 98%;
+    --secondary: 36 40% 92%;
+    --secondary-foreground: 20 14% 15%;
+    --muted: 36 30% 94%;
+    --muted-foreground: 25 8% 40%;
+    --accent: 36 40% 90%;
+    --accent-foreground: 20 14% 15%;
+    --destructive: 0 72% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 20% 85%;
+    --input: 30 20% 82%;
+    --ring: 17 78% 30%;
+    --radius: 0.375rem;
+  }
+
+  .dark {
+    --background: 20 14% 8%;
+    --foreground: 40 33% 96%;
+    --card: 20 14% 11%;
+    --card-foreground: 40 33% 96%;
+    --popover: 20 14% 11%;
+    --popover-foreground: 40 33% 96%;
+    --primary: 22 80% 60%;
+    --primary-foreground: 20 14% 8%;
+    --secondary: 20 10% 18%;
+    --secondary-foreground: 40 33% 96%;
+    --muted: 20 10% 16%;
+    --muted-foreground: 30 10% 65%;
+    --accent: 20 10% 20%;
+    --accent-foreground: 40 33% 96%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 20 10% 22%;
+    --input: 20 10% 24%;
+    --ring: 22 80% 60%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-size: 14px; /* 1366×768 shop screens: denser default */
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'tnum' 1; /* money columns line up */
+  }
+}
+
+@layer utilities {
+  /* Right-aligned numeric cell — every money / qty column uses this. */
+  .num {
+    @apply text-right tabular-nums;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

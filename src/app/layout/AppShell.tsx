@@ -1,25 +1,48 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { AlertTriangle } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { AlertTriangle, LogOut } from 'lucide-react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { NAV } from '@/app/nav';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { signOut } from '@/features/auth/api';
+import { useMe, usePermissions } from '@/features/auth/hooks';
+import { toastError } from '@/hooks/use-toast';
+import { roleLabel } from '@/lib/permissions';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 
 /**
  * The application chrome: fixed sidebar, top bar, scrolling content.
  * Sized for 1366×768 — the sidebar is 13rem and the content pane never
  * assumes more than ~1100px of width.
  *
- * T0.3 will filter NAV by role and put the org name and user menu in the top bar.
+ * The sidebar only lists modules the role can view. That is cosmetic; RLS
+ * returns nothing for the rest even if the URL is typed by hand.
  */
 export function AppShell() {
+  const me = useMe();
+  const perms = usePermissions();
+  const navigate = useNavigate();
+  const logout = useMutation({
+    mutationFn: signOut,
+    onSuccess: () => navigate('/login', { replace: true }),
+    onError: (err) => toastError(err, 'Could not sign out'),
+  });
+
+  const groups = NAV.map((g) => ({ ...g, items: g.items.filter((i) => perms.canView(i.module)) })).filter(
+    (g) => g.items.length > 0,
+  );
+
   return (
     <div className="flex h-screen overflow-hidden">
       <aside className="no-print flex w-52 shrink-0 flex-col border-r bg-card">
         <div className="flex h-12 items-center border-b px-4">
-          <span className="text-sm font-bold tracking-wide text-primary">JYOTHI FOODS</span>
+          <span className="truncate text-sm font-bold tracking-wide text-primary" title={me.data?.org_name ?? ''}>
+            {me.data?.org_name ?? 'JYOTHI FOODS'}
+          </span>
         </div>
         <nav className="flex-1 overflow-y-auto py-2" aria-label="Main">
-          {NAV.map((group) => (
+          {groups.map((group) => (
             <div key={group.label} className="mb-2">
               <div className="px-4 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {group.label}
@@ -48,7 +71,17 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="no-print flex h-12 shrink-0 items-center justify-between border-b bg-card px-4">
           <div className="text-sm text-muted-foreground">ERP</div>
-          <div className="text-sm text-muted-foreground">Not signed in</div>
+          <div className="flex items-center gap-3 text-sm">
+            {me.data && (
+              <>
+                <span className="font-medium">{me.data.full_name}</span>
+                <Badge variant="secondary">{roleLabel(me.data.role)}</Badge>
+              </>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => logout.mutate()} disabled={logout.isPending} aria-label="Sign out">
+              <LogOut /> Sign out
+            </Button>
+          </div>
         </header>
 
         {!isSupabaseConfigured && (

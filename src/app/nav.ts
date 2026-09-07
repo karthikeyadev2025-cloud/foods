@@ -15,16 +15,17 @@ import {
   Users,
   Wallet,
 } from 'lucide-react';
+import type { ModuleKey } from '@/lib/permissions';
 
 /**
- * Sidebar navigation. `module` is the key used by `role_permissions.module`, so
- * T0.3 can filter this list by the caller's role without touching the routes.
+ * Sidebar navigation. `module` is the key used by `role_permissions.module`;
+ * AppShell filters this list by the caller's role without touching the routes.
  */
 export interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
-  module: string;
+  module: ModuleKey;
 }
 
 export interface NavGroup {

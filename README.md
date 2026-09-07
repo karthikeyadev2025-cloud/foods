@@ -66,5 +66,16 @@ src/
 | Task | State |
 |---|---|
 | T0.1 Scaffold | ✅ Vite + React 18 + TS strict, Tailwind + shadcn/ui, TanStack Query, react-hook-form + zod, react-router. Build clean, shell boots. |
-| T0.2 Database | ⏳ needs a Supabase project |
-| T0.3 Auth + shell | ⏳ |
+| T0.2 Database | ✅ Migrations 01→02→04→03→05→06 validated on Postgres 16 by `db/tests/*.sql`; types generated. Apply to the Supabase project with `db/apply.sh` or the SQL Editor. |
+| T0.3 Auth + shell | ✅ Email/password login, `/welcome` first-run bootstrap, sidebar filtered by `role_permissions`, and RLS that hides Production/Payments from a `sales_exec` (`db/tests/03_permissions.sql`). |
+| T0.4 Setup wizard | ✅ `/setup/wizard` — business & trade terms → units → pack types → receipt modes → expense heads → users → sections → locations → numbering → permissions. Each is also a Setup tab with full CRUD and Excel export. Adding a receipt mode adds a register column (`receipts_register()` returns `by_mode`). |
+| T0.5 Importer | ⏳ |
+
+Deploy the `create-user` edge function before adding users from Setup:
+
+```bash
+supabase functions deploy create-user
+```
+
+Then disable public sign-ups in the Supabase dashboard (Authentication → Providers → Email). The owner
+signs up once, lands on `/welcome`, creates the org, and every later login is created from Setup → Users.

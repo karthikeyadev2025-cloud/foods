@@ -59,7 +59,10 @@ begin
     ('1262', '5/- SWEET TOMATO (24)',       24, 40)
   ) as v(c, n, j, rt);
 
-  -- Numbering comes from number_series, created on first use.
+  -- Numbering comes from number_series, created on first use. next_doc_no is
+  -- pinned to the caller's org (06), so give this session an owner identity.
+  insert into staff (org_id, auth_uid, full_name, role) values (v_org, gen_random_uuid(), 'Owner', 'owner');
+  perform set_config('request.jwt.claim.sub', (select auth_uid::text from staff where org_id = v_org), true);
   v_no := next_doc_no(v_org, 'invoice');
   assert v_no = '0001', format('first invoice number should be 0001, got %s', v_no);
 

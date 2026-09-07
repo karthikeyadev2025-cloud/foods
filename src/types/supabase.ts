@@ -67,10 +67,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "account_transactions_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "account_transactions_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transactions_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -113,6 +125,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "account_transfers_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "account_transfers_from_account_fkey"
             columns: ["from_account"]
             referencedRelation: "cash_bank_accounts"
@@ -129,6 +147,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transfers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "account_transfers_to_account_fkey"
@@ -186,10 +210,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "attendance_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "attendance_staff_id_fkey"
             columns: ["staff_id"]
             referencedRelation: "staff"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_staff_id_fkey"
+            columns: ["staff_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
           },
         ]
       }
@@ -258,6 +294,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "backup_settings_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       backups: {
@@ -299,10 +341,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "backups_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "backups_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "backups_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -423,6 +477,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cash_bank_accounts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       catalogs: {
@@ -465,6 +525,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogs_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -613,6 +679,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cheques_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "cheques_supplier_id_fkey"
             columns: ["supplier_id"]
             referencedRelation: "suppliers"
@@ -686,6 +758,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "customers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "customers_price_list_id_fkey"
             columns: ["price_list_id"]
             referencedRelation: "price_lists"
@@ -750,6 +828,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "delivery_challans_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "delivery_challans_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
@@ -778,6 +862,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_challans_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "delivery_challans_trip_id_fkey"
@@ -853,6 +943,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "discount_schemes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "discount_schemes_section_id_fkey"
             columns: ["section_id"]
             referencedRelation: "sections"
@@ -885,6 +981,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_heads_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -936,10 +1038,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "import_jobs_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "import_jobs_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_jobs_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -1004,6 +1118,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -1134,6 +1254,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invoices_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "invoices_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
@@ -1156,6 +1282,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "invoices_trip_id_fkey"
@@ -1213,6 +1345,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "item_barcodes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "item_barcodes_uom_id_fkey"
             columns: ["uom_id"]
             referencedRelation: "uoms"
@@ -1268,6 +1406,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "item_batches_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "item_batches_production_batch_id_fkey"
             columns: ["production_batch_id"]
             referencedRelation: "production_batches"
@@ -1303,6 +1447,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_categories_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -1367,6 +1517,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_price_overrides_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -1460,6 +1616,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "items_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "items_pack_type_id_fkey"
             columns: ["pack_type_id"]
             referencedRelation: "pack_types"
@@ -1518,10 +1680,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "journal_entries_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "journal_entries_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -1643,6 +1817,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ledger_accounts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "ledger_accounts_parent_id_fkey"
             columns: ["parent_id"]
             referencedRelation: "ledger_accounts"
@@ -1728,6 +1908,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "message_log_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "message_log_template_id_fkey"
             columns: ["template_id"]
             referencedRelation: "message_templates"
@@ -1776,6 +1962,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "message_templates_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       number_series: {
@@ -1818,6 +2010,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "number_series_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -1945,6 +2143,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "orders_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
@@ -1961,6 +2165,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "orders_source_inbound_id_fkey"
@@ -2056,6 +2266,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pack_types_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       payments: {
@@ -2127,6 +2343,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "payments_expense_head_id_fkey"
             columns: ["expense_head_id"]
             referencedRelation: "expense_heads"
@@ -2145,10 +2367,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "payments_staff_id_fkey"
             columns: ["staff_id"]
             referencedRelation: "staff"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_staff_id_fkey"
+            columns: ["staff_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
           },
           {
             foreignKeyName: "payments_supplier_id_fkey"
@@ -2233,6 +2467,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "price_lists_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       print_templates: {
@@ -2278,6 +2518,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_templates_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -2365,10 +2611,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "production_batches_chief_id_fkey"
+            columns: ["chief_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "production_batches_created_by_fkey"
             columns: ["created_by"]
             referencedRelation: "staff"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
           },
           {
             foreignKeyName: "production_batches_item_id_fkey"
@@ -2393,6 +2651,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "production_batches_recipe_id_fkey"
@@ -2563,6 +2827,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchase_returns_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "purchase_returns_location_id_fkey"
             columns: ["location_id"]
             referencedRelation: "stock_locations"
@@ -2573,6 +2843,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_returns_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "purchase_returns_purchase_id_fkey"
@@ -2642,6 +2918,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchases_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "purchases_location_id_fkey"
             columns: ["location_id"]
             referencedRelation: "stock_locations"
@@ -2652,6 +2934,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "purchases_supplier_id_fkey"
@@ -2797,6 +3085,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "quotations_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "quotations_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
@@ -2819,6 +3113,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -2931,6 +3231,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "receipt_modes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       receipts: {
@@ -2996,6 +3302,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "receipts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "receipts_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
@@ -3012,6 +3324,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "receipts_trip_id_fkey"
@@ -3123,6 +3441,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "recipes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       reminder_rules: {
@@ -3167,6 +3491,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reminder_rules_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
             foreignKeyName: "reminder_rules_template_id_fkey"
             columns: ["template_id"]
             referencedRelation: "message_templates"
@@ -3209,6 +3539,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "role_permissions_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       routes: {
@@ -3239,6 +3575,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -3354,6 +3696,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sales_returns_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "sales_returns_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
@@ -3382,6 +3730,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -3421,10 +3775,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sections_mestri_id_fkey"
+            columns: ["mestri_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "sections_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sections_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -3471,6 +3837,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -3537,6 +3909,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stock_ledger_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "stock_ledger_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "items"
@@ -3559,6 +3937,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_ledger_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -3590,6 +3974,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_locations_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -3628,6 +4018,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "suppliers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       transaction_message_settings: {
@@ -3661,6 +4057,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_message_settings_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "transaction_message_settings_template_id_fkey"
@@ -3707,6 +4109,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uoms_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -3761,10 +4169,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vehicle_trips_driver_id_fkey"
+            columns: ["driver_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "vehicle_trips_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "vehicle_trips_route_id_fkey"
@@ -3825,6 +4245,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vehicles_driver_id_fkey"
+            columns: ["driver_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "vehicles_location_id_fkey"
             columns: ["location_id"]
             referencedRelation: "stock_locations"
@@ -3835,6 +4261,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "vehicles_route_id_fkey"
@@ -3861,6 +4293,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cash_bank_accounts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       v_customer_outstanding: {
@@ -3883,6 +4321,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "customers_route_id_fkey"
@@ -3921,7 +4365,35 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "items_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
+      }
+      v_me: {
+        Row: {
+          address: string | null
+          auth_uid: string | null
+          breakage_recovery_pct: number | null
+          credit_days: number | null
+          fssai_no: string | null
+          full_name: string | null
+          interest_pct_pa: number | null
+          is_active: boolean | null
+          is_mestry: boolean | null
+          jurisdiction: string | null
+          license_valid_till: string | null
+          org_id: string | null
+          org_name: string | null
+          org_phone: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["staff_role"] | null
+          staff_id: string | null
+        }
+        Relationships: []
       }
       v_production_sheet: {
         Row: {
@@ -3949,6 +4421,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "orgs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -3992,6 +4470,12 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "stock_ledger_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
       v_trial_balance: {
@@ -4012,14 +4496,27 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ledger_accounts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
         ]
       }
     }
     Functions: {
+      bootstrap_org: {
+        Args: { p_full_name: string; p_org_name: string; p_phone?: string }
+        Returns: string
+      }
       breakage_credit: {
         Args: { p_org: string; p_value: number }
         Returns: number
       }
+      can_delete: { Args: { p_module: string }; Returns: boolean }
+      can_edit: { Args: { p_module: string }; Returns: boolean }
+      can_view: { Args: { p_module: string }; Returns: boolean }
       close_production_batch: { Args: { p_batch: string }; Returns: undefined }
       closing_stock_report: {
         Args: { p_date?: string; p_location?: string; p_org: string }
@@ -4105,6 +4602,7 @@ export type Database = {
         Args: { p_invoice: string }
         Returns: undefined
       }
+      seed_role_permissions: { Args: { p_org: string }; Returns: undefined }
       show_limit: { Args: Record<PropertyKey, never>; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       to_base_qty: {

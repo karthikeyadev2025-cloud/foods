@@ -410,6 +410,12 @@ export type Database = {
           {
             foreignKeyName: "batch_ingredients_batch_id_fkey"
             columns: ["batch_id"]
+            referencedRelation: "v_batch_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_ingredients_batch_id_fkey"
+            columns: ["batch_id"]
             referencedRelation: "v_production_sheet"
             referencedColumns: ["batch_id"]
           },
@@ -1601,6 +1607,12 @@ export type Database = {
             foreignKeyName: "item_batches_production_batch_id_fkey"
             columns: ["production_batch_id"]
             referencedRelation: "production_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_batches_production_batch_id_fkey"
+            columns: ["production_batch_id"]
+            referencedRelation: "v_batch_list"
             referencedColumns: ["id"]
           },
           {
@@ -2807,12 +2819,14 @@ export type Database = {
           actual_pieces: number
           batch_no: string | null
           chief_id: string | null
+          closed_at: string | null
           created_at: string
           created_by: string | null
           expected_boxes: number
           expected_jars: number
           expected_pieces: number
           id: string
+          ingredient_cost: number
           item_id: string
           labour_cost: number
           labour_count: number
@@ -2825,6 +2839,7 @@ export type Database = {
           production_date: string
           recipe_id: string | null
           status: Database["public"]["Enums"]["batch_status"]
+          total_cost: number
         }
         Insert: {
           actual_boxes?: number
@@ -2832,12 +2847,14 @@ export type Database = {
           actual_pieces?: number
           batch_no?: string | null
           chief_id?: string | null
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
           expected_boxes?: number
           expected_jars?: number
           expected_pieces?: number
           id?: string
+          ingredient_cost?: number
           item_id: string
           labour_cost?: number
           labour_count?: number
@@ -2850,6 +2867,7 @@ export type Database = {
           production_date?: string
           recipe_id?: string | null
           status?: Database["public"]["Enums"]["batch_status"]
+          total_cost?: number
         }
         Update: {
           actual_boxes?: number
@@ -2857,12 +2875,14 @@ export type Database = {
           actual_pieces?: number
           batch_no?: string | null
           chief_id?: string | null
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
           expected_boxes?: number
           expected_jars?: number
           expected_pieces?: number
           id?: string
+          ingredient_cost?: number
           item_id?: string
           labour_cost?: number
           labour_count?: number
@@ -2875,6 +2895,7 @@ export type Database = {
           production_date?: string
           recipe_id?: string | null
           status?: Database["public"]["Enums"]["batch_status"]
+          total_cost?: number
         }
         Relationships: [
           {
@@ -2947,6 +2968,12 @@ export type Database = {
             foreignKeyName: "production_batches_recipe_id_fkey"
             columns: ["recipe_id"]
             referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_recipe_id_fkey"
+            columns: ["recipe_id"]
+            referencedRelation: "v_recipe_list"
             referencedColumns: ["id"]
           },
         ]
@@ -3807,6 +3834,12 @@ export type Database = {
             foreignKeyName: "recipe_ingredients_recipe_id_fkey"
             columns: ["recipe_id"]
             referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            referencedRelation: "v_recipe_list"
             referencedColumns: ["id"]
           },
           {
@@ -4790,6 +4823,181 @@ export type Database = {
           },
         ]
       }
+      v_batch_ingredients: {
+        Row: {
+          amount: number | null
+          batch_id: string | null
+          difference: number | null
+          id: string | null
+          ingredient: string | null
+          ingredient_id: string | null
+          item_code: string | null
+          no_of_plates: number | null
+          quantity: number | null
+          rate: number | null
+          total_usage_per_plate: number | null
+          total_used_by_chief: number | null
+          uom_code: string | null
+          uom_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_ingredients_batch_id_fkey"
+            columns: ["batch_id"]
+            referencedRelation: "production_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_ingredients_batch_id_fkey"
+            columns: ["batch_id"]
+            referencedRelation: "v_batch_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_ingredients_batch_id_fkey"
+            columns: ["batch_id"]
+            referencedRelation: "v_production_sheet"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "batch_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "batch_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "batch_ingredients_uom_id_fkey"
+            columns: ["uom_id"]
+            referencedRelation: "uoms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_batch_list: {
+        Row: {
+          actual_boxes: number | null
+          actual_jars: number | null
+          actual_pieces: number | null
+          batch_no: string | null
+          box_difference: number | null
+          chief_id: string | null
+          chief_name: string | null
+          closed_at: string | null
+          cost_per_box: number | null
+          created_at: string | null
+          expected_boxes: number | null
+          expected_jars: number | null
+          expected_pieces: number | null
+          id: string | null
+          ingredient_cost: number | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          labour_cost: number | null
+          labour_count: number | null
+          location_id: string | null
+          location_name: string | null
+          mestri_name: string | null
+          mestry_count: number | null
+          no_of_plates: number | null
+          no_of_workers: number | null
+          notes: string | null
+          org_id: string | null
+          pieces_per_unit: number | null
+          production_date: string | null
+          recipe_id: string | null
+          section_name: string | null
+          status: Database["public"]["Enums"]["batch_status"] | null
+          total_cost: number | null
+          units_per_box: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_batches_chief_id_fkey"
+            columns: ["chief_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_chief_id_fkey"
+            columns: ["chief_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "production_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "production_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "production_batches_location_id_fkey"
+            columns: ["location_id"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "production_batches_recipe_id_fkey"
+            columns: ["recipe_id"]
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_recipe_id_fkey"
+            columns: ["recipe_id"]
+            referencedRelation: "v_recipe_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_customer_list: {
         Row: {
           address: string | null
@@ -5768,6 +5976,134 @@ export type Database = {
           },
         ]
       }
+      v_recipe_ingredients: {
+        Row: {
+          id: string | null
+          ingredient_id: string | null
+          ingredient_name: string | null
+          item_code: string | null
+          qty_per_plate: number | null
+          rate: number | null
+          recipe_id: string | null
+          uom_code: string | null
+          uom_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            referencedRelation: "v_recipe_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_uom_id_fkey"
+            columns: ["uom_id"]
+            referencedRelation: "uoms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_recipe_list: {
+        Row: {
+          boxes_per_plate: number | null
+          cost_per_plate: number | null
+          created_at: string | null
+          id: string | null
+          ingredient_count: number | null
+          is_active: boolean | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          mestri_id: string | null
+          mestri_name: string | null
+          name: string | null
+          org_id: string | null
+          pieces_per_plate: number | null
+          pieces_per_unit: number | null
+          section_name: string | null
+          units_per_box: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "recipes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "recipes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "sections_mestri_id_fkey"
+            columns: ["mestri_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sections_mestri_id_fkey"
+            columns: ["mestri_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+        ]
+      }
       v_return_lines: {
         Row: {
           amount: number | null
@@ -6194,6 +6530,7 @@ export type Database = {
       can_delete: { Args: { p_module: string }; Returns: boolean }
       can_edit: { Args: { p_module: string }; Returns: boolean }
       can_view: { Args: { p_module: string }; Returns: boolean }
+      cancel_production_batch: { Args: { p_batch: string }; Returns: undefined }
       close_production_batch: { Args: { p_batch: string }; Returns: undefined }
       closing_stock_report: {
         Args: {
@@ -6259,16 +6596,7 @@ export type Database = {
       }
       normalize_code: { Args: { p: string }; Returns: string }
       normalize_item_code: { Args: { p: string }; Returns: string }
-      open_production_batch: {
-        Args: {
-          p_chief?: string
-          p_date?: string
-          p_item: string
-          p_org: string
-          p_plates: number
-        }
-        Returns: string
-      }
+      open_production_batch: { Args: { p: Json }; Returns: string }
       pgp_armor_headers: {
         Args: { "": string }
         Returns: Record<string, unknown>[]
@@ -6291,6 +6619,25 @@ export type Database = {
       }
       post_purchase_stock: { Args: { p_purchase: string }; Returns: undefined }
       post_return_stock: { Args: { p_return: string }; Returns: undefined }
+      production_variance: {
+        Args: { p_from: string; p_group?: string; p_org: string; p_to: string }
+        Returns: {
+          actual_boxes: number
+          actual_ingredient_cost: number
+          batches: number
+          box_variance: number
+          box_variance_pct: number
+          cost_per_box: number
+          expected_boxes: number
+          expected_ingredient_cost: number
+          group_key: string
+          group_label: string
+          ingredient_variance: number
+          labour_cost: number
+          plates: number
+          total_cost: number
+        }[]
+      }
       qty_to_pieces: {
         Args: { p_item: string; p_qty: number; p_uom: string }
         Returns: number
@@ -6333,6 +6680,10 @@ export type Database = {
       }
       save_receipt: {
         Args: { p_allocations?: Json; p_header: Json; p_lines: Json }
+        Returns: string
+      }
+      save_recipe: {
+        Args: { p_header: Json; p_ingredients: Json }
         Returns: string
       }
       save_sales_return: {
@@ -6424,6 +6775,10 @@ export type Database = {
           sold: number
           units_per_box: number
         }[]
+      }
+      update_batch_actuals: {
+        Args: { p: Json; p_batch: string }
+        Returns: undefined
       }
       van_load: {
         Args: { p_from_location: string; p_lines: Json; p_trip: string }

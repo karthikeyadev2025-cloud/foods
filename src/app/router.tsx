@@ -13,6 +13,8 @@ import { InvoicesPage } from '@/features/invoices/routes/InvoicesPage';
 import { ItemEditPage } from '@/features/items/routes/ItemEditPage';
 import { ItemsPage } from '@/features/items/routes/ItemsPage';
 import { PaymentsPage } from '@/features/payments/routes/PaymentsPage';
+import { BatchPage } from '@/features/production/routes/BatchPage';
+import { ProductionPage } from '@/features/production/routes/ProductionPage';
 import { PurchaseNewPage, PurchaseViewPage, PurchasesPage } from '@/features/purchases/routes/PurchasesPage';
 import { ReceiptNewPage, ReceiptViewPage, ReceiptsPage } from '@/features/receipts/routes/ReceiptsPage';
 import { ReturnNewPage, ReturnViewPage, ReturnsPage } from '@/features/returns/routes/ReturnsPage';
@@ -82,7 +84,12 @@ export const router = createBrowserRouter([
             { path: 'stock/movements', element: <StockPage tab="movements" /> },
             { path: 'stock/low', element: <StockPage tab="low" /> },
           ]),
-          guarded('production', [{ path: 'production', element: <Placeholder title="Production" task="T4.2" /> }]),
+          guarded('production', [
+            { path: 'production', element: <ProductionPage /> },
+            { path: 'production/recipes', element: <ProductionPage tab="recipes" /> },
+            { path: 'production/variance', element: <ProductionPage tab="variance" /> },
+            { path: 'production/batches/:id', element: <BatchPage /> },
+          ]),
           guarded('vehicles', [
             { path: 'vehicles', element: <VehiclesPage /> },
             { path: 'vehicles/trips', element: <TripsPage /> },

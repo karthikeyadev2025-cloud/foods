@@ -78,6 +78,8 @@ src/
 
 | T3 Stock & vehicles | ✅ `db/10_stock_trips.sql`. **Stock**: closing stock by date / location / section, grouped with sub-totals in boxes, negatives flagged, inward and outward counted from every movement type; per-item movement ledger with document references and running balance; low stock by reorder level; all with Excel. **Trips**: create → load (godown → van through the ledger) → dispatch → settle; invoices booked on a trip sell from the van; settlement shows loaded vs sold vs returned vs collected with the gap per item; printable loading sheet. `db/tests/07_stock_trips.sql`. |
 
+| T4 Production | ✅ `db/11_production.sql`. **Recipes** per item (qty per plate, pieces per plate; one active per item). **Batch open** explodes the recipe into expected usage and `plates × pieces per plate → ÷ pieces per unit → ÷ units per box` expected boxes. **Sheet** in the client's exact columns: Ingredients · Quantity · No of Plates · Total Usage per Plate · Total Used by Chief · Difference · No of Workers · Mestry · Labour, plus Expected vs Actual Boxes. **Chief** enters actuals and, by RLS, sees only today's open batch; the production head closes. **Close** consumes raw material, adds finished goods at cost, costs the batch (ingredients + labour, cost per box). **Variance** by item, mestri or week. `db/tests/08_production.sql`. |
+
 **Still needed from the client to finish T0.6:** units per box (and pack type) for the 64 codes in
 `seed/unmatched_items.csv` with a blank `units_per_box`, the four duplicated stock-sheet rows resolved,
 and the rate list. Each is a re-run of the importer, not a developer task.

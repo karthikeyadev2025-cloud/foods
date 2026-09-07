@@ -17,21 +17,19 @@ npm install
 cp .env.example .env          # add Supabase URL + anon key, Nikki API key
 ```
 
-Apply migrations in order, then generate types:
+Apply migrations, run the DB acceptance tests, then generate types:
 
 ```bash
-psql "$DATABASE_URL" -f db/01_schema.sql
-psql "$DATABASE_URL" -f db/02_logic.sql
-psql "$DATABASE_URL" -f db/03_rls.sql
-psql "$DATABASE_URL" -f db/04_extended.sql
-npm run gen:types             # supabase gen types typescript --linked > src/types/supabase.ts
+DATABASE_URL=postgresql://... db/apply.sh   # 01 → 02 → 04 → 03 → 05, then db/tests/*.sql
+npm run gen:types                            # regenerates src/types/supabase.ts
 ```
 
-Until a Supabase project is linked, the scaffold type-checks against a stub:
+**Order matters:** `03_rls.sql` enables policies on tables that `04_extended.sql`
+creates, so 04 runs before 03. If you paste into the Supabase SQL Editor instead of
+using `psql`, paste each file as one query, in that same order, then run the tests.
 
-```bash
-cp src/types/supabase.stub.ts src/types/supabase.ts
-```
+`src/types/supabase.ts` is generated and committed; regenerate it after every
+migration (see `src/types/README.md`).
 
 Seed the client's real master data through the in-app importer (T0.5) from
 `seed/*.csv`. `scripts/import_masters.py` only regenerates those CSVs from the

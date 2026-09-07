@@ -227,11 +227,14 @@ Never use floats for intermediate money maths. Round only at display and at `amo
 ## Repo layout
 
 ```
-/db                 numbered SQL migrations — run in order, never edit a shipped one
+/db                 numbered SQL migrations — never edit a shipped one; apply with db/apply.sh
   01_schema.sql      core: masters, stock ledger, sales, production, vehicles
   02_logic.sql       conversion, posting, reports, numbering
-  03_rls.sql         row level security
   04_extended.sql    cash/bank, journal, orders, price lists, batches, print, backup
+  03_rls.sql         row level security — runs AFTER 04 (it covers 04's tables)
+  05_fixes.sql       audit_log RLS, view security_invoker, invoice snapshot + totals,
+                     append-only posting (no DELETE on stock_ledger, ever)
+  tests/             psql acceptance tests, rolled back; run after every migration
 /scripts            one-off importers and data tools (Python)
 /seed               generated CSVs from the client's real files
 /src

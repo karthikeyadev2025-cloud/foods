@@ -1,14 +1,18 @@
 # Generated types
 
-`supabase.ts` is generated, never hand-written:
+`supabase.ts` is generated, never hand-written (DOMAIN_RULES.md rule 3). It is committed so
+every checkout type-checks without a database, and **must be regenerated after every
+migration**:
 
 ```bash
-npm run gen:types     # supabase gen types typescript --linked > src/types/supabase.ts
+DATABASE_URL=postgresql://... npm run gen:types
 ```
 
-It is gitignored. Until a Supabase project is linked (T0.2), copy `supabase.stub.ts`
-over it so the scaffold type-checks:
+`scripts/gen-types.mjs` runs the same generator as the Supabase CLI
+(`@supabase/postgres-meta` + `@supabase/postgrest-typegen`) but needs no Docker, so it
+works against a local Postgres or a Supabase project's direct connection string. The
+CLI form is equivalent if you prefer it:
 
 ```bash
-cp src/types/supabase.stub.ts src/types/supabase.ts
+supabase gen types typescript --db-url "$DATABASE_URL" --schema public > src/types/supabase.ts
 ```

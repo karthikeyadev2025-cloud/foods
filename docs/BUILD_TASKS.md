@@ -16,9 +16,13 @@ react-hook-form + zod, react-router. Folder layout exactly as in `DOMAIN_RULES.m
 ✅ `npm run build` clean, zero TS errors, app boots to an empty shell.
 
 **T0.2 Database**
-Apply `db/01_schema.sql`, `db/02_logic.sql`, `db/03_rls.sql` in order.
+Run `db/apply.sh` — it applies `01_schema` → `02_logic` → `04_extended` → `03_rls` → `05_fixes`
+(03 must follow 04: it enables RLS on tables 04 creates), then runs `db/tests/*.sql`.
 Generate types into `src/types/supabase.ts`.
 ✅ All tables exist, RLS on, types compile.
+✅ `db/tests/01_quotation.sql` reproduces the quotation through the real triggers.
+✅ `db/tests/02_rls.sql` passes as the `authenticated` role: orgs isolated, roles enforced,
+stock posts exactly once per status change.
 
 **T0.3 Auth + shell**
 Supabase email/password login. `useSession`, `useStaff` (role + org). App shell:

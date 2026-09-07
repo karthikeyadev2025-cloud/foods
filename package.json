@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen:types": "supabase gen types typescript --linked > src/types/supabase.ts"
+    "gen:types": "node scripts/gen-types.mjs",
+    "db:apply": "bash db/apply.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -35,6 +36,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@supabase/postgres-meta": "^0.99.0",
+    "@supabase/postgrest-typegen": "^0.2.1",
     "@types/node": "^22.18.0",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",

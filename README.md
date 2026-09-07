@@ -69,7 +69,12 @@ src/
 | T0.2 Database | ✅ Migrations 01→02→04→03→05→06 validated on Postgres 16 by `db/tests/*.sql`; types generated. Apply to the Supabase project with `db/apply.sh` or the SQL Editor. |
 | T0.3 Auth + shell | ✅ Email/password login, `/welcome` first-run bootstrap, sidebar filtered by `role_permissions`, and RLS that hides Production/Payments from a `sales_exec` (`db/tests/03_permissions.sql`). |
 | T0.4 Setup wizard | ✅ `/setup/wizard` — business & trade terms → units → pack types → receipt modes → expense heads → users → sections → locations → numbering → permissions. Each is also a Setup tab with full CRUD and Excel export. Adding a receipt mode adds a register column (`receipts_register()` returns `by_mode`). |
-| T0.5 Importer | ⏳ |
+| T0.5 Importer | ✅ Setup → Import data: upload XLSX/CSV → map columns → dry run → error rows download → commit. Targets: sections, items, customers, opening stock, rates. Server-side `import_rows()` (`db/07_import.sql`), one sub-transaction per row, idempotent on natural keys, opening stock re-import posts adjustments never overwrites. |
+| T0.6 Client data | ✅ The decoded spreadsheets ship in `public/seed/` and appear as "Use this" buttons in the importer. `db/tests/04_import.sql` loads them exactly as the screen does: 15 sections, 166 price-list items, 21 of the 85 stock-report-only codes (the 64 without a readable packing come back as error rows for the client), and 167 of the 237 opening rows. The 70 rejected opening rows are the 62 codes still missing packing plus four codes the sheet lists twice (27C, 119A, 251, 252 — the importer refuses to guess whether to add them). 3 of the sheet's 7 negative rows show on the closing stock report; the other 4 belong to codes awaiting packing. Rates stay blank until the client supplies them. |
+
+**Still needed from the client to finish T0.6:** units per box (and pack type) for the 64 codes in
+`seed/unmatched_items.csv` with a blank `units_per_box`, the four duplicated stock-sheet rows resolved,
+and the rate list. Each is a re-run of the importer, not a developer task.
 
 Deploy the `create-user` edge function before adding users from Setup:
 

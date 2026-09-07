@@ -4549,15 +4549,27 @@ export type Database = {
         Args: { p_roles: Database["public"]["Enums"]["staff_role"][] }
         Returns: boolean
       }
+      import_rows: {
+        Args: {
+          p_dry_run?: boolean
+          p_options?: Json
+          p_rows: Json
+          p_target: string
+        }
+        Returns: Json
+      }
       my_org_id: { Args: Record<PropertyKey, never>; Returns: string }
       my_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["staff_role"]
       }
+      my_staff_id: { Args: Record<PropertyKey, never>; Returns: string }
       next_doc_no: {
         Args: { p_doc_type: string; p_org: string }
         Returns: string
       }
+      normalize_code: { Args: { p: string }; Returns: string }
+      normalize_item_code: { Args: { p: string }; Returns: string }
       open_production_batch: {
         Args: {
           p_chief?: string

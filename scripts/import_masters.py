@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 """
-Jyothi Foods — master data importer.
+Jyothi Foods — decode the client's two spreadsheets into importer-ready CSVs.
 
-Reads the client's two spreadsheets and produces load-ready CSVs:
+  sections.csv         code, name, sort_order
+  items.csv            item_code, pack_type, name, units_per_box, pieces_per_unit,
+                       mrp_per_piece, section_code          (price list items)
+  unmatched_items.csv  same columns + opening_boxes         (in the stock report but
+                       not on the price list; units_per_box only where the name
+                       encodes it, e.g. "(12) 32" → 32 — the rest need the client)
+  opening_stock.csv    item_code, section_code, opening_boxes
 
-  items.csv          item_code, pack_type, name, units_per_box, pieces_per_unit,
-                     mrp_per_piece, section_code
-  sections.csv       code, name, sort_order
-  opening_stock.csv  item_code, section_code, opening_boxes
+These go through the in-app importer (Setup → Import data), never straight into
+the database. This script only regenerates them from docs/reference/.
 
 Usage:
-    python3 import_masters.py <price_list.xlsx> <stock_report.xlsx> <outdir>
+    python3 scripts/import_masters.py docs/reference/Structured_Item_Price_List.xlsx \
+        docs/reference/STOCK_REPORT.xlsx seed/
 """
 import csv, re, sys
 from pathlib import Path
 from openpyxl import load_workbook
 
-PACK_MAP = {"JAR": "JAR", "PACK": "PACK", "L.B": "LB", "LB": "LB",
+PACK_MAP = {"JAR": "JAR", "PACK": "PACK", "L.B": "L.B", "LB": "L.B",
             "KG": "KG", "TRY": "TRY", "TRAY": "TRY", "BOX": "BOX"}
 
 # "  8 x 1", "21 X 1", "10 X 1"  ->  8, 21, 10
@@ -25,6 +30,8 @@ BOX_RE = re.compile(r"^\s*(\d+)\s*[xX]\s*(\d+)\s*$")
 MRP_RE = re.compile(r"^\s*(\d+)\s*/-")
 # the "(12)" packing hint inside the name
 PIECES_RE = re.compile(r"\((\d+)\s*[A-Za-z]?\)")
+# trailing units-per-box after the parens: "(12) 32", "(12)24 NEW", "(12) 24P"
+TRAILING_RE = re.compile(r"\)\s*(\d+)\s*[A-Za-z]?\s*(?:NEW)?\s*$", re.IGNORECASE)
 
 
 def norm_code(v):
@@ -37,6 +44,22 @@ def norm_code(v):
     return re.sub(r"[\s:]+", "", s).upper() or None
 
 
+def clean_name(name):
+    return re.sub(r"\s+", " ", str(name).strip())
+
+
+def parse_name(name):
+    """MRP, pieces per unit and (if encoded) units per box from the item name."""
+    mrp = MRP_RE.match(name)
+    pieces = PIECES_RE.search(name)
+    trailing = TRAILING_RE.search(name)
+    return (
+        float(mrp.group(1)) if mrp else None,
+        int(pieces.group(1)) if pieces else 1,
+        int(trailing.group(1)) if trailing else None,
+    )
+
+
 def parse_price_list(path):
     """The sheet has two side-by-side blocks: cols A-D and F-I."""
     ws = load_workbook(path, read_only=True, data_only=True)["Item List"]
@@ -46,7 +69,7 @@ def parse_price_list(path):
         row = list(row) + [None] * 10
         for base in (0, 5):                       # two blocks per row
             code, pack, name, box = row[base:base + 4]
-            code, name = norm_code(code), (str(name).strip() if name else None)
+            code, name = norm_code(code), (clean_name(name) if name else None)
             if not code or not name or code == "CODE":
                 continue
             if code in seen:                       # first occurrence wins
@@ -56,20 +79,14 @@ def parse_price_list(path):
             if not m:
                 continue
             units_per_box = int(m.group(1))
-
             pack_type = PACK_MAP.get(str(pack or "").strip().upper(), "JAR")
-
-            mrp = MRP_RE.match(name)
-            mrp = float(mrp.group(1)) if mrp else None
-
-            pieces = PIECES_RE.search(name)
-            pieces = int(pieces.group(1)) if pieces else 1
+            mrp, pieces, _ = parse_name(name)
 
             seen.add(code)
             items.append({
                 "item_code": code,
                 "pack_type": pack_type,
-                "name": re.sub(r"\s+", " ", name),
+                "name": name,
                 "units_per_box": units_per_box,
                 "pieces_per_unit": pieces,
                 "mrp_per_piece": mrp,
@@ -109,7 +126,10 @@ def parse_stock_report(path):
         opening = row[3]
         stock.append({
             "item_code": code,
-            "section_code": cur_code or "",
+            "pack": str(row[1]).strip() if row[1] else "",
+            "name": clean_name(row[2]) if row[2] else "",
+            # importer matches a section by code or by name, so OTHERS groups work too
+            "section_code": cur_code or cur_name or "",
             "section_name": cur_name or "OTHERS",
             "opening_boxes": round(float(opening), 3) if isinstance(opening, (int, float)) else 0,
         })
@@ -124,14 +144,30 @@ def main():
     sections, stock = parse_stock_report(stock_path)
 
     # attach each item to the section its stock is reported under
-    sec_by_item = {s["item_code"]: (s["section_code"], s["section_name"]) for s in stock}
-    known = {s["name"] for s in sections}
+    sec_by_item = {}
+    for s in stock:
+        sec_by_item.setdefault(s["item_code"], s["section_code"])
     for it in items:
-        it["section_code"] = sec_by_item.get(it["item_code"], ("", ""))[0]
+        it["section_code"] = sec_by_item.get(it["item_code"], "")
 
     # items present in the stock report but missing from the price list
     have = {i["item_code"] for i in items}
-    orphans = [s for s in stock if s["item_code"] not in have]
+    orphans, seen = [], set()
+    for s in stock:
+        if s["item_code"] in have or s["item_code"] in seen:
+            continue
+        seen.add(s["item_code"])
+        mrp, pieces, units = parse_name(s["name"]) if s["name"] else (None, 1, None)
+        orphans.append({
+            "item_code": s["item_code"],
+            "pack_type": "",                      # stock report's Pack column is the stock unit, not the pack type
+            "name": s["name"],
+            "units_per_box": units if units else "",
+            "pieces_per_unit": pieces,
+            "mrp_per_piece": mrp,
+            "section_code": s["section_code"],
+            "opening_boxes": s["opening_boxes"],
+        })
 
     def dump(name, rows, cols):
         with open(outdir / name, "w", newline="") as f:
@@ -139,18 +175,18 @@ def main():
             w.writeheader()
             w.writerows(rows)
 
-    dump("items.csv", items,
-         ["item_code", "pack_type", "name", "units_per_box",
-          "pieces_per_unit", "mrp_per_piece", "section_code"])
+    item_cols = ["item_code", "pack_type", "name", "units_per_box",
+                 "pieces_per_unit", "mrp_per_piece", "section_code"]
+    dump("items.csv", items, item_cols)
     dump("sections.csv", sections, ["code", "name", "sort_order"])
     dump("opening_stock.csv", stock, ["item_code", "section_code", "opening_boxes"])
-    dump("unmatched_items.csv", orphans,
-         ["item_code", "section_name", "opening_boxes"])
+    dump("unmatched_items.csv", orphans, item_cols + ["opening_boxes"])
 
-    print(f"items            : {len(items)}")
-    print(f"sections         : {len(sections)}  ({', '.join(sorted(known))[:80]}…)")
+    print(f"items             : {len(items)}")
+    print(f"sections          : {len(sections)}")
     print(f"opening stock rows: {len(stock)}")
-    print(f"in stock report but not in price list: {len(orphans)}")
+    print(f"in stock report but not in price list: {len(orphans)} "
+          f"({sum(1 for o in orphans if o['units_per_box'] != '')} with packing readable from the name)")
     print(f"negative opening  : {sum(1 for s in stock if s['opening_boxes'] < 0)}")
 
 

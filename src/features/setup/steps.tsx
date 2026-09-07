@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { ImportPanel } from './components/ImportPanel';
 import { OrgProfileForm } from './components/OrgProfileForm';
 import { PermissionsMatrix } from './components/PermissionsMatrix';
 import { UsersPanel } from './components/UsersPanel';
@@ -84,5 +85,11 @@ export const SETUP_STEPS: SetupStep[] = [
     label: 'Permissions',
     why: 'What each role can view, edit and delete. Enforced by the database.',
     Component: PermissionsMatrix,
+  },
+  {
+    slug: 'import',
+    label: 'Import data',
+    why: 'Load sections, items, opening stock, customers and rates from Excel/CSV — or from the client’s own decoded files. Check first, then import; error rows come back to you.',
+    Component: ImportPanel,
   },
 ];

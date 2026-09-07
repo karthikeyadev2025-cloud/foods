@@ -144,6 +144,79 @@ export async function createUser(input: CreateUserInput): Promise<Staff> {
 }
 
 // ------------------------------------------------------------------
+// Data import (db/07_import.sql)
+// ------------------------------------------------------------------
+export interface ImportErrorRow {
+  row: number;
+  error: string;
+  data: Record<string, string>;
+}
+
+export interface ImportResult {
+  target: string;
+  dry_run: boolean;
+  total: number;
+  ok: number;
+  unchanged: number;
+  errors: number;
+  error_rows: ImportErrorRow[];
+}
+
+/** A type alias, not an interface, so it is assignable to the RPC's Json parameter. */
+export type ImportOptions = {
+  location_id?: string;
+  txn_date?: string;
+};
+
+function asRecord(v: unknown): Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+}
+
+function num(v: unknown): number {
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Validate (dry run) or commit rows server-side. Every row is reported; bad rows never block good ones. */
+export async function runImport(
+  target: string,
+  rows: Record<string, string>[],
+  options: ImportOptions,
+  dryRun: boolean,
+): Promise<ImportResult> {
+  const { data, error } = await supabase.rpc('import_rows', {
+    p_target: target,
+    p_rows: rows,
+    p_options: options,
+    p_dry_run: dryRun,
+  });
+  if (error) throw error;
+  const r = asRecord(data);
+  const errorRows = Array.isArray(r.error_rows) ? r.error_rows : [];
+  return {
+    target: String(r.target ?? target),
+    dry_run: Boolean(r.dry_run),
+    total: num(r.total),
+    ok: num(r.ok),
+    unchanged: num(r.unchanged),
+    errors: num(r.errors),
+    error_rows: errorRows.map((e) => {
+      const er = asRecord(e);
+      const dataRec = asRecord(er.data);
+      const cleaned: Record<string, string> = {};
+      for (const [k, v] of Object.entries(dataRec)) cleaned[k] = v === null || v === undefined ? '' : String(v);
+      return { row: num(er.row), error: String(er.error ?? ''), data: cleaned };
+    }),
+  };
+}
+
+export type ImportJob = Tables['import_jobs']['Row'];
+
+export function listImportJobs(): Promise<ImportJob[]> {
+  return expectRows(supabase.from('import_jobs').select('*').order('created_at', { ascending: false }).limit(50));
+}
+
+// ------------------------------------------------------------------
 // Role permissions
 // ------------------------------------------------------------------
 export type RolePermission = Tables['role_permissions']['Row'];

@@ -73,6 +73,8 @@ export interface InvoiceHeaderInput {
   invoice_date: string;
   location_id: string;
   vehicle_id?: string | null;
+  /** Selling from a van on a trip: the DB fixes vehicle and location from the trip. */
+  trip_id?: string | null;
   transport_name?: string | null;
   lr_no?: string | null;
   lr_date?: string | null;

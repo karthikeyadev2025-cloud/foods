@@ -20,6 +20,7 @@ import { exportToExcel } from '@/lib/export';
 import { int } from '@/lib/format';
 import { createVehicle, listVehicles, updateVehicle, type VehicleRow } from '../api';
 import { VEHICLE_DEFAULTS, vehicleSchema, type VehicleInput } from '../schema';
+import { VehicleTabs } from './TripsPage';
 
 const KEY = ['vehicles', 'list'] as const;
 
@@ -63,6 +64,7 @@ export function VehiclesPage() {
         }
       />
 
+      <VehicleTabs active="vehicles" />
       {vehicles.isLoading ? (
         <Spinner />
       ) : vehicles.error ? (

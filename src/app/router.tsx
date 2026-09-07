@@ -18,6 +18,10 @@ import { ReceiptNewPage, ReceiptViewPage, ReceiptsPage } from '@/features/receip
 import { ReturnNewPage, ReturnViewPage, ReturnsPage } from '@/features/returns/routes/ReturnsPage';
 import { SetupPage } from '@/features/setup/routes/SetupPage';
 import { SetupWizard } from '@/features/setup/routes/SetupWizard';
+import { StockPage } from '@/features/stock/routes/StockPage';
+import { TripDetailPage } from '@/features/vehicles/routes/TripDetailPage';
+import { TripPrintPage } from '@/features/vehicles/routes/TripPrintPage';
+import { TripsPage } from '@/features/vehicles/routes/TripsPage';
 import { VehiclesPage } from '@/features/vehicles/routes/VehiclesPage';
 import type { ModuleKey } from '@/lib/permissions';
 
@@ -39,6 +43,7 @@ export const router = createBrowserRouter([
       { path: '/welcome', element: <WelcomePage /> },
       // Print sheets render without the app chrome.
       guarded('invoices', [{ path: '/invoices/:id/print', element: <InvoicePrintPage /> }]),
+      guarded('vehicles', [{ path: '/vehicles/trips/:id/print', element: <TripPrintPage /> }]),
       {
         path: '/',
         element: <AppShell />,
@@ -72,9 +77,17 @@ export const router = createBrowserRouter([
             { path: 'receipts/:id', element: <ReceiptViewPage /> },
           ]),
           guarded('payments', [{ path: 'payments', element: <PaymentsPage /> }]),
-          guarded('stock', [{ path: 'stock', element: <Placeholder title="Stock" task="T3.1" /> }]),
+          guarded('stock', [
+            { path: 'stock', element: <StockPage /> },
+            { path: 'stock/movements', element: <StockPage tab="movements" /> },
+            { path: 'stock/low', element: <StockPage tab="low" /> },
+          ]),
           guarded('production', [{ path: 'production', element: <Placeholder title="Production" task="T4.2" /> }]),
-          guarded('vehicles', [{ path: 'vehicles', element: <VehiclesPage /> }]),
+          guarded('vehicles', [
+            { path: 'vehicles', element: <VehiclesPage /> },
+            { path: 'vehicles/trips', element: <TripsPage /> },
+            { path: 'vehicles/trips/:id', element: <TripDetailPage /> },
+          ]),
           guarded('messaging', [{ path: 'messaging', element: <Placeholder title="Messaging" task="T6.1" /> }]),
           guarded('reports', [{ path: 'reports', element: <Placeholder title="Reports" task="T5.2" /> }]),
           guarded('setup', [

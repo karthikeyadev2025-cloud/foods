@@ -18,6 +18,7 @@ import { getCustomer, searchCustomers, type CustomerRow } from '@/features/custo
 import { effectiveUnitRate, searchItems, type ItemRow } from '@/features/items/api';
 import { stockLocationsApi } from '@/features/setup/api';
 import { listVehicles } from '@/features/vehicles/api';
+import { listOpenTrips } from '@/features/vehicles/trips-api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { amount, dateDMY, int, qty, toISODate, toNumber } from '@/lib/format';
 import { amountInWords } from '@/lib/money';
@@ -62,6 +63,7 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
 
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list });
   const vehicles = useQuery({ queryKey: ['vehicles', 'list'], queryFn: listVehicles });
+  const openTrips = useQuery({ queryKey: ['trips', 'open'], queryFn: listOpenTrips, enabled: editable });
 
   const form = useForm<InvoiceHeaderForm>({
     resolver: zodResolver(invoiceHeaderSchema),
@@ -70,6 +72,7 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
       invoice_date: invoice?.invoice_date ?? toISODate(),
       location_id: invoice?.location_id ?? '',
       vehicle_id: invoice?.vehicle_id ?? '',
+      trip_id: invoice?.trip_id ?? '',
       transport_name: invoice?.transport_name ?? '',
       lr_no: invoice?.lr_no ?? '',
       lr_date: invoice?.lr_date ?? '',
@@ -107,6 +110,7 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
   const [cancelOpen, setCancelOpen] = useState(false);
 
   const invoiceDate = watch('invoice_date');
+  const tripId = watch('trip_id');
   const freight = toNumber(watch('freight'));
   const discount = toNumber(watch('discount'));
   const roundOff = toNumber(watch('round_off'));
@@ -179,6 +183,7 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
           invoice_date: header.invoice_date,
           location_id: header.location_id,
           vehicle_id: header.vehicle_id || null,
+          trip_id: header.trip_id || null,
           transport_name: header.transport_name || null,
           lr_no: header.lr_no || null,
           lr_date: header.lr_date || null,
@@ -290,16 +295,29 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
             <Field label="Invoice date" htmlFor="inv-date" error={e.invoice_date?.message}>
               <Input id="inv-date" type="date" disabled={!canEdit} {...register('invoice_date')} />
             </Field>
-            <Field label="Stock from" htmlFor="inv-location" error={e.location_id?.message}>
-              <NativeSelect id="inv-location" disabled={!canEdit} {...register('location_id')}>
-                <option value="">— choose —</option>
-                {(locations.data ?? []).filter((l) => l.is_active).map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
+            <Field label="Van trip (selling on the road)" htmlFor="inv-trip" help={tripId ? 'Stock leaves the van; vehicle set from the trip.' : undefined}>
+              <NativeSelect id="inv-trip" disabled={!canEdit} {...register('trip_id')}>
+                <option value="">— from a godown —</option>
+                {(openTrips.data ?? []).map((t) => (
+                  <option key={t.id ?? ''} value={t.id ?? ''}>
+                    {t.vehicle_number} · {dateDMY(t.trip_date)}
+                    {t.driver_name ? ` · ${t.driver_name}` : ''}
                   </option>
                 ))}
               </NativeSelect>
             </Field>
+            {!tripId && (
+              <Field label="Stock from" htmlFor="inv-location" error={e.location_id?.message}>
+                <NativeSelect id="inv-location" disabled={!canEdit} {...register('location_id')}>
+                  <option value="">— choose —</option>
+                  {(locations.data ?? []).filter((l) => l.is_active).map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
             <Field label="Transport name" htmlFor="inv-transport" error={e.transport_name?.message}>
               <Input id="inv-transport" disabled={!canEdit} {...register('transport_name')} />
             </Field>

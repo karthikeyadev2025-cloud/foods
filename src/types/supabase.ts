@@ -432,6 +432,12 @@ export type Database = {
             referencedColumns: ["item_id"]
           },
           {
+            foreignKeyName: "batch_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
             foreignKeyName: "batch_ingredients_uom_id_fkey"
             columns: ["uom_id"]
             referencedRelation: "uoms"
@@ -594,6 +600,12 @@ export type Database = {
             foreignKeyName: "challan_items_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "challan_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -914,6 +926,18 @@ export type Database = {
           {
             foreignKeyName: "delivery_challans_trip_id_fkey"
             columns: ["trip_id"]
+            referencedRelation: "v_open_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_challans_trip_id_fkey"
+            columns: ["trip_id"]
+            referencedRelation: "v_trip_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_challans_trip_id_fkey"
+            columns: ["trip_id"]
             referencedRelation: "vehicle_trips"
             referencedColumns: ["id"]
           },
@@ -988,6 +1012,12 @@ export type Database = {
             foreignKeyName: "discount_schemes_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "discount_schemes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -1274,6 +1304,12 @@ export type Database = {
             referencedColumns: ["item_id"]
           },
           {
+            foreignKeyName: "invoice_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
             foreignKeyName: "invoice_items_uom_id_fkey"
             columns: ["uom_id"]
             referencedRelation: "uoms"
@@ -1400,6 +1436,18 @@ export type Database = {
           {
             foreignKeyName: "invoices_trip_id_fkey"
             columns: ["trip_id"]
+            referencedRelation: "v_open_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_trip_id_fkey"
+            columns: ["trip_id"]
+            referencedRelation: "v_trip_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_trip_id_fkey"
+            columns: ["trip_id"]
             referencedRelation: "vehicle_trips"
             referencedColumns: ["id"]
           },
@@ -1456,6 +1504,12 @@ export type Database = {
             foreignKeyName: "item_barcodes_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "item_barcodes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -1523,6 +1577,12 @@ export type Database = {
             foreignKeyName: "item_batches_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "item_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -1648,6 +1708,12 @@ export type Database = {
             foreignKeyName: "item_price_overrides_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "item_price_overrides_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -2244,6 +2310,12 @@ export type Database = {
             referencedColumns: ["item_id"]
           },
           {
+            foreignKeyName: "order_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
             foreignKeyName: "order_items_order_id_fkey"
             columns: ["order_id"]
             referencedRelation: "orders"
@@ -2620,6 +2692,12 @@ export type Database = {
             referencedColumns: ["item_id"]
           },
           {
+            foreignKeyName: "price_list_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
             foreignKeyName: "price_list_items_price_list_id_fkey"
             columns: ["price_list_id"]
             referencedRelation: "price_lists"
@@ -2842,6 +2920,12 @@ export type Database = {
             referencedColumns: ["item_id"]
           },
           {
+            foreignKeyName: "production_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
             foreignKeyName: "production_batches_location_id_fkey"
             columns: ["location_id"]
             referencedRelation: "stock_locations"
@@ -2918,6 +3002,12 @@ export type Database = {
             referencedColumns: ["item_id"]
           },
           {
+            foreignKeyName: "purchase_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
             foreignKeyName: "purchase_items_purchase_id_fkey"
             columns: ["purchase_id"]
             referencedRelation: "purchases"
@@ -2985,6 +3075,12 @@ export type Database = {
             foreignKeyName: "purchase_return_items_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "purchase_return_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -3240,6 +3336,12 @@ export type Database = {
             foreignKeyName: "quotation_items_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "quotation_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -3625,6 +3727,18 @@ export type Database = {
           {
             foreignKeyName: "receipts_trip_id_fkey"
             columns: ["trip_id"]
+            referencedRelation: "v_open_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_trip_id_fkey"
+            columns: ["trip_id"]
+            referencedRelation: "v_trip_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_trip_id_fkey"
+            columns: ["trip_id"]
             referencedRelation: "vehicle_trips"
             referencedColumns: ["id"]
           },
@@ -3681,6 +3795,12 @@ export type Database = {
             foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
             columns: ["ingredient_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -3742,6 +3862,12 @@ export type Database = {
             foreignKeyName: "recipes_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "recipes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -3944,6 +4070,12 @@ export type Database = {
             foreignKeyName: "sales_return_items_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -4269,6 +4401,12 @@ export type Database = {
             foreignKeyName: "stock_ledger_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "stock_ledger_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -4872,6 +5010,12 @@ export type Database = {
             referencedColumns: ["item_id"]
           },
           {
+            foreignKeyName: "invoice_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
             foreignKeyName: "invoice_items_uom_id_fkey"
             columns: ["uom_id"]
             referencedRelation: "uoms"
@@ -4961,6 +5105,18 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "invoices_trip_id_fkey"
+            columns: ["trip_id"]
+            referencedRelation: "v_open_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_trip_id_fkey"
+            columns: ["trip_id"]
+            referencedRelation: "v_trip_list"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "invoices_trip_id_fkey"
@@ -5069,6 +5225,42 @@ export type Database = {
           },
         ]
       }
+      v_item_stock: {
+        Row: {
+          boxes: number | null
+          is_low: boolean | null
+          is_negative: boolean | null
+          item_code: string | null
+          item_id: string | null
+          name: string | null
+          org_id: string | null
+          qty_base: number | null
+          reorder_level: number | null
+          section_id: string | null
+          section_name: string | null
+          units_per_box: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "items_section_id_fkey"
+            columns: ["section_id"]
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_me: {
         Row: {
           address: string | null
@@ -5090,6 +5282,81 @@ export type Database = {
           staff_id: string | null
         }
         Relationships: []
+      }
+      v_open_trips: {
+        Row: {
+          closing_km: number | null
+          collected: number | null
+          created_at: string | null
+          driver_id: string | null
+          driver_name: string | null
+          expenses: number | null
+          id: string | null
+          invoice_count: number | null
+          loaded_boxes: number | null
+          notes: string | null
+          opening_km: number | null
+          org_id: string | null
+          route_id: string | null
+          route_name: string | null
+          sold_value: number | null
+          status: Database["public"]["Enums"]["trip_status"] | null
+          trip_date: string | null
+          van_location_id: string | null
+          van_location_name: string | null
+          vehicle_id: string | null
+          vehicle_number: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_trips_driver_id_fkey"
+            columns: ["driver_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_driver_id_fkey"
+            columns: ["driver_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_route_id_fkey"
+            columns: ["route_id"]
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "v_vehicle_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_location_id_fkey"
+            columns: ["van_location_id"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_payment_list: {
         Row: {
@@ -5242,6 +5509,12 @@ export type Database = {
             foreignKeyName: "purchase_items_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "purchase_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -5466,6 +5739,18 @@ export type Database = {
           {
             foreignKeyName: "receipts_trip_id_fkey"
             columns: ["trip_id"]
+            referencedRelation: "v_open_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_trip_id_fkey"
+            columns: ["trip_id"]
+            referencedRelation: "v_trip_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_trip_id_fkey"
+            columns: ["trip_id"]
             referencedRelation: "vehicle_trips"
             referencedColumns: ["id"]
           },
@@ -5516,6 +5801,12 @@ export type Database = {
             foreignKeyName: "sales_return_items_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
             referencedColumns: ["item_id"]
           },
           {
@@ -5662,6 +5953,12 @@ export type Database = {
             referencedColumns: ["item_id"]
           },
           {
+            foreignKeyName: "stock_ledger_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
             foreignKeyName: "stock_ledger_location_id_fkey"
             columns: ["location_id"]
             referencedRelation: "stock_locations"
@@ -5753,6 +6050,81 @@ export type Database = {
           },
         ]
       }
+      v_trip_list: {
+        Row: {
+          closing_km: number | null
+          collected: number | null
+          created_at: string | null
+          driver_id: string | null
+          driver_name: string | null
+          expenses: number | null
+          id: string | null
+          invoice_count: number | null
+          loaded_boxes: number | null
+          notes: string | null
+          opening_km: number | null
+          org_id: string | null
+          route_id: string | null
+          route_name: string | null
+          sold_value: number | null
+          status: Database["public"]["Enums"]["trip_status"] | null
+          trip_date: string | null
+          van_location_id: string | null
+          van_location_name: string | null
+          vehicle_id: string | null
+          vehicle_number: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_trips_driver_id_fkey"
+            columns: ["driver_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_driver_id_fkey"
+            columns: ["driver_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_route_id_fkey"
+            columns: ["route_id"]
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "v_vehicle_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_location_id_fkey"
+            columns: ["van_location_id"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_vehicle_list: {
         Row: {
           capacity_boxes: number | null
@@ -5824,21 +6196,32 @@ export type Database = {
       can_view: { Args: { p_module: string }; Returns: boolean }
       close_production_batch: { Args: { p_batch: string }; Returns: undefined }
       closing_stock_report: {
-        Args: { p_date?: string; p_location?: string; p_org: string }
+        Args: {
+          p_date?: string
+          p_location?: string
+          p_org: string
+          p_section?: string
+        }
         Returns: {
           closing: number
+          closing_units: number
           is_negative: boolean
           item_code: string
+          item_id: string
           item_name: string
           opening: number
+          opening_units: number
           pack: string
           purchase: number
           sales: number
           section_code: string
+          section_id: string
           section_name: string
           sort_order: number
+          units_per_box: number
         }[]
       }
+      create_trip: { Args: { p: Json }; Returns: string }
       dashboard_summary: {
         Args: { p_date?: string; p_org: string }
         Returns: Json
@@ -5964,8 +6347,49 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_trip_status: {
+        Args: {
+          p_status: Database["public"]["Enums"]["trip_status"]
+          p_trip: string
+        }
+        Returns: undefined
+      }
+      settle_trip: {
+        Args: {
+          p_closing_km?: number
+          p_expenses?: number
+          p_notes?: string
+          p_to_location: string
+          p_trip: string
+        }
+        Returns: undefined
+      }
       show_limit: { Args: Record<PropertyKey, never>; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      stock_movements: {
+        Args: {
+          p_from?: string
+          p_item: string
+          p_location?: string
+          p_to?: string
+        }
+        Returns: {
+          balance_base: number
+          balance_boxes: number
+          boxes: number
+          created_at: string
+          id: number
+          location_id: string
+          location_name: string
+          qty_base: number
+          rate: number
+          ref_id: string
+          ref_no: string
+          ref_table: string
+          txn_date: string
+          txn_type: Database["public"]["Enums"]["stock_txn_type"]
+        }[]
+      }
       to_base_qty: {
         Args: { p_item: string; p_qty: number; p_uom: string }
         Returns: number
@@ -5974,14 +6398,40 @@ export type Database = {
         Args: { p_from?: string; p_org: string; p_to?: string }
         Returns: number
       }
+      trip_loading_sheet: {
+        Args: { p_trip: string }
+        Returns: {
+          boxes: number
+          item_code: string
+          item_id: string
+          item_name: string
+          pack: string
+          rate: number
+          units: number
+          units_per_box: number
+        }[]
+      }
+      trip_settlement: {
+        Args: { p_trip: string }
+        Returns: {
+          gap: number
+          item_code: string
+          item_id: string
+          item_name: string
+          loaded: number
+          returned: number
+          sale_value: number
+          sold: number
+          units_per_box: number
+        }[]
+      }
       van_load: {
-        Args: {
-          p_from_location: string
-          p_lines: Json
-          p_org: string
-          p_trip: string
-        }
+        Args: { p_from_location: string; p_lines: Json; p_trip: string }
         Returns: undefined
+      }
+      van_unload: {
+        Args: { p_lines?: Json; p_to_location: string; p_trip: string }
+        Returns: number
       }
     }
     Enums: {

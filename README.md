@@ -74,6 +74,8 @@ src/
 
 | T1 Masters | ✅ `db/08_masters.sql` drops the `units_per_box` default of 8 and adds list views. **Items**: Add Product with the live derived panel (box rate, pieces per box, worked preview), packing locked once stock has moved, paged list with search / section / pack filters and Excel. **Customers**: CRUD with mobile-1 duplicate check (form and unique index), outstanding on the list, bulk import link. **Vehicles**: create auto-creates the van's stock location. **Setup**: routes, drag-to-reorder sections. `db/tests/05_masters.sql`. |
 
+| T2 Transactions | ✅ `db/09_transactions.sql`: one `save_*` RPC per document that numbers it, posts stock via the 05 functions and writes a balanced journal entry to a seeded system chart of accounts (rule 11, brought forward from T7.3). **Invoice** screen in the quotation's column order, CODE → Boxes → Rate keyboard entry, status machine draft → confirmed → dispatched → delivered, cancel reverses stock and journal, vehicle assigned after creation, A4 print with terms from `orgs` and amount in words. **Purchases** (+ suppliers tab) post stock in on save. **Returns**: one screen, three kinds; rate difference never touches stock. **Receipts**: multi-mode lines, FIFO allocation with manual override. **Payments**: supplier / wages / expense head. `db/tests/06_transactions.sql` reproduces the quotation (17 lines, 32 boxes, 753 qty, ₹34,258.00) and asserts the trial balance is zero after every step. |
+
 **Still needed from the client to finish T0.6:** units per box (and pack type) for the 64 codes in
 `seed/unmatched_items.csv` with a blank `units_per_box`, the four duplicated stock-sheet rows resolved,
 and the rate list. Each is a re-run of the importer, not a developer task.

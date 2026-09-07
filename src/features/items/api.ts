@@ -38,6 +38,24 @@ export async function listAllItems(q: Omit<ItemListQuery, 'page' | 'pageSize'>):
   return expectRows(applyFilters({ ...q, page: 1, pageSize: 5000 }).range(0, 4999));
 }
 
+/** Bill-entry lookup: active items by code or name, exact code first. */
+export async function searchItems(q: string, opts: { finishedOnly?: boolean } = {}): Promise<ItemRow[]> {
+  const s = sanitizeSearch(q);
+  let query = supabase.from('v_item_list').select('*').eq('is_active', true);
+  if (opts.finishedOnly) query = query.eq('type', 'finished_good');
+  if (s) query = query.or(`item_code.ilike.${s}%,name.ilike.%${s}%`);
+  const rows = await expectRows(query.order('item_code').limit(15));
+  const upper = s.toUpperCase();
+  return rows.sort((a, b) => Number(b.item_code === upper) - Number(a.item_code === upper));
+}
+
+/** The customer's effective unit rate today (overrides → price list → master). */
+export async function effectiveUnitRate(itemId: string, customerId: string, date: string): Promise<number> {
+  const { data, error } = await supabase.rpc('effective_unit_rate', { p_item: itemId, p_customer: customerId, p_date: date });
+  if (error) throw error;
+  return Number(data ?? 0);
+}
+
 export function getItem(id: string): Promise<ItemRow> {
   return expectOne(supabase.from('v_item_list').select('*').eq('id', id).single());
 }

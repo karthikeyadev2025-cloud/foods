@@ -32,6 +32,18 @@ export function listAllCustomers(q: Omit<CustomerListQuery, 'page' | 'pageSize'>
   return expectRows(applyFilters({ ...q, page: 1, pageSize: 10000 }).range(0, 9999));
 }
 
+/** Picker lookup by name, mobile or town. */
+export function searchCustomers(q: string): Promise<CustomerRow[]> {
+  const s = sanitizeSearch(q);
+  let query = supabase.from('v_customer_list').select('*').eq('is_active', true);
+  if (s) query = query.or(`name.ilike.%${s}%,mobile1.ilike.%${s}%,town.ilike.%${s}%,code.ilike.${s}%`);
+  return expectRows(query.order('name').limit(15));
+}
+
+export function getCustomer(id: string): Promise<CustomerRow> {
+  return expectOne(supabase.from('v_customer_list').select('*').eq('id', id).single());
+}
+
 /** Duplicate check on mobile 1: returns the existing customer's name, or null. */
 export async function findByMobile(mobile1: string, exceptId?: string): Promise<string | null> {
   let query = supabase.from('customers').select('id, name').eq('mobile1', mobile1).limit(1);

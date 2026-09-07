@@ -36,7 +36,7 @@ import {
   type StockLocationInput,
   type UomInput,
 } from '../schema';
-import { MasterCrud, type MasterConfig } from './MasterCrud';
+import { MasterCrud, type MasterConfig } from '@/components/MasterCrud';
 
 const activeCol = { key: 'is_active', label: 'Active' } as const;
 

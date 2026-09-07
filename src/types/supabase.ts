@@ -708,6 +708,12 @@ export type Database = {
             referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cheques_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
       customers: {
@@ -873,6 +879,18 @@ export type Database = {
             foreignKeyName: "delivery_challans_invoice_id_fkey"
             columns: ["invoice_id"]
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_challans_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_balance"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "delivery_challans_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_list"
             referencedColumns: ["id"]
           },
           {
@@ -1156,6 +1174,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "inbound_orders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_balance"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "inbound_orders_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "orgs"
@@ -1214,6 +1244,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_balance"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoice_items_item_id_fkey"
             columns: ["item_id"]
             referencedRelation: "items"
@@ -1245,16 +1287,20 @@ export type Database = {
           created_by: string | null
           customer_id: string
           discount: number
+          freight: number
           id: string
           invoice_date: string
           invoice_no: string
           location_id: string
+          lr_date: string | null
+          lr_no: string | null
           notes: string | null
           org_id: string
           round_off: number
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
           total: number
+          transport_name: string | null
           trip_id: string | null
           vehicle_id: string | null
         }
@@ -1263,16 +1309,20 @@ export type Database = {
           created_by?: string | null
           customer_id: string
           discount?: number
+          freight?: number
           id?: string
           invoice_date?: string
           invoice_no: string
           location_id: string
+          lr_date?: string | null
+          lr_no?: string | null
           notes?: string | null
           org_id: string
           round_off?: number
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           total?: number
+          transport_name?: string | null
           trip_id?: string | null
           vehicle_id?: string | null
         }
@@ -1281,16 +1331,20 @@ export type Database = {
           created_by?: string | null
           customer_id?: string
           discount?: number
+          freight?: number
           id?: string
           invoice_date?: string
           invoice_no?: string
           location_id?: string
+          lr_date?: string | null
+          lr_no?: string | null
           notes?: string | null
           org_id?: string
           round_off?: number
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           total?: number
+          transport_name?: string | null
           trip_id?: string | null
           vehicle_id?: string | null
         }
@@ -1731,6 +1785,7 @@ export type Database = {
           org_id: string
           ref_id: string | null
           ref_table: string | null
+          reverses_entry_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1743,6 +1798,7 @@ export type Database = {
           org_id: string
           ref_id?: string | null
           ref_table?: string | null
+          reverses_entry_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1755,6 +1811,7 @@ export type Database = {
           org_id?: string
           ref_id?: string | null
           ref_table?: string | null
+          reverses_entry_id?: string | null
         }
         Relationships: [
           {
@@ -1780,6 +1837,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reverses_entry_id_fkey"
+            columns: ["reverses_entry_id"]
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1928,6 +1991,12 @@ export type Database = {
             foreignKeyName: "ledger_accounts_supplier_id_fkey"
             columns: ["supplier_id"]
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
             referencedColumns: ["id"]
           },
         ]
@@ -2292,6 +2361,12 @@ export type Database = {
             referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
       orgs: {
@@ -2496,6 +2571,12 @@ export type Database = {
             foreignKeyName: "payments_supplier_id_fkey"
             columns: ["supplier_id"]
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
             referencedColumns: ["id"]
           },
         ]
@@ -2843,6 +2924,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            referencedRelation: "v_purchase_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "purchase_items_uom_id_fkey"
             columns: ["uom_id"]
             referencedRelation: "uoms"
@@ -2989,9 +3076,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchase_returns_purchase_id_fkey"
+            columns: ["purchase_id"]
+            referencedRelation: "v_purchase_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "purchase_returns_supplier_id_fkey"
             columns: ["supplier_id"]
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_returns_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
             referencedColumns: ["id"]
           },
         ]
@@ -3077,6 +3176,12 @@ export type Database = {
             foreignKeyName: "purchases_supplier_id_fkey"
             columns: ["supplier_id"]
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
             referencedColumns: ["id"]
           },
         ]
@@ -3253,6 +3358,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "quotations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_balance"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "quotations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "quotations_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "orgs"
@@ -3293,9 +3410,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "receipt_allocations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_balance"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "receipt_allocations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "receipt_allocations_receipt_id_fkey"
             columns: ["receipt_id"]
             referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_allocations_receipt_id_fkey"
+            columns: ["receipt_id"]
+            referencedRelation: "v_receipt_list"
             referencedColumns: ["id"]
           },
         ]
@@ -3333,6 +3468,12 @@ export type Database = {
             foreignKeyName: "receipt_lines_receipt_id_fkey"
             columns: ["receipt_id"]
             referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_lines_receipt_id_fkey"
+            columns: ["receipt_id"]
+            referencedRelation: "v_receipt_list"
             referencedColumns: ["id"]
           },
         ]
@@ -3812,6 +3953,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sales_return_items_return_id_fkey"
+            columns: ["return_id"]
+            referencedRelation: "v_return_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sales_return_items_uom_id_fkey"
             columns: ["uom_id"]
             referencedRelation: "uoms"
@@ -3897,6 +4044,18 @@ export type Database = {
             foreignKeyName: "sales_returns_invoice_id_fkey"
             columns: ["invoice_id"]
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_balance"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "sales_returns_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_list"
             referencedColumns: ["id"]
           },
           {
@@ -4589,6 +4748,240 @@ export type Database = {
         }
         Relationships: []
       }
+      v_invoice_balance: {
+        Row: {
+          balance: number | null
+          customer_id: string | null
+          invoice_date: string | null
+          invoice_id: string | null
+          invoice_no: string | null
+          org_id: string | null
+          received: number | null
+          returned: number | null
+          status: Database["public"]["Enums"]["invoice_status"] | null
+          total: number | null
+        }
+        Insert: {
+          balance?: never
+          customer_id?: string | null
+          invoice_date?: string | null
+          invoice_id?: string | null
+          invoice_no?: string | null
+          org_id?: string | null
+          received?: never
+          returned?: never
+          status?: Database["public"]["Enums"]["invoice_status"] | null
+          total?: number | null
+        }
+        Update: {
+          balance?: never
+          customer_id?: string | null
+          invoice_date?: string | null
+          invoice_id?: string | null
+          invoice_no?: string | null
+          org_id?: string | null
+          received?: never
+          returned?: never
+          status?: Database["public"]["Enums"]["invoice_status"] | null
+          total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_outstanding"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "invoices_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      v_invoice_lines: {
+        Row: {
+          amount: number | null
+          boxes: number | null
+          id: string | null
+          invoice_id: string | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          pack_code: string | null
+          qty: number | null
+          qty_base: number | null
+          rate: number | null
+          units_per_box: number | null
+          uom_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_balance"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "invoice_items_uom_id_fkey"
+            columns: ["uom_id"]
+            referencedRelation: "uoms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_invoice_list: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          customer_mobile: string | null
+          customer_name: string | null
+          customer_town: string | null
+          discount: number | null
+          freight: number | null
+          id: string | null
+          invoice_date: string | null
+          invoice_no: string | null
+          line_count: number | null
+          location_id: string | null
+          location_name: string | null
+          lr_date: string | null
+          lr_no: string | null
+          notes: string | null
+          org_id: string | null
+          received: number | null
+          returned: number | null
+          round_off: number | null
+          status: Database["public"]["Enums"]["invoice_status"] | null
+          subtotal: number | null
+          total: number | null
+          total_boxes: number | null
+          total_qty: number | null
+          transport_name: string | null
+          trip_id: string | null
+          vehicle_id: string | null
+          vehicle_number: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_outstanding"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "invoices_location_id_fkey"
+            columns: ["location_id"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "invoices_trip_id_fkey"
+            columns: ["trip_id"]
+            referencedRelation: "vehicle_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "v_vehicle_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_item_list: {
         Row: {
           base_uom_code: string | null
@@ -4698,6 +5091,91 @@ export type Database = {
         }
         Relationships: []
       }
+      v_payment_list: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          created_by: string | null
+          expense_head: string | null
+          expense_head_id: string | null
+          id: string | null
+          mode_code: string | null
+          mode_id: string | null
+          narration: string | null
+          org_id: string | null
+          party_kind: string | null
+          party_name: string | null
+          payment_date: string | null
+          payment_no: string | null
+          reference: string | null
+          staff_id: string | null
+          staff_name: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "payments_expense_head_id_fkey"
+            columns: ["expense_head_id"]
+            referencedRelation: "expense_heads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_mode_id_fkey"
+            columns: ["mode_id"]
+            referencedRelation: "receipt_modes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "payments_staff_id_fkey"
+            columns: ["staff_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_staff_id_fkey"
+            columns: ["staff_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "payments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_production_sheet: {
         Row: {
           actual_boxes: number | null
@@ -4727,6 +5205,422 @@ export type Database = {
           },
           {
             foreignKeyName: "production_batches_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      v_purchase_lines: {
+        Row: {
+          amount: number | null
+          id: string | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          purchase_id: string | null
+          qty: number | null
+          qty_base: number | null
+          rate: number | null
+          uom_code: string | null
+          uom_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            referencedRelation: "v_purchase_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_uom_id_fkey"
+            columns: ["uom_id"]
+            referencedRelation: "uoms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_purchase_list: {
+        Row: {
+          bill_date: string | null
+          bill_no: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          line_count: number | null
+          location_id: string | null
+          location_name: string | null
+          notes: string | null
+          org_id: string | null
+          other_charges: number | null
+          paid_amount: number | null
+          subtotal: number | null
+          supplier_id: string | null
+          supplier_name: string | null
+          total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "purchases_location_id_fkey"
+            columns: ["location_id"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_receipt_allocations: {
+        Row: {
+          amount: number | null
+          id: string | null
+          invoice_date: string | null
+          invoice_id: string | null
+          invoice_no: string | null
+          receipt_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_allocations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_allocations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_balance"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "receipt_allocations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_allocations_receipt_id_fkey"
+            columns: ["receipt_id"]
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_allocations_receipt_id_fkey"
+            columns: ["receipt_id"]
+            referencedRelation: "v_receipt_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_receipt_lines: {
+        Row: {
+          amount: number | null
+          id: string | null
+          is_collection: boolean | null
+          mode_code: string | null
+          mode_id: string | null
+          mode_name: string | null
+          receipt_id: string | null
+          reference: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_lines_mode_id_fkey"
+            columns: ["mode_id"]
+            referencedRelation: "receipt_modes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_lines_receipt_id_fkey"
+            columns: ["receipt_id"]
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_lines_receipt_id_fkey"
+            columns: ["receipt_id"]
+            referencedRelation: "v_receipt_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_receipt_list: {
+        Row: {
+          allocated: number | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_town: string | null
+          id: string | null
+          modes: string | null
+          narration: string | null
+          org_id: string | null
+          receipt_date: string | null
+          receipt_no: string | null
+          total_amount: number | null
+          trip_id: string | null
+          vehicle_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "receipts_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_outstanding"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "receipts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "receipts_trip_id_fkey"
+            columns: ["trip_id"]
+            referencedRelation: "vehicle_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "v_vehicle_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_return_lines: {
+        Row: {
+          amount: number | null
+          boxes: number | null
+          id: string | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          new_rate: number | null
+          old_rate: number | null
+          qty: number | null
+          qty_base: number | null
+          return_id: string | null
+          units_per_box: number | null
+          uom_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_return_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_return_id_fkey"
+            columns: ["return_id"]
+            referencedRelation: "sales_returns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_return_id_fkey"
+            columns: ["return_id"]
+            referencedRelation: "v_return_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_uom_id_fkey"
+            columns: ["uom_id"]
+            referencedRelation: "uoms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_return_list: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_town: string | null
+          id: string | null
+          invoice_id: string | null
+          invoice_no: string | null
+          kind: Database["public"]["Enums"]["return_kind"] | null
+          line_count: number | null
+          location_id: string | null
+          location_name: string | null
+          notes: string | null
+          org_id: string | null
+          return_date: string | null
+          return_no: string | null
+          total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_returns_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "sales_returns_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_outstanding"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "sales_returns_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_balance"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "sales_returns_invoice_id_fkey"
+            columns: ["invoice_id"]
+            referencedRelation: "v_invoice_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_location_id_fkey"
+            columns: ["location_id"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
@@ -4781,6 +5675,52 @@ export type Database = {
           },
           {
             foreignKeyName: "stock_ledger_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      v_supplier_list: {
+        Row: {
+          id: string | null
+          is_active: boolean | null
+          mobile1: string | null
+          name: string | null
+          opening_balance: number | null
+          org_id: string | null
+          payable: number | null
+          town: string | null
+        }
+        Insert: {
+          id?: string | null
+          is_active?: boolean | null
+          mobile1?: string | null
+          name?: string | null
+          opening_balance?: number | null
+          org_id?: string | null
+          payable?: never
+          town?: string | null
+        }
+        Update: {
+          id?: string | null
+          is_active?: boolean | null
+          mobile1?: string | null
+          name?: string | null
+          opening_balance?: number | null
+          org_id?: string | null
+          payable?: never
+          town?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suppliers_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
@@ -4870,6 +5810,7 @@ export type Database = {
       }
     }
     Functions: {
+      acct: { Args: { p_code: string; p_org: string }; Returns: string }
       bootstrap_org: {
         Args: { p_full_name: string; p_org_name: string; p_phone?: string }
         Returns: string
@@ -4907,6 +5848,7 @@ export type Database = {
         Args: { p_customer: string; p_date?: string; p_item: string }
         Returns: number
       }
+      ensure_system_accounts: { Args: { p_org: string }; Returns: undefined }
       gen_random_uuid: { Args: Record<PropertyKey, never>; Returns: string }
       gen_salt: { Args: { "": string }; Returns: string }
       has_role: {
@@ -4953,6 +5895,17 @@ export type Database = {
         Returns: number
       }
       post_invoice_stock: { Args: { p_invoice: string }; Returns: undefined }
+      post_journal: {
+        Args: {
+          p_date: string
+          p_lines: Json
+          p_narration: string
+          p_org: string
+          p_ref_id: string
+          p_ref_table: string
+        }
+        Returns: string
+      }
       post_purchase_stock: { Args: { p_purchase: string }; Returns: undefined }
       post_return_stock: { Args: { p_return: string }; Returns: undefined }
       qty_to_pieces: {
@@ -4979,11 +5932,46 @@ export type Database = {
         Returns: undefined
       }
       reorder_sections: { Args: { p_ids: string[] }; Returns: undefined }
+      reverse_journal: {
+        Args: {
+          p_date: string
+          p_narration: string
+          p_org: string
+          p_ref_id: string
+          p_ref_table: string
+        }
+        Returns: number
+      }
+      save_invoice: { Args: { p_header: Json; p_lines: Json }; Returns: string }
+      save_payment: { Args: { p: Json }; Returns: string }
+      save_purchase: {
+        Args: { p_header: Json; p_lines: Json }
+        Returns: string
+      }
+      save_receipt: {
+        Args: { p_allocations?: Json; p_header: Json; p_lines: Json }
+        Returns: string
+      }
+      save_sales_return: {
+        Args: { p_header: Json; p_lines: Json }
+        Returns: string
+      }
       seed_role_permissions: { Args: { p_org: string }; Returns: undefined }
+      set_invoice_status: {
+        Args: {
+          p_invoice: string
+          p_status: Database["public"]["Enums"]["invoice_status"]
+        }
+        Returns: undefined
+      }
       show_limit: { Args: Record<PropertyKey, never>; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       to_base_qty: {
         Args: { p_item: string; p_qty: number; p_uom: string }
+        Returns: number
+      }
+      trial_balance_check: {
+        Args: { p_from?: string; p_org: string; p_to?: string }
         Returns: number
       }
       van_load: {

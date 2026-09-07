@@ -7,8 +7,15 @@ import { RequireModule } from '@/features/auth/components/RequireModule';
 import { LoginPage } from '@/features/auth/routes/LoginPage';
 import { WelcomePage } from '@/features/auth/routes/WelcomePage';
 import { CustomersPage } from '@/features/customers/routes/CustomersPage';
+import { InvoiceEditPage } from '@/features/invoices/routes/InvoiceEditPage';
+import { InvoicePrintPage } from '@/features/invoices/routes/InvoicePrintPage';
+import { InvoicesPage } from '@/features/invoices/routes/InvoicesPage';
 import { ItemEditPage } from '@/features/items/routes/ItemEditPage';
 import { ItemsPage } from '@/features/items/routes/ItemsPage';
+import { PaymentsPage } from '@/features/payments/routes/PaymentsPage';
+import { PurchaseNewPage, PurchaseViewPage, PurchasesPage } from '@/features/purchases/routes/PurchasesPage';
+import { ReceiptNewPage, ReceiptViewPage, ReceiptsPage } from '@/features/receipts/routes/ReceiptsPage';
+import { ReturnNewPage, ReturnViewPage, ReturnsPage } from '@/features/returns/routes/ReturnsPage';
 import { SetupPage } from '@/features/setup/routes/SetupPage';
 import { SetupWizard } from '@/features/setup/routes/SetupWizard';
 import { VehiclesPage } from '@/features/vehicles/routes/VehiclesPage';
@@ -30,6 +37,8 @@ export const router = createBrowserRouter([
     element: <RequireAuth />,
     children: [
       { path: '/welcome', element: <WelcomePage /> },
+      // Print sheets render without the app chrome.
+      guarded('invoices', [{ path: '/invoices/:id/print', element: <InvoicePrintPage /> }]),
       {
         path: '/',
         element: <AppShell />,
@@ -41,11 +50,28 @@ export const router = createBrowserRouter([
             { path: 'items/:id', element: <ItemEditPage /> },
           ]),
           guarded('customers', [{ path: 'customers', element: <CustomersPage /> }]),
-          guarded('invoices', [{ path: 'invoices', element: <Placeholder title="Sales Invoices" task="T2.2" /> }]),
-          guarded('purchases', [{ path: 'purchases', element: <Placeholder title="Purchases" task="T2.1" /> }]),
-          guarded('returns', [{ path: 'returns', element: <Placeholder title="Returns" task="T2.4" /> }]),
-          guarded('receipts', [{ path: 'receipts', element: <Placeholder title="Receipts" task="T2.5" /> }]),
-          guarded('payments', [{ path: 'payments', element: <Placeholder title="Payments" task="T2.6" /> }]),
+          guarded('invoices', [
+            { path: 'invoices', element: <InvoicesPage /> },
+            { path: 'invoices/new', element: <InvoiceEditPage /> },
+            { path: 'invoices/:id', element: <InvoiceEditPage /> },
+          ]),
+          guarded('purchases', [
+            { path: 'purchases', element: <PurchasesPage /> },
+            { path: 'purchases/suppliers', element: <PurchasesPage tab="suppliers" /> },
+            { path: 'purchases/new', element: <PurchaseNewPage /> },
+            { path: 'purchases/:id', element: <PurchaseViewPage /> },
+          ]),
+          guarded('returns', [
+            { path: 'returns', element: <ReturnsPage /> },
+            { path: 'returns/new', element: <ReturnNewPage /> },
+            { path: 'returns/:id', element: <ReturnViewPage /> },
+          ]),
+          guarded('receipts', [
+            { path: 'receipts', element: <ReceiptsPage /> },
+            { path: 'receipts/new', element: <ReceiptNewPage /> },
+            { path: 'receipts/:id', element: <ReceiptViewPage /> },
+          ]),
+          guarded('payments', [{ path: 'payments', element: <PaymentsPage /> }]),
           guarded('stock', [{ path: 'stock', element: <Placeholder title="Stock" task="T3.1" /> }]),
           guarded('production', [{ path: 'production', element: <Placeholder title="Production" task="T4.2" /> }]),
           guarded('vehicles', [{ path: 'vehicles', element: <VehiclesPage /> }]),

@@ -1,0 +1,1627 @@
+<title>Jyothi Foods Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap">
+
+<style>
+:root {
+  --paper: #F2F4F1;
+  --card: #FFFFFF;
+  --card-2: #E9EEEA;
+  --ink: #16211E;
+  --muted: #5C6B66;
+  --pine: #0F5B52;
+  --pine-ink: #0B403A;
+  --pine-soft: #DCE9E5;
+  --jaggery: #A85C15;
+  --jaggery-soft: #F4E6D4;
+  --rule: #D5DDD8;
+  --shadow: 0 1px 2px rgba(22,33,30,.06), 0 8px 24px -18px rgba(22,33,30,.35);
+
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: "Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --telugu: "Noto Sans Telugu", "Gautami", "Nirmala UI", sans-serif;
+  --mono: "Roboto Mono", ui-monospace, "Courier New", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1614;
+    --card: #16211E;
+    --card-2: #1D2A26;
+    --ink: #E4EBE7;
+    --muted: #97A8A2;
+    --pine: #5CB6A5;
+    --pine-ink: #8FD4C6;
+    --pine-soft: #1C332E;
+    --jaggery: #DA9954;
+    --jaggery-soft: #33261A;
+    --rule: #2A3733;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1614;
+  --card: #16211E;
+  --card-2: #1D2A26;
+  --ink: #E4EBE7;
+  --muted: #97A8A2;
+  --pine: #5CB6A5;
+  --pine-ink: #8FD4C6;
+  --pine-soft: #1C332E;
+  --jaggery: #DA9954;
+  --jaggery-soft: #33261A;
+  --rule: #2A3733;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--pine); }
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--pine);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* ---------- masthead ---------- */
+.masthead {
+  border-bottom: 1px solid var(--rule);
+  background: var(--card);
+}
+.masthead-in {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 28px 32px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px;
+  justify-content: space-between;
+}
+.masthead h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(30px, 4.4vw, 46px);
+  line-height: 1.1;
+  margin: 0 0 8px;
+  text-wrap: balance;
+  letter-spacing: -.015em;
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--pine);
+  margin: 0 0 12px;
+}
+.masthead p.lede {
+  margin: 0;
+  color: var(--muted);
+  max-width: 56ch;
+  font-size: 16.5px;
+}
+.masthead .te-line {
+  font-family: var(--telugu);
+  font-size: 15px;
+  color: var(--ink);
+  margin: 10px 0 0;
+  max-width: 56ch;
+}
+.print-btn {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pine);
+  background: var(--pine-soft);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 9px 18px;
+  cursor: pointer;
+}
+.print-btn:hover { border-color: var(--pine); }
+
+/* ---------- shell ---------- */
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 28px 96px;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+@media (max-width: 980px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+
+/* ---------- contents rail ---------- */
+.rail {
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 32px 0 40px;
+}
+@media (max-width: 980px) {
+  .rail { position: static; max-height: none; border-bottom: 1px solid var(--rule); margin-bottom: 8px; }
+}
+.rail h2 {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 12px;
+  font-weight: 500;
+}
+.filter {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 7px 10px;
+  margin-bottom: 14px;
+}
+.filter::placeholder { color: var(--muted); }
+.rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rail li.part {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--pine);
+  padding: 18px 0 5px;
+  border-top: 1px solid var(--rule);
+  margin-top: 8px;
+}
+.rail li.part:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+.rail a {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 14px;
+  padding: 3px 0;
+  line-height: 1.35;
+}
+.rail a span.n { font-family: var(--mono); font-size: 11.5px; color: var(--muted); padding-top: 2px; }
+.rail a:hover { color: var(--pine); }
+.rail a.on { color: var(--pine); font-weight: 600; }
+.rail a.on span.n { color: var(--pine); }
+.rail li.hide, .rail li.part.hide { display: none; }
+
+/* ---------- reading column ---------- */
+main { padding-top: 34px; max-width: 70ch; }
+
+.part-head {
+  margin: 64px 0 0;
+  padding-top: 22px;
+  border-top: 2px solid var(--pine);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--pine);
+}
+.part-head:first-child { margin-top: 0; }
+
+section.ch { margin-top: 40px; scroll-margin-top: 20px; }
+section.ch > h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 27px;
+  line-height: 1.2;
+  margin: 0 0 6px;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+section.ch > h3 .num {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pine);
+}
+h4 {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 700;
+  margin: 28px 0 8px;
+  letter-spacing: .005em;
+}
+p { margin: 0 0 14px; }
+main ul, main ol { margin: 0 0 14px; padding-left: 22px; }
+main li { margin-bottom: 5px; }
+strong { font-weight: 600; }
+
+.who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-bottom: 14px;
+}
+.who b { color: var(--ink); font-weight: 500; }
+
+.path {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  background: var(--pine-soft);
+  color: var(--pine-ink);
+  border-radius: 4px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+kbd {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--card-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* ---------- steps ---------- */
+ol.steps { list-style: none; margin: 14px 0 18px; padding: 0; counter-reset: s; }
+ol.steps > li {
+  counter-increment: s;
+  position: relative;
+  padding-left: 34px;
+  margin-bottom: 11px;
+}
+ol.steps > li::before {
+  content: counter(s);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--pine);
+  color: var(--card);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  display: grid;
+  place-items: center;
+}
+:root[data-theme="dark"] ol.steps > li::before { color: #0E1614; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) ol.steps > li::before { color: #0E1614; }
+}
+
+/* ---------- term card ---------- */
+.term {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 16px 0 18px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 4px;
+}
+.term .en {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--pine);
+}
+.term .tel {
+  font-family: var(--telugu);
+  font-size: 21px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+.term .rom { font-size: 13px; color: var(--muted); font-style: italic; }
+.term .say { font-family: var(--telugu); font-size: 15px; line-height: 1.75; }
+.term .mean { font-size: 14.5px; color: var(--ink); }
+
+/* ---------- callouts ---------- */
+.note, .warn {
+  border-left: 3px solid var(--pine);
+  background: var(--card);
+  padding: 12px 16px;
+  margin: 16px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 14.5px;
+}
+.warn { border-left-color: var(--jaggery); background: var(--jaggery-soft); }
+.note p:last-child, .warn p:last-child { margin-bottom: 0; }
+.note b, .warn b { font-weight: 600; }
+
+/* ---------- tables ---------- */
+.tw { overflow-x: auto; margin: 16px 0 20px; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td {
+  text-align: left;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+th {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+  border-bottom-color: var(--ink);
+}
+td.tel { font-family: var(--telugu); font-size: 16px; white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+
+/* ---------- footer ---------- */
+footer.doc {
+  border-top: 1px solid var(--rule);
+  margin-top: 72px;
+  padding-top: 22px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+footer.doc b { color: var(--ink); font-weight: 600; }
+
+/* ---------- print ---------- */
+@media print {
+  .rail, .print-btn { display: none; }
+  .shell { display: block; padding: 0; }
+  main { max-width: none; padding-top: 0; }
+  body { background: #fff; color: #000; font-size: 11.5pt; }
+  section.ch { break-inside: auto; }
+  section.ch > h3, .part-head { break-after: avoid; }
+  .term, .note, .warn, ol.steps > li { break-inside: avoid; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+html { scroll-behavior: smooth; }
+</style>
+
+<header class="masthead">
+  <div class="masthead-in">
+    <div>
+      <p class="eyebrow">Jyothi Foods · Staff handbook · September 2026</p>
+      <h1>Jyothi Foods Handbook</h1>
+      <p class="lede">Every screen in the system, in the order you meet it. No computer knowledge assumed &mdash; if you can use WhatsApp, you can use this. Business words are explained in Telugu where they first appear.</p>
+      <p class="te-line">ప్రతి తెరనూ, మీరు వాడే వరుసలోనే వివరించాం. కంప్యూటర్ తెలియకపోయినా ఫర్వాలేదు. వ్యాపార పదాలకు తెలుగు అర్థం ఇచ్చాం.</p>
+    </div>
+    <button class="print-btn" id="printBtn" type="button">Print this handbook</button>
+  </div>
+</header>
+
+<div class="shell">
+
+<nav class="rail" aria-label="Contents">
+  <h2>Contents</h2>
+  <input class="filter" id="filter" type="search" placeholder="Find a screen…" aria-label="Filter contents">
+  <ol id="toc">
+    <li class="part">Part A · Getting in</li>
+    <li><a href="#c1"><span class="n">1</span><span>Signing in</span></a></li>
+    <li><a href="#c2"><span class="n">2</span><span>What the screen looks like</span></a></li>
+    <li><a href="#c3"><span class="n">3</span><span>The first-day wizard</span></a></li>
+
+    <li class="part">Part B · Setting the shop up</li>
+    <li><a href="#c4"><span class="n">4</span><span>Business details</span></a></li>
+    <li><a href="#c5"><span class="n">5</span><span>Units of measure</span></a></li>
+    <li><a href="#c6"><span class="n">6</span><span>Pack types</span></a></li>
+    <li><a href="#c7"><span class="n">7</span><span>Sections and mestris</span></a></li>
+    <li><a href="#c8"><span class="n">8</span><span>Users and who sees what</span></a></li>
+    <li><a href="#c9"><span class="n">9</span><span>Locations, routes, numbering</span></a></li>
+    <li><a href="#c10"><span class="n">10</span><span>Receipt modes, expense heads</span></a></li>
+
+    <li class="part">Part C · Products</li>
+    <li><a href="#c11"><span class="n">11</span><span>Adding a product</span></a></li>
+    <li><a href="#c12"><span class="n">12</span><span>Adding a product photo</span></a></li>
+    <li><a href="#c13"><span class="n">13</span><span>The rate card</span></a></li>
+    <li><a href="#c14"><span class="n">14</span><span>Price lists</span></a></li>
+
+    <li class="part">Part D · Selling</li>
+    <li><a href="#c15"><span class="n">15</span><span>Customers</span></a></li>
+    <li><a href="#c16"><span class="n">16</span><span>Quotations</span></a></li>
+    <li><a href="#c17"><span class="n">17</span><span>Orders</span></a></li>
+    <li><a href="#c18"><span class="n">18</span><span>Challans</span></a></li>
+    <li><a href="#c19"><span class="n">19</span><span>Sales invoices</span></a></li>
+    <li><a href="#c20"><span class="n">20</span><span>Printing a bill</span></a></li>
+    <li><a href="#c21"><span class="n">21</span><span>Sales returns</span></a></li>
+
+    <li class="part">Part E · Money</li>
+    <li><a href="#c22"><span class="n">22</span><span>Receipts &mdash; collecting</span></a></li>
+    <li><a href="#c23"><span class="n">23</span><span>Payments</span></a></li>
+    <li><a href="#c24"><span class="n">24</span><span>Accounts</span></a></li>
+    <li><a href="#c25"><span class="n">25</span><span>Purchases</span></a></li>
+
+    <li class="part">Part F · The factory</li>
+    <li><a href="#c26"><span class="n">26</span><span>Stock</span></a></li>
+    <li><a href="#c27"><span class="n">27</span><span>Production</span></a></li>
+    <li><a href="#c28"><span class="n">28</span><span>Vans and trips</span></a></li>
+    <li><a href="#c29"><span class="n">29</span><span>The driver's phone</span></a></li>
+    <li><a href="#c30"><span class="n">30</span><span>Attendance and Punchly</span></a></li>
+
+    <li class="part">Part G · Reach and record</li>
+    <li><a href="#c31"><span class="n">31</span><span>Messaging</span></a></li>
+    <li><a href="#c32"><span class="n">32</span><span>Reports</span></a></li>
+    <li><a href="#c33"><span class="n">33</span><span>Backup and audit trail</span></a></li>
+    <li><a href="#c34"><span class="n">34</span><span>Importing old data</span></a></li>
+    <li><a href="#c35"><span class="n">35</span><span>The licence screen</span></a></li>
+
+    <li class="part">Part H · Reference</li>
+    <li><a href="#c36"><span class="n">36</span><span>Telugu word list</span></a></li>
+    <li><a href="#c37"><span class="n">37</span><span>When something goes wrong</span></a></li>
+    <li><a href="#c38"><span class="n">38</span><span>The daily routine</span></a></li>
+  </ol>
+</nav>
+
+<main>
+
+<p class="part-head">Part A · Getting in</p>
+
+<section class="ch" id="c1">
+  <h3><span class="num">01</span><span>Signing in</span></h3>
+  <p class="who">Who does this: <b>everyone</b></p>
+
+  <p>Open the program. On a computer it is the Jyothi Foods icon on the desktop; on a phone it is the web address the office gives you. You will see two boxes.</p>
+
+  <ol class="steps">
+    <li>Type your <strong>email address</strong> in the first box. This is the one the office created for you &mdash; not your personal Gmail unless they used it.</li>
+    <li>Type your <strong>password</strong> in the second box. Nobody else can see it; it shows as dots.</li>
+    <li>Press <kbd>Sign in</kbd>.</li>
+  </ol>
+
+  <p>You stay signed in on that computer. You only have to do this again if you sign out, or if you have not opened it for many days.</p>
+
+  <div class="warn">
+    <p><b>Never share your password.</b> Everything you do is recorded under your name &mdash; every bill, every receipt, every change to a rate. If you lend your login to someone, their mistakes become yours. If you think somebody knows it, tell the owner and it will be changed the same day.</p>
+  </div>
+
+  <p>Forgot your password? Only the owner or admin can reset it, from <span class="path">Setup › Users</span>. There is no self-service reset by design &mdash; it is one fewer way in for a stranger.</p>
+</section>
+
+<section class="ch" id="c2">
+  <h3><span class="num">02</span><span>What the screen looks like</span></h3>
+  <p class="who">Who does this: <b>everyone</b></p>
+
+  <p>Three parts, and they never move:</p>
+
+  <ul>
+    <li><strong>The left strip</strong> is the menu. It is grouped &mdash; Overview, Masters, Transactions, Operations, Reports &amp; Setup. Click a name to go there.</li>
+    <li><strong>The top bar</strong> shows the shop name and your own name. Your name is also the button for signing out.</li>
+    <li><strong>The middle</strong> is the screen you chose.</li>
+  </ul>
+
+  <p>You will not see every menu item. The system shows only what your job needs. A production supervisor does not see Payments; a driver sees almost nothing on the computer because their work is on the phone. This is not a fault. If you genuinely need a screen you cannot see, ask the owner to tick it for you in <span class="path">Setup › Permissions</span>.</p>
+
+  <div class="note">
+    <p><b>Two words used everywhere in this handbook.</b> <em>Masters</em> are the lists you set up once and reuse forever &mdash; products, customers, sections. <em>Transactions</em> are the things that happen daily &mdash; bills, receipts, purchases. Get the masters right and the transactions become quick.</p>
+  </div>
+</section>
+
+<section class="ch" id="c3">
+  <h3><span class="num">03</span><span>The first-day wizard</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b></p>
+
+  <p>The very first time the shop uses the system, go to <span class="path">Setup › Wizard</span>. It walks you through the setup screens in the right order, one at a time, so nothing is missed. Order matters here: you cannot put a product into a section that does not exist yet.</p>
+
+  <p>The wizard's order is the correct order, and it is also the order of Part B of this handbook:</p>
+
+  <ol class="steps">
+    <li>Business details</li>
+    <li>Units of measure</li>
+    <li>Pack types</li>
+    <li>Receipt modes and expense heads</li>
+    <li>Users (including mestris)</li>
+    <li>Sections</li>
+    <li>Locations and routes</li>
+    <li>Numbering</li>
+    <li>Permissions</li>
+  </ol>
+
+  <p>You do not have to finish it in one sitting. Leave it and come back; it remembers where you stopped. You can also skip the wizard entirely and use the tabs on <span class="path">Setup</span> directly &mdash; the wizard is just the same tabs in a safe order.</p>
+</section>
+
+<p class="part-head">Part B · Setting the shop up</p>
+
+<section class="ch" id="c4">
+  <h3><span class="num">04</span><span>Business details</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b></p>
+
+  <p><span class="path">Setup › Business</span>. This is what prints at the top of every bill, so get it exactly right.</p>
+
+  <ul>
+    <li><strong>Shop name</strong> &mdash; as it should appear on a bill and on the rate card.</li>
+    <li><strong>Address, phone, email</strong> &mdash; the ones a customer should use to reach you.</li>
+    <li><strong>GSTIN</strong> &mdash; if you bill with GST. Leave blank if you do not.</li>
+    <li><strong>Logo</strong> &mdash; click, choose the picture file, done. It appears on bills and on the rate card. A square or wide picture works; a very tall one gets squeezed.</li>
+  </ul>
+
+  <p>Change these any time. Old bills already printed do not change &mdash; only new ones.</p>
+</section>
+
+<section class="ch" id="c5">
+  <h3><span class="num">05</span><span>Units of measure</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b></p>
+
+  <div class="term">
+    <div class="en">Unit of measure</div>
+    <div class="tel">కొలత</div>
+    <div class="rom">kolata</div>
+    <div class="say">సరుకును దేనితో లెక్కపెడతామో అది &mdash; కిలో, గ్రాము, లీటరు, పీసు, పెట్టె.</div>
+    <div class="mean">How you count a thing: kilogram, gram, litre, piece, box.</div>
+  </div>
+
+  <p><span class="path">Setup › Units</span>. Add every unit you actually use. Typically: <strong>KG</strong>, <strong>G</strong>, <strong>L</strong>, <strong>ML</strong>, <strong>PCS</strong>, <strong>BOX</strong>.</p>
+
+  <p>Each unit has a short <strong>code</strong> (KG) and a <strong>name</strong> (Kilogram). The code is what appears in narrow columns on screen and on printed sheets, so keep it to two or three letters.</p>
+
+  <div class="note">
+    <p><b>Why this matters.</b> Stock is counted in the unit you pick here. If laddu is set to KG, every stock figure for laddu is in kilograms &mdash; a count sheet that says 42 means 42 kg. Change a product's unit after stock has moved and the old numbers stop meaning the same thing, so decide once.</p>
+  </div>
+</section>
+
+<section class="ch" id="c6">
+  <h3><span class="num">06</span><span>Pack types</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b></p>
+
+  <div class="term">
+    <div class="en">Pack type</div>
+    <div class="tel">ప్యాకింగ్ రకం</div>
+    <div class="rom">packing rakam</div>
+    <div class="say">సరుకు ఏ రూపంలో అమ్ముతున్నామో అది &mdash; పాకెట్, డబ్బా, కవర్, లూజ్.</div>
+    <div class="mean">The shape the product is sold in: packet, tin, cover, loose.</div>
+  </div>
+
+  <p><span class="path">Setup › Pack types</span>. Add the ones the shop uses: Packet, Box, Tin, Cover, Loose, Jar.</p>
+
+  <p>The pack type is not the same as the unit. A unit is <em>how much</em>; a pack type is <em>what it is in</em>. The same 250 g of mixture can be a Packet or Loose, and the rate card prints "₹60 per packet" because of what you set here.</p>
+</section>
+
+<section class="ch" id="c7">
+  <h3><span class="num">07</span><span>Sections and mestris</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b></p>
+
+  <p>This is the word people ask about most, so it gets the longest explanation.</p>
+
+  <div class="term">
+    <div class="en">Section</div>
+    <div class="tel">విభాగం</div>
+    <div class="rom">vibhāgam</div>
+    <div class="say">తయారీలో ఒక భాగం. ఒక్కో విభాగానికి ఒక మేస్త్రీ ఉంటాడు. ఉదాహరణకు: స్వీట్స్ విభాగం, హాట్ ఐటమ్స్ విభాగం, ప్యాకింగ్ విభాగం. ఆ విభాగంలో తయారయ్యే సరుకు అంతా ఆ మేస్త్రీ లెక్కలోకి వస్తుంది.</div>
+    <div class="mean">One part of the factory, run by one mestri. Everything made in that part is counted against that mestri.</div>
+  </div>
+
+  <div class="term">
+    <div class="en">Mestri</div>
+    <div class="tel">మేస్త్రీ</div>
+    <div class="rom">mestrī</div>
+    <div class="say">ఒక విభాగాన్ని నడిపే పెద్ద పనివాడు. ఆ విభాగం పని, సరుకు, తేడాలు అన్నీ అతని బాధ్యత.</div>
+    <div class="mean">The head workman who runs a section and answers for its output.</div>
+  </div>
+
+  <h4>What a section is, in plain words</h4>
+  <p>Think of the factory floor divided into areas. The sweets area. The hot-items area. The packing area. Each area has a mestri in charge. A <strong>section</strong> is the system's name for one of those areas.</p>
+
+  <p>Once sections exist, three things become possible that were not possible before:</p>
+  <ul>
+    <li>Every product belongs to a section, so you can ask <em>how much did the sweets section produce this month</em>.</li>
+    <li>Production batches are booked against a section, so wastage and shortfall have an owner.</li>
+    <li>The rate card and the sales reports group by section, which is how customers and the owner both think.</li>
+  </ul>
+
+  <h4>Adding a section</h4>
+  <p>Mestris are users, so <strong>add the users first</strong> (chapter 8), then come back here. Otherwise there is nobody to pick.</p>
+  <ol class="steps">
+    <li>Go to <span class="path">Setup › Sections</span>.</li>
+    <li>Press <kbd>Add section</kbd>.</li>
+    <li><strong>Name</strong> &mdash; what people call it: Sweets, Hot, Packing, Namkeen.</li>
+    <li><strong>Code</strong> &mdash; two or three letters: SW, HOT, PKG.</li>
+    <li><strong>Mestri</strong> &mdash; pick from the list. Only users ticked as a mestri appear here.</li>
+    <li><strong>Sort order</strong> &mdash; a number that decides the order sections appear everywhere: on the rate card, in reports, in the item list. Give the biggest section 1.</li>
+    <li>Press <kbd>Save</kbd>.</li>
+  </ol>
+
+  <div class="note">
+    <p><b>A mestri can change.</b> If a section changes hands, edit the section and pick the new person. Old batches keep the old mestri's name, which is correct &mdash; they did that work.</p>
+  </div>
+</section>
+
+<section class="ch" id="c8">
+  <h3><span class="num">08</span><span>Users and who sees what</span></h3>
+  <p class="who">Who does this: <b>owner only</b></p>
+
+  <p><span class="path">Setup › Users</span>. One entry per person who works with the system.</p>
+
+  <ol class="steps">
+    <li>Press <kbd>Add user</kbd>.</li>
+    <li><strong>Name</strong> &mdash; the person's real name, as you would say it out loud.</li>
+    <li><strong>Email and password</strong> &mdash; these are their login. <em>Leave both blank</em> if this person will never sign in &mdash; a mestri who only needs to be named on sections and batches does not need a login at all.</li>
+    <li><strong>Role</strong> &mdash; see the table below.</li>
+    <li>Tick <strong>Is a mestri (runs a section)</strong> if they head a section.</li>
+    <li>Press <kbd>Save</kbd>.</li>
+  </ol>
+
+  <div class="note">
+    <p><b>Mestri is a tick, not a role.</b> It sits on top of whatever role you gave them. A mestri with the production role can enter batches; a mestri with no login at all still gets counted in section reports. The tick only decides one thing: whether their name appears in the mestri list on <span class="path">Setup › Sections</span>.</p>
+  </div>
+
+  <h4>The roles</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>Role</th><th>Telugu</th><th>What they can do</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Owner</strong></td><td class="tel">యజమాని</td><td>Everything, including users, licence and deleting records. Usually one person.</td></tr>
+      <tr><td><strong>Admin</strong></td><td class="tel">మేనేజర్</td><td>Everything day-to-day: bills, receipts, purchases, stock, setup. Cannot change the licence.</td></tr>
+      <tr><td><strong>Accountant</strong></td><td class="tel">అకౌంటెంట్</td><td>Bills, receipts, payments, accounts, reports, attendance. Not setup.</td></tr>
+      <tr><td><strong>Production</strong></td><td class="tel">తయారీ ఇన్‌ఛార్జి</td><td>Batches, recipes, stock. Does not see money screens.</td></tr>
+      <tr><td><strong>Driver</strong></td><td class="tel">డ్రైవర్</td><td>Their own trip on the phone: stops, van sales, collections. Nothing else.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Need something finer &mdash; an accountant who may view purchases but not change them? <span class="path">Setup › Permissions</span> has a grid: one row per screen, tick boxes for view, edit and delete. Change a role there and it applies to everyone with that role at once.</p>
+
+  <div class="warn">
+    <p><b>When someone leaves.</b> Do not delete them &mdash; their name is on hundreds of past bills and those must stay honest. Set them to <strong>inactive</strong> instead. They can no longer sign in, and the history stays intact.</p>
+  </div>
+</section>
+
+<section class="ch" id="c9">
+  <h3><span class="num">09</span><span>Locations, routes, numbering</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b></p>
+
+  <h4>Locations</h4>
+  <div class="term">
+    <div class="en">Location</div>
+    <div class="tel">స్థలం / గోడౌన్</div>
+    <div class="rom">sthalam / godown</div>
+    <div class="say">సరుకు ఎక్కడ ఉందో ఆ చోటు &mdash; ఫ్యాక్టరీ, షాపు, గోడౌన్, వ్యాన్.</div>
+    <div class="mean">A place stock physically sits: factory, shop, godown, van.</div>
+  </div>
+  <p><span class="path">Setup › Locations</span>. Every stock figure is per location, so the system can answer "how much laddu is at the shop" separately from "how much is in the godown". Add at least one. Most shops have two or three.</p>
+
+  <h4>Routes</h4>
+  <div class="term">
+    <div class="en">Route</div>
+    <div class="tel">రూట్ / మార్గం</div>
+    <div class="rom">route / mārgam</div>
+    <div class="say">వ్యాన్ ఒక రోజు తిరిగే దారి, అందులో వచ్చే ఊళ్లు, షాపులు.</div>
+    <div class="mean">The path a van covers in a day, with the towns and shops on it.</div>
+  </div>
+  <p><span class="path">Setup › Routes</span>. Give each route a name people already use &mdash; Vijayawada Road, Town, Guntur Line. Customers get attached to a route (chapter 15). After that, route-wise sales and route profit reports work on their own.</p>
+
+  <h4>Numbering</h4>
+  <p><span class="path">Setup › Numbering</span>. Decides how bill numbers look. Set a <strong>prefix</strong> (JF/25-26/) and a <strong>starting number</strong>, and every new invoice, receipt, purchase and challan numbers itself.</p>
+  <div class="warn">
+    <p><b>Set this before the first bill.</b> Changing the prefix later leaves a visible break in the book &mdash; JF/001 to JF/040 then JFN/041. Auditors ask about breaks. Decide it once, at the start.</p>
+  </div>
+</section>
+
+<section class="ch" id="c10">
+  <h3><span class="num">10</span><span>Receipt modes and expense heads</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b></p>
+
+  <div class="term">
+    <div class="en">Receipt mode</div>
+    <div class="tel">వసూలు విధానం</div>
+    <div class="rom">vasūlu vidhānam</div>
+    <div class="say">డబ్బు ఏ రూపంలో వచ్చిందో అది &mdash; నగదు, UPI, చెక్కు, బ్యాంకు జమ.</div>
+    <div class="mean">The form money arrived in: cash, UPI, cheque, bank transfer.</div>
+  </div>
+
+  <p><span class="path">Setup › Receipt modes</span>. Add Cash, UPI, Cheque, Bank transfer, and any name your own staff use for a mode. Later, <span class="path">Reports › Collection by mode</span> tells you how much came in each way &mdash; which is only as accurate as this list.</p>
+
+  <div class="term">
+    <div class="en">Expense head</div>
+    <div class="tel">ఖర్చు రకం</div>
+    <div class="rom">kharchu rakam</div>
+    <div class="say">ఖర్చును ఏ పేరుతో రాస్తామో అది &mdash; డీజిల్, కూలి, కరెంటు, అద్దె, రిపేర్.</div>
+    <div class="mean">The name you file a cost under: diesel, wages, current bill, rent, repairs.</div>
+  </div>
+
+  <p><span class="path">Setup › Expense heads</span>. Every payment that is not to a supplier gets one of these. Keep the list short &mdash; fifteen heads you actually use beat sixty that nobody picks correctly.</p>
+</section>
+
+<p class="part-head">Part C · Products</p>
+
+<section class="ch" id="c11">
+  <h3><span class="num">11</span><span>Adding a product</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b></p>
+
+  <div class="term">
+    <div class="en">Item / Product</div>
+    <div class="tel">సరుకు</div>
+    <div class="rom">saruku</div>
+    <div class="say">మీరు తయారు చేసి అమ్మే వస్తువు, లేదా తయారీకి కొనే ముడి సరుకు.</div>
+    <div class="mean">A thing you make and sell, or a raw material you buy to make it.</div>
+  </div>
+
+  <p>Go to <span class="path">Items</span> and press <kbd>New item</kbd>. Fill the form top to bottom.</p>
+
+  <ol class="steps">
+    <li><strong>Item name.</strong> What everyone calls it. "Boondi Laddu 250g", not "BL250". Say it out loud &mdash; if a new worker would understand it, it is right.</li>
+    <li><strong>Item code.</strong> A short code for narrow screens and count sheets. Leave it blank and the system makes one.</li>
+    <li><strong>Type.</strong> <em>Finished</em> for what you sell, <em>Raw material</em> for what you buy to make it (besan, oil, sugar), <em>Packing</em> for covers and boxes. This decides which screens the item appears on &mdash; a raw material must not turn up on a customer's bill.</li>
+    <li><strong>Section (mestri).</strong> Which part of the factory makes it. Chapter 7 explains sections.</li>
+    <li><strong>Stock kept in.</strong> The unit stock is counted in &mdash; KG for loose, PCS for pieces. Chapter 5.</li>
+    <li><strong>Pack type.</strong> Packet, box, tin, loose. Chapter 6.</li>
+    <li><strong>Pieces per box</strong> and <strong>units per box.</strong> How many go in a carton. Needed for box rates and for stock to add up when someone sells by the box.</li>
+    <li><strong>Unit rate.</strong> Your normal selling price for one unit.</li>
+    <li><strong>Box rate.</strong> The price when sold by the full box. Leave blank if you never sell that way.</li>
+    <li><strong>Purchase rate.</strong> What it costs you. This is what makes the profit reports mean anything. Nobody outside owner and accountant sees it.</li>
+    <li><strong>MRP per piece.</strong> The printed maximum price, if the pack carries one.</li>
+    <li><strong>Net weight (g).</strong> For loose items sold by weight.</li>
+    <li><strong>Reorder level.</strong> When stock drops below this number, the item shows on <span class="path">Stock › Low stock</span>. Set it to about a week's selling.</li>
+    <li><strong>Shelf life (days).</strong> How many days it stays good. Drives expiry warnings on batches.</li>
+    <li>Press <kbd>Save</kbd>.</li>
+  </ol>
+
+  <div class="note">
+    <p><b>You do not need every field.</b> Name, type, unit and rate are enough to start billing. The rest can be filled later by opening the item again. But <em>units per box</em> and <em>purchase rate</em> are the two that quietly break reports when left empty &mdash; fill them when you have a quiet hour.</p>
+  </div>
+
+  <div class="warn">
+    <p><b>Stopping a product.</b> Do not delete an item that has ever been billed or stocked &mdash; the old bills need it. Open it and untick <strong>Active</strong>. It vanishes from new bills and from the rate card, and every past record still reads correctly.</p>
+  </div>
+</section>
+
+<section class="ch" id="c12">
+  <h3><span class="num">12</span><span>Adding a product photo</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b></p>
+
+  <p>A photo makes the rate card worth sending. Adding one takes about fifteen seconds.</p>
+
+  <ol class="steps">
+    <li>Go to <span class="path">Items</span> and click the product's name to open it. (For a brand-new product you can add the photo straight away, before saving.)</li>
+    <li>Find the <strong>Photo</strong> box at the top of the form.</li>
+    <li>Press <kbd>Choose photo</kbd>. Your computer's file window opens.</li>
+    <li>Pick the picture and press Open. It uploads immediately and you see it appear in the box.</li>
+    <li><strong>Press <kbd>Save</kbd> at the bottom of the form.</strong> The photo is only attached to the product once you save.</li>
+  </ol>
+
+  <div class="warn">
+    <p><b>The one mistake people make.</b> The photo appearing in the box does not mean it is saved. You must press <kbd>Save</kbd> on the product form afterwards. If you upload a photo and then click away to another screen, the photo is lost and you will have to do it again.</p>
+  </div>
+
+  <h4>Changing or removing a photo</h4>
+  <p>Open the item. Press <kbd>Replace</kbd> and pick a different picture, or press <kbd>Remove the photo</kbd> to clear it. Either way, press <kbd>Save</kbd>.</p>
+
+  <h4>Taking a good product photo</h4>
+  <ul>
+    <li>Daylight, near a window or in shade outdoors. No flash &mdash; it whitens sweets.</li>
+    <li>Plain background. A steel tray or a white sheet is plenty.</li>
+    <li>Fill the frame with the product. Nobody needs to see the table.</li>
+    <li>Photograph one product at a time, so the picture matches the name.</li>
+    <li>A normal phone photo is the right size. Anything over 5 MB is refused &mdash; if that happens, send the photo to yourself on WhatsApp and use the copy WhatsApp produces, which is smaller.</li>
+    <li>JPG and PNG are accepted. HEIC from an iPhone may not be &mdash; the WhatsApp trick fixes that too.</li>
+  </ul>
+
+  <div class="note">
+    <p><b>Do it in one sitting.</b> Lay out twenty products on a tray by the window, photograph them one after another, then add them all in one go. An afternoon gets the whole catalogue done, and the rate card is transformed.</p>
+  </div>
+</section>
+
+<section class="ch" id="c13">
+  <h3><span class="num">13</span><span>The rate card</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant</b></p>
+
+  <div class="term">
+    <div class="en">Rate card / catalogue</div>
+    <div class="tel">రేటు పట్టిక</div>
+    <div class="rom">rēṭu paṭṭika</div>
+    <div class="say">సరుకుల ఫోటో, ప్యాకింగ్, రేటుతో ఉన్న పట్టిక &mdash; కస్టమర్‌కు చూపించడానికి, పంపడానికి.</div>
+    <div class="mean">A sheet of products with photo, pack and price, to show or send a customer.</div>
+  </div>
+
+  <p>Go to <span class="path">Rate card</span> in the Masters group. It builds itself from your products &mdash; there is nothing to type.</p>
+
+  <ol class="steps">
+    <li><strong>Section</strong> &mdash; choose one section, or leave it on "Every section" for the full list.</li>
+    <li><strong>Only products with a photo</strong> &mdash; leave this ticked. A card of blank squares looks worse than a shorter card.</li>
+    <li><strong>Show rates</strong> &mdash; untick to print a picture-only sheet, for a customer who negotiates rates separately.</li>
+    <li>Check the count on the right: "24 products". If it says 0, no product in that section has a photo yet.</li>
+    <li>Press <kbd>Print</kbd>.</li>
+  </ol>
+
+  <h4>Sending it on WhatsApp</h4>
+  <p>In the print window that opens, change the printer to <strong>Save as PDF</strong> (on Windows: "Microsoft Print to PDF"), press Save, and put the file somewhere you can find it. Then send that PDF from WhatsApp Web or from your phone like any other file.</p>
+
+  <div class="note">
+    <p><b>Rates are the product's own rates.</b> Not any one customer's special price. That is deliberate &mdash; a card priced for one shop that reaches another causes an argument you cannot win. For customer-specific pricing use price lists (chapter 14) and quote from a bill instead.</p>
+  </div>
+
+  <p>The card carries your shop logo, name, the section, and today's date at the top, and a line at the bottom saying rates may change. That line matters: it is what lets you raise a rate next month without a customer waving an old sheet at you.</p>
+</section>
+
+<section class="ch" id="c14">
+  <h3><span class="num">14</span><span>Price lists</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b> &nbsp;·&nbsp; Growth plan and above</p>
+
+  <div class="term">
+    <div class="en">Price list</div>
+    <div class="tel">ప్రత్యేక రేట్ల పట్టిక</div>
+    <div class="rom">pratyēka rēṭla paṭṭika</div>
+    <div class="say">కొంతమంది కస్టమర్లకు మాత్రమే వర్తించే ప్రత్యేక రేట్లు.</div>
+    <div class="mean">Special rates that apply only to certain customers.</div>
+  </div>
+
+  <p><span class="path">Pricing</span>. Make a list &mdash; "Wholesale", "Town retail", "Guntur dealers" &mdash; and set the rate for the products that differ from your normal rate. You do not have to list every product; anything you leave out uses the item's own rate.</p>
+
+  <p>Then attach the list to a customer (chapter 15). From then on, every bill for that customer picks their rate automatically. No remembering, no arguments, no rate typed wrong at seven in the evening.</p>
+</section>
+
+<p class="part-head">Part D · Selling</p>
+
+<section class="ch" id="c15">
+  <h3><span class="num">15</span><span>Customers</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant</b></p>
+
+  <p><span class="path">Customers</span>, then <kbd>New customer</kbd>.</p>
+
+  <ol class="steps">
+    <li><strong>Name</strong> &mdash; the shop's name, and the owner's name in brackets if that is how your staff refer to them: "Sri Venkateswara Stores (Ramu)".</li>
+    <li><strong>Phone</strong> &mdash; the WhatsApp number. Reminders and order confirmations go here, so get it right.</li>
+    <li><strong>Town</strong> and <strong>Route</strong> &mdash; which van run covers them. This is what makes route reports and the driver's stop list work.</li>
+    <li><strong>Price list</strong> &mdash; if they get special rates.</li>
+    <li><strong>Credit limit</strong> &mdash; the most you are willing to let them owe. When they cross it, billing warns you.</li>
+    <li><strong>Opening balance</strong> &mdash; what they already owed on the day you started using the system. Enter it once, never again.</li>
+    <li><kbd>Save</kbd>.</li>
+  </ol>
+
+  <div class="term">
+    <div class="en">Outstanding</div>
+    <div class="tel">బాకీ</div>
+    <div class="rom">bākī</div>
+    <div class="say">కస్టమర్ ఇంకా ఇవ్వాల్సిన డబ్బు. బిల్లు వేస్తే పెరుగుతుంది, వసూలు చేస్తే తగ్గుతుంది.</div>
+    <div class="mean">What a customer still owes. A bill increases it; a receipt reduces it.</div>
+  </div>
+
+  <p>Open any customer to see their running balance and every bill and receipt against them. That screen is the answer to "how much does he owe?" &mdash; no notebook needed.</p>
+</section>
+
+<section class="ch" id="c16">
+  <h3><span class="num">16</span><span>Quotations</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant</b> &nbsp;·&nbsp; Growth plan and above</p>
+
+  <div class="term">
+    <div class="en">Quotation</div>
+    <div class="tel">ధర పత్రం</div>
+    <div class="rom">dhara patram</div>
+    <div class="say">"ఇంత రేటుకు ఇస్తాం" అని ముందుగా ఇచ్చే కాగితం. ఇది బిల్లు కాదు &mdash; డబ్బు బాకీ అవదు.</div>
+    <div class="mean">A written price offer. It is not a bill and creates no debt.</div>
+  </div>
+
+  <p><span class="path">Quotations › New</span>. Pick the customer, add the products and quantities, set a validity date, save and print. Nothing moves in stock and nothing lands in the customer's account.</p>
+
+  <p>When they accept, open the quotation and press <kbd>Convert to order</kbd> or <kbd>Convert to invoice</kbd>. Everything carries over &mdash; you do not retype a single line.</p>
+</section>
+
+<section class="ch" id="c17">
+  <h3><span class="num">17</span><span>Orders</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant</b> &nbsp;·&nbsp; Growth plan and above</p>
+
+  <div class="term">
+    <div class="en">Order</div>
+    <div class="tel">ఆర్డర్</div>
+    <div class="rom">order</div>
+    <div class="say">కస్టమర్ అడిగిన సరుకు జాబితా. ఇంకా పంపలేదు, బిల్లు వేయలేదు.</div>
+    <div class="mean">What a customer has asked for. Not yet sent, not yet billed.</div>
+  </div>
+
+  <p><span class="path">Orders</span>. Type an order as it comes in on the phone, or open one that arrived by WhatsApp (chapter 31). Production looks at pending orders to know what to make tomorrow, and the loading list is built from them.</p>
+
+  <p>When goods go out, open the order and press <kbd>Convert to invoice</kbd> or <kbd>Convert to challan</kbd>. Orders that are partly delivered stay open for the balance, so nothing is quietly forgotten.</p>
+
+  <p>The same screen has a <strong>purchase orders</strong> side, at <span class="path">Orders › Purchase</span>, for what you order from your own suppliers.</p>
+</section>
+
+<section class="ch" id="c18">
+  <h3><span class="num">18</span><span>Challans</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant</b> &nbsp;·&nbsp; Growth plan and above</p>
+
+  <div class="term">
+    <div class="en">Challan</div>
+    <div class="tel">డెలివరీ చలానా</div>
+    <div class="rom">delivery chalānā</div>
+    <div class="say">సరుకుతో పాటు పంపే కాగితం. ఏమేమి పంపామో చెబుతుంది, కానీ రేట్లు, డబ్బు ఉండవు.</div>
+    <div class="mean">The paper that travels with the goods. Says what was sent; no prices, no money.</div>
+  </div>
+
+  <p>Use a challan when goods must move before the bill is settled &mdash; sale-or-return, goods sent for approval, a load going out while the rate is still being agreed. Stock leaves your books; the customer's account is untouched.</p>
+
+  <p>Later, open the challan and press <kbd>Convert to invoice</kbd> for whatever they kept.</p>
+</section>
+
+<section class="ch" id="c19">
+  <h3><span class="num">19</span><span>Sales invoices</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant</b></p>
+
+  <div class="term">
+    <div class="en">Invoice / Bill</div>
+    <div class="tel">బిల్లు</div>
+    <div class="rom">billu</div>
+    <div class="say">అమ్మకం పక్కా అయ్యాక ఇచ్చే కాగితం. కస్టమర్ బాకీ పెరుగుతుంది, నిల్వ తగ్గుతుంది.</div>
+    <div class="mean">The document for a confirmed sale. It raises what the customer owes and lowers stock.</div>
+  </div>
+
+  <p>This is the screen most used, so it is built to be fast. <span class="path">Sales Invoices › New invoice</span>.</p>
+
+  <ol class="steps">
+    <li><strong>Customer.</strong> Start typing the name; the list narrows. Their rates load automatically, and their current outstanding shows at the top so you know what you are walking into.</li>
+    <li><strong>Date.</strong> Today unless you change it.</li>
+    <li><strong>Add a line.</strong> Start typing a product name and pick it. Type the <strong>quantity</strong>. The rate fills itself in &mdash; from the customer's price list if they have one, otherwise the item's own rate.</li>
+    <li><strong>Change the rate</strong> only for a genuine one-off. A rate you change on every bill belongs in a price list instead.</li>
+    <li><strong>More lines.</strong> Repeat. There is no limit.</li>
+    <li><strong>Discount</strong> &mdash; on a single line, or on the whole bill at the bottom.</li>
+    <li>Check the <strong>total</strong>. It adds up as you go.</li>
+    <li>Press <kbd>Save</kbd>. The bill takes its number, stock comes down, and the customer's outstanding goes up.</li>
+  </ol>
+
+  <div class="warn">
+    <p><b>Correcting a bill.</b> A saved invoice can be edited on the same day. After that, do not edit it &mdash; the numbers have already reached reports and the customer's account. Raise a <strong>sales return</strong> (chapter 21) or a fresh bill. This is not the system being awkward; it is the difference between a book you can defend and one you cannot.</p>
+  </div>
+</section>
+
+<section class="ch" id="c20">
+  <h3><span class="num">20</span><span>Printing a bill</span></h3>
+  <p class="who">Who does this: <b>everyone who bills</b></p>
+
+  <ol class="steps">
+    <li>Open the invoice from the list, or stay on it after saving.</li>
+    <li>Press <kbd>Print</kbd>. A clean bill page opens &mdash; no menu, no buttons, just the bill.</li>
+    <li>Your computer's print window appears. Check the printer, press Print.</li>
+  </ol>
+
+  <p>To send instead of print, choose <strong>Save as PDF</strong> in the same window and share the file on WhatsApp.</p>
+
+  <h4>Changing how the bill looks</h4>
+  <p><span class="path">Setup › Print designer</span> controls the printed layout: which columns appear, the terms line at the bottom, the signature block, paper size. Set it once with the owner, print one test bill, and leave it alone.</p>
+</section>
+
+<section class="ch" id="c21">
+  <h3><span class="num">21</span><span>Sales returns</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant</b></p>
+
+  <div class="term">
+    <div class="en">Sales return</div>
+    <div class="tel">తిరిగి వచ్చిన సరుకు</div>
+    <div class="rom">tirigi vachchina saruku</div>
+    <div class="say">కస్టమర్ వెనక్కి ఇచ్చిన సరుకు. బాకీ తగ్గుతుంది, నిల్వ పెరుగుతుంది.</div>
+    <div class="mean">Goods a customer sent back. Their debt falls and stock rises.</div>
+  </div>
+
+  <p><span class="path">Returns › New return</span>. Pick the customer, pick the original bill if you know it, list what came back, save.</p>
+
+  <p>Two questions the screen asks that people skip &mdash; do not skip them:</p>
+  <ul>
+    <li><strong>Is it saleable?</strong> If yes it goes back into stock. If it is stale or crushed, mark it damaged &mdash; it must not go back on the shelf, and the loss should be visible.</li>
+    <li><strong>Why did it come back?</strong> Six months of these answers is the most useful quality report the shop will ever have.</li>
+  </ul>
+
+  <p>Goods you send back to your own supplier are a different screen: <span class="path">Purchase Returns</span>.</p>
+</section>
+
+<p class="part-head">Part E · Money</p>
+
+<section class="ch" id="c22">
+  <h3><span class="num">22</span><span>Receipts &mdash; collecting money</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant, driver</b></p>
+
+  <div class="term">
+    <div class="en">Receipt</div>
+    <div class="tel">వసూలు రసీదు</div>
+    <div class="rom">vasūlu rasīdu</div>
+    <div class="say">కస్టమర్ నుంచి డబ్బు తీసుకున్నామని రాసే కాగితం. వాళ్ల బాకీ తగ్గుతుంది.</div>
+    <div class="mean">The record of money taken from a customer. Reduces what they owe.</div>
+  </div>
+
+  <p><span class="path">Receipts › New receipt</span>.</p>
+
+  <ol class="steps">
+    <li><strong>Customer.</strong> Their outstanding appears immediately.</li>
+    <li><strong>Amount</strong> received.</li>
+    <li><strong>Mode</strong> &mdash; cash, UPI, cheque, bank transfer. From the list you set in chapter 10.</li>
+    <li><strong>Reference</strong> &mdash; cheque number, UPI transaction id. Skip for cash.</li>
+    <li><strong>Against which bills.</strong> The open bills are listed. Tick the ones this money settles, or let it settle the oldest first, which is the default and usually right.</li>
+    <li><kbd>Save</kbd>, then <kbd>Print</kbd> if the customer wants a slip.</li>
+  </ol>
+
+  <div class="note">
+    <p><b>Enter receipts the same day.</b> Not the same week. A customer's outstanding is only useful if it is true this morning, and the person who takes a call at eleven should not be working from Monday's figure.</p>
+  </div>
+
+  <h4>Cheques</h4>
+  <p>A cheque received is not money until it clears. Enter it with mode Cheque; it sits in <span class="path">Accounts › Cheques</span> as pending. When the bank clears it, mark it cleared there. If it bounces, mark it bounced &mdash; the customer's outstanding goes straight back up, which is exactly what should happen.</p>
+</section>
+
+<section class="ch" id="c23">
+  <h3><span class="num">23</span><span>Payments</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant</b></p>
+
+  <div class="term">
+    <div class="en">Payment</div>
+    <div class="tel">చెల్లింపు</div>
+    <div class="rom">chellimpu</div>
+    <div class="say">మీరు బయటకు ఇచ్చే డబ్బు &mdash; సప్లయర్‌కు, కూలీలకు, డీజిల్‌కు, కరెంటుకు.</div>
+    <div class="mean">Money you pay out: to suppliers, workers, diesel, current bill.</div>
+  </div>
+
+  <p><span class="path">Payments › New payment</span>. Two kinds:</p>
+  <ul>
+    <li><strong>To a supplier</strong> &mdash; pick the supplier and the purchase bills it settles. Their outstanding falls.</li>
+    <li><strong>An expense</strong> &mdash; pick an expense head (diesel, wages, rent). No supplier involved.</li>
+  </ul>
+
+  <p>Every payment needs a mode, the same list as receipts. Between receipts and payments, the day book and cash flow report fill themselves in &mdash; nobody has to total anything by hand.</p>
+</section>
+
+<section class="ch" id="c24">
+  <h3><span class="num">24</span><span>Accounts</span></h3>
+  <p class="who">Who does this: <b>owner, accountant</b></p>
+
+  <p><span class="path">Accounts</span> is the proper books, for the owner and whoever files the returns. Nothing here needs daily typing &mdash; it is built from the bills, receipts, purchases and payments already entered. Tabs:</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Tab</th><th>Telugu</th><th>What it shows</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Day book</strong></td><td class="tel">రోజు పుస్తకం</td><td>Every money movement on one day, in and out. The end-of-day check.</td></tr>
+      <tr><td><strong>Cheques</strong></td><td class="tel">చెక్కులు</td><td>Cheques in hand, cleared and bounced.</td></tr>
+      <tr><td><strong>Journal</strong></td><td class="tel">జర్నల్</td><td>Manual entries for things with no bill &mdash; depreciation, an adjustment.</td></tr>
+      <tr><td><strong>Chart of accounts</strong></td><td class="tel">ఖాతాల జాబితా</td><td>The list of ledger heads everything files under.</td></tr>
+      <tr><td><strong>Trial balance</strong></td><td class="tel">అంకెల సరిపోలిక</td><td>Debits against credits. They must match. If they do not, something is wrong.</td></tr>
+      <tr><td><strong>Balance sheet</strong></td><td class="tel">ఆస్తి-అప్పుల పట్టిక</td><td>What the business owns against what it owes, on a date.</td></tr>
+      <tr><td><strong>Cash flow</strong></td><td class="tel">నగదు రాకపోకలు</td><td>Cash in, cash out, over a period.</td></tr>
+      <tr><td><strong>Item profit</strong></td><td class="tel">సరుకుల లాభం</td><td>Selling rate minus purchase rate, per product. Only as true as the purchase rates in chapter 11.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="ch" id="c25">
+  <h3><span class="num">25</span><span>Purchases</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant</b></p>
+
+  <div class="term">
+    <div class="en">Purchase</div>
+    <div class="tel">కొనుగోలు</div>
+    <div class="rom">konugōlu</div>
+    <div class="say">బయటి నుంచి కొన్న సరుకు &mdash; నూనె, పంచదార, శనగపిండి, కవర్లు.</div>
+    <div class="mean">Goods bought in: oil, sugar, besan, covers.</div>
+  </div>
+
+  <p>First add the supplier once, at <span class="path">Purchases › Suppliers</span>. Then, for each bill that arrives:</p>
+
+  <ol class="steps">
+    <li><span class="path">Purchases › New purchase</span>.</li>
+    <li>Pick the <strong>supplier</strong>, type their <strong>bill number</strong> and <strong>date</strong> exactly as printed on their paper.</li>
+    <li>Add each item with quantity and rate.</li>
+    <li>Add freight or other charges if they are on the bill.</li>
+    <li>Choose the <strong>location</strong> the goods went to.</li>
+    <li><kbd>Save</kbd>. Stock goes up and the supplier's outstanding goes up.</li>
+  </ol>
+
+  <p>Then pay it from <span class="path">Payments</span> when you pay it &mdash; not before.</p>
+
+  <div class="note">
+    <p><b>Purchase rate feeds profit.</b> The rate you type here is what every profit figure in the system is measured against. It is worth the extra ten seconds of care.</p>
+  </div>
+</section>
+
+<p class="part-head">Part F · The factory</p>
+
+<section class="ch" id="c26">
+  <h3><span class="num">26</span><span>Stock</span></h3>
+  <p class="who">Who does this: <b>owner, admin, production</b></p>
+
+  <div class="term">
+    <div class="en">Stock</div>
+    <div class="tel">నిల్వ</div>
+    <div class="rom">nilva</div>
+    <div class="say">ఇప్పుడు మీ దగ్గర ఎంత సరుకు ఉందో అది.</div>
+    <div class="mean">How much of each thing you have right now.</div>
+  </div>
+
+  <p>Nobody types stock figures. Stock moves on its own: a purchase or a production batch raises it, a bill or a challan lowers it. <span class="path">Stock</span> just shows the result.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Tab</th><th>What it is for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Closing stock</strong></td><td>What you have now, per item and per location. The screen you open most.</td></tr>
+      <tr><td><strong>Movements</strong></td><td>Every in and out for one item. Use it when a figure looks wrong &mdash; it shows exactly which document moved it.</td></tr>
+      <tr><td><strong>Low stock</strong></td><td>Items below their reorder level. Check it before ordering raw material.</td></tr>
+      <tr><td><strong>Transfers</strong></td><td>Moving stock factory to shop, or shop to van. Print the transfer slip and send it with the goods.</td></tr>
+      <tr><td><strong>Stock count</strong></td><td>Physical counting. See below.</td></tr>
+      <tr><td><strong>Barcodes</strong></td><td>Print labels for packs and shelves.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Doing a physical count</h4>
+  <ol class="steps">
+    <li><span class="path">Stock › Stock count</span>, press <kbd>New count</kbd>, choose the location.</li>
+    <li>Print the count sheet. It lists every item with a blank column.</li>
+    <li>Walk the godown and write the real quantities by hand.</li>
+    <li>Come back, open the count and type what you wrote.</li>
+    <li>The screen shows book quantity against counted quantity, and the difference.</li>
+    <li>Look at every difference before you press <kbd>Post</kbd>. A difference is usually a missed entry, not missing goods.</li>
+    <li><kbd>Post</kbd> makes the system agree with the shelf.</li>
+  </ol>
+
+  <div class="warn">
+    <p><b>Do not post a count you have not looked at.</b> Posting overwrites the book figure. If the real reason for a gap was an unentered purchase, posting hides that mistake instead of fixing it &mdash; and the supplier's outstanding stays wrong.</p>
+  </div>
+</section>
+
+<section class="ch" id="c27">
+  <h3><span class="num">27</span><span>Production</span></h3>
+  <p class="who">Who does this: <b>production, admin, owner</b></p>
+
+  <div class="term">
+    <div class="en">Batch</div>
+    <div class="tel">బ్యాచ్ / తయారీ</div>
+    <div class="rom">batch / tayārī</div>
+    <div class="say">ఒకసారి చేసిన తయారీ &mdash; ఎంత ముడి సరుకు వాడారు, ఎంత సరుకు వచ్చింది.</div>
+    <div class="mean">One run of making something: what went in, what came out.</div>
+  </div>
+
+  <div class="term">
+    <div class="en">Recipe</div>
+    <div class="tel">తయారీ విధానం</div>
+    <div class="rom">tayārī vidhānam</div>
+    <div class="say">ఒక సరుకు తయారుచేయడానికి ఏ ముడి సరుకు ఎంత కావాలో ముందే రాసిపెట్టిన లెక్క.</div>
+    <div class="mean">The standing list of what and how much goes into making one product.</div>
+  </div>
+
+  <div class="term">
+    <div class="en">Variance</div>
+    <div class="tel">తేడా</div>
+    <div class="rom">tēḍā</div>
+    <div class="say">రావాల్సిన దానికి, నిజంగా వచ్చిన దానికి మధ్య తేడా.</div>
+    <div class="mean">The gap between what should have come out and what did.</div>
+  </div>
+
+  <h4>Set the recipes once</h4>
+  <p><span class="path">Production › Recipes</span>. For each finished product, list the raw materials and how much of each makes one standard batch. Do this with the mestri standing next to you &mdash; they know the real quantities, not the book ones.</p>
+
+  <h4>Record a batch each time you make something</h4>
+  <ol class="steps">
+    <li><span class="path">Production › Batches</span>, press <kbd>New batch</kbd>.</li>
+    <li>Pick the <strong>product</strong> and the <strong>section</strong>. The mestri fills in from the section.</li>
+    <li>Enter the <strong>planned quantity</strong>. The recipe fills the raw material list automatically.</li>
+    <li>Print the <strong>batch sheet</strong> and give it to the mestri. It lists what to draw from the godown.</li>
+    <li>After the run, enter the <strong>actual output</strong> and any changes to what was actually used.</li>
+    <li><kbd>Post</kbd>. Raw material comes out of stock, finished goods go in.</li>
+  </ol>
+
+  <h4>Reading variance</h4>
+  <p><span class="path">Production › Variance</span> compares recipe against reality, by section and by mestri. A small gap every time is normal &mdash; frying loses weight. A gap that suddenly doubles is a question worth asking, and this screen is what lets you ask it with a number instead of a suspicion.</p>
+</section>
+
+<section class="ch" id="c28">
+  <h3><span class="num">28</span><span>Vans and trips</span></h3>
+  <p class="who">Who does this: <b>admin, owner</b></p>
+
+  <div class="term">
+    <div class="en">Trip</div>
+    <div class="tel">ట్రిప్</div>
+    <div class="rom">trip</div>
+    <div class="say">ఒక వ్యాన్ ఒక రోజు చేసే పని &mdash; ఎంత సరుకు తీసుకెళ్లింది, ఎక్కడెక్కడ ఆగింది, ఎంత అమ్మింది, ఎంత వసూలు చేసింది, ఎంత తిరిగి వచ్చింది.</div>
+    <div class="mean">One van's day: what it loaded, where it stopped, what it sold, what it collected, what came back.</div>
+  </div>
+
+  <p>Add each vehicle once at <span class="path">Vehicles</span> &mdash; number, driver, route.</p>
+
+  <h4>Starting the day</h4>
+  <ol class="steps">
+    <li><span class="path">Vehicles › Trips</span>, press <kbd>New trip</kbd>.</li>
+    <li>Pick <strong>vehicle</strong>, <strong>driver</strong>, <strong>route</strong> and <strong>date</strong>.</li>
+    <li>Enter the <strong>load</strong> &mdash; what goes on the van. Stock moves from the godown to the van.</li>
+    <li>Print the <strong>loading sheet</strong> for the driver.</li>
+    <li>Press <kbd>Start trip</kbd>.</li>
+  </ol>
+
+  <h4>Closing the day</h4>
+  <ol class="steps">
+    <li>Open the trip when the van is back.</li>
+    <li>Enter <strong>returned stock</strong> &mdash; what came back unsold. It goes back into the godown.</li>
+    <li>Check <strong>collections</strong> against the cash the driver hands over.</li>
+    <li>Enter <strong>expenses</strong> &mdash; diesel, tolls, loading charges.</li>
+    <li>Press <kbd>Close trip</kbd>.</li>
+  </ol>
+
+  <p>A closed trip settles: loaded minus sold minus returned must be zero. Anything left over is shown, and it is the fastest honest check the business has. <span class="path">Reports › Route profit</span> then tells you whether each route is actually earning after its own diesel and wages.</p>
+</section>
+
+<section class="ch" id="c29">
+  <h3><span class="num">29</span><span>The driver's phone</span></h3>
+  <p class="who">Who does this: <b>driver</b> &nbsp;·&nbsp; Growth plan and above</p>
+
+  <p>The driver opens the same web address on their phone and signs in with their own login. They get a simple screen with big buttons, not the office layout.</p>
+
+  <ul>
+    <li><strong>Today's trip</strong> &mdash; what is loaded on the van.</li>
+    <li><strong>Stops</strong> &mdash; the customers on the route, in order.</li>
+    <li>At a stop: <strong>Bill</strong> makes a van sale on the spot, <strong>Collect</strong> records money taken.</li>
+    <li><strong>Stock</strong> &mdash; what is left on the van right now.</li>
+  </ul>
+
+  <div class="note">
+    <p><b>No signal is fine.</b> The phone keeps working with no network. Bills and receipts wait in an <strong>Outbox</strong> and go up on their own when signal returns. The driver does not have to do anything. If the Outbox shows a number for hours, ask them to stand somewhere with signal and open the app &mdash; that is all it needs.</p>
+  </div>
+</section>
+
+<section class="ch" id="c30">
+  <h3><span class="num">30</span><span>Attendance and Punchly</span></h3>
+  <p class="who">Who does this: <b>admin, accountant, owner</b></p>
+
+  <div class="term">
+    <div class="en">Attendance</div>
+    <div class="tel">హాజరు</div>
+    <div class="rom">hājaru</div>
+    <div class="say">ఎవరు ఏ రోజు వచ్చారు, ఎన్ని గంటలు పనిచేశారు అనే లెక్క.</div>
+    <div class="mean">Who came which day, and how many hours they worked.</div>
+  </div>
+
+  <h4>How it works</h4>
+  <p>Workers mark themselves present in the <strong>Punchly</strong> app on their own phone &mdash; they open it, press punch in when they arrive and punch out when they leave. Punchly records the time and the place.</p>
+
+  <p>The ERP fetches those punches by itself several times a day. Nobody types attendance, and workers never touch the ERP.</p>
+
+  <h4>What the office does</h4>
+  <ol class="steps">
+    <li>Open <span class="path">Attendance</span>. The day's register is already filled: in-time, out-time, hours worked.</li>
+    <li>Look at the rows marked <strong>needs review</strong>. These are the ones the system is not sure about &mdash; a missing punch-out, a very short day, a punch from far away from the factory.</li>
+    <li>Fix them. Press <kbd>Enter a day</kbd> to type an attendance by hand for someone whose phone died, or who genuinely was not on the app.</li>
+    <li>Open the <strong>Wages</strong> tab at month end to see days and hours per person for paying.</li>
+  </ol>
+
+  <p><kbd>Sync now</kbd> pulls fresh punches immediately, for when someone punched in two minutes ago and you want to see it.</p>
+
+  <h4>New worker</h4>
+  <ol class="steps">
+    <li>Add them in Punchly and let them install the app.</li>
+    <li>Add them at <span class="path">Setup › Users</span> in the ERP.</li>
+    <li>Go to <span class="path">Setup › Attendance</span> and <strong>link</strong> the Punchly name to the ERP name. Once linked, it stays linked.</li>
+  </ol>
+
+  <div class="warn">
+    <p><b>Unlinked people show no attendance.</b> If somebody's row is empty all month, the usual reason is that step 3 was never done. Check the link list first, before anything else.</p>
+  </div>
+
+  <div class="note">
+    <p><b>The day runs on Indian time.</b> A punch at 11:45 pm belongs to that day, not the next. You do not have to think about it &mdash; but it is why a night-shift register looks right rather than split in half.</p>
+  </div>
+</section>
+
+<p class="part-head">Part G · Reach and record</p>
+
+<section class="ch" id="c31">
+  <h3><span class="num">31</span><span>Messaging</span></h3>
+  <p class="who">Who does this: <b>admin, owner</b> &nbsp;·&nbsp; Full plan</p>
+
+  <p>Messaging is WhatsApp, run from the shop's own business number through <strong>Hey Nikki</strong>. Customers message that number as they always would; they never learn a new app.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Tab</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Orders</strong></td><td>Orders customers sent by WhatsApp, read and turned into an order you can accept with one press.</td></tr>
+      <tr><td><strong>Reminders</strong></td><td>Polite payment reminders to customers past their due date. Set it once; it runs itself.</td></tr>
+      <tr><td><strong>New stock</strong></td><td>Tell chosen customers a product is back in stock.</td></tr>
+      <tr><td><strong>Catalogs</strong></td><td>Send the rate card as a WhatsApp catalogue.</td></tr>
+      <tr><td><strong>Broadcasts</strong></td><td>One message to many customers &mdash; a festival offer, a price change, a holiday notice.</td></tr>
+      <tr><td><strong>Templates</strong></td><td>The wording of every automatic message. Edit these so they sound like your shop, in your language.</td></tr>
+      <tr><td><strong>Log</strong></td><td>Every message sent, with whether it was delivered.</td></tr>
+      <tr><td><strong>Settings</strong></td><td>Quiet hours, daily limits, which automatic messages are switched on.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note">
+    <p><b>Quiet hours are a feature, not a limit.</b> Messages do not go out at night; they wait for morning. A reminder that arrives at 11 pm annoys a customer and does not get paid any faster.</p>
+  </div>
+</section>
+
+<section class="ch" id="c32">
+  <h3><span class="num">32</span><span>Reports</span></h3>
+  <p class="who">Who does this: <b>owner, admin, accountant</b></p>
+
+  <p>Every report works the same way: choose the dates at the top, read the table, press <kbd>Export</kbd> for an Excel file. Nothing to build, nothing to configure.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Report</th><th>Answers</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Receipts register</strong></td><td>Every rupee collected in a period, by whom.</td></tr>
+      <tr><td><strong>Customer ledger</strong></td><td>One customer's full account: bills, receipts, running balance. Print it and hand it over when there is a dispute.</td></tr>
+      <tr><td><strong>Outstanding ageing</strong></td><td>Who owes, and how old it is &mdash; 30, 60, 90 days. The collection list for the week.</td></tr>
+      <tr><td><strong>Collection by mode</strong></td><td>How much came as cash, UPI, cheque.</td></tr>
+      <tr><td><strong>Route-wise</strong></td><td>Sales by route.</td></tr>
+      <tr><td><strong>Sales</strong></td><td>Sales by day, month, customer, town, route, item or section &mdash; the tabs across the top.</td></tr>
+      <tr><td><strong>Route profit</strong></td><td>Sales minus cost minus that route's expenses. Which van run actually earns.</td></tr>
+      <tr><td><strong>Incentives</strong></td><td>Staff incentive due, worked out from the scheme set at <span class="path">Setup › Incentives</span>.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note">
+    <p><b>Three worth a fixed habit.</b> Outstanding ageing every Monday. Low stock every purchase day. Route profit on the first of the month. Those three, read regularly, catch most of what goes wrong in a food business before it becomes expensive.</p>
+  </div>
+</section>
+
+<section class="ch" id="c33">
+  <h3><span class="num">33</span><span>Backup and audit trail</span></h3>
+  <p class="who">Who does this: <b>owner</b></p>
+
+  <h4>Backup</h4>
+  <p>The system backs itself up every night with no help from anyone. <span class="path">Setup › Backup</span> shows when the last one ran.</p>
+  <p>Before anything big &mdash; a stock count, a rate revision across the board, importing old data &mdash; press <kbd>Backup now</kbd> and take one anyway. It costs a minute.</p>
+  <p><kbd>Download</kbd> saves a copy to your own computer. Do that once a month and keep it somewhere off the office machine.</p>
+
+  <div class="warn">
+    <p><b>Photos are not inside the backup.</b> The backup holds all your records and the links to your product photos, but the picture files themselves live separately. They are not lost when you restore &mdash; but do not let anyone empty the photo storage thinking a backup covers it.</p>
+  </div>
+
+  <h4>Audit trail</h4>
+  <div class="term">
+    <div class="en">Audit trail</div>
+    <div class="tel">మార్పుల రికార్డు</div>
+    <div class="rom">mārpula record</div>
+    <div class="say">ఎవరు, ఎప్పుడు, ఏమి మార్చారు అనే పూర్తి రికార్డు.</div>
+    <div class="mean">A full record of who changed what, and when.</div>
+  </div>
+  <p><span class="path">Setup › Audit trail</span>. Every change to a bill, a rate, a customer, a user &mdash; who did it and when. Nobody can edit or erase it, including the owner. Most months you will never open it. The month you need it, nothing else will do.</p>
+</section>
+
+<section class="ch" id="c34">
+  <h3><span class="num">34</span><span>Importing old data</span></h3>
+  <p class="who">Who does this: <b>owner, admin</b></p>
+
+  <p><span class="path">Setup › Import data</span> loads long lists from Excel instead of typing them: products, customers, opening stock, opening balances.</p>
+
+  <ol class="steps">
+    <li>Press <kbd>Download template</kbd> for the thing you are importing. You get an Excel file with the right column headings.</li>
+    <li>Fill it in. Do not rename or reorder the columns.</li>
+    <li>Press <kbd>Upload</kbd> and choose your file.</li>
+    <li>The screen shows what it found and lists any problems &mdash; a missing unit, a section that does not exist, a duplicate name.</li>
+    <li>Fix the problems in Excel and upload again. Nothing has been saved yet.</li>
+    <li>When the list is clean, press <kbd>Import</kbd>.</li>
+  </ol>
+
+  <div class="note">
+    <p><b>Set up units, pack types and sections first.</b> An import cannot invent them. Chapters 5, 6 and 7 before this one, always.</p>
+  </div>
+</section>
+
+<section class="ch" id="c35">
+  <h3><span class="num">35</span><span>The licence screen</span></h3>
+  <p class="who">Who does this: <b>owner only</b></p>
+
+  <p><span class="path">Setup › Licence</span> shows which plan the shop is on and until when. There are three plans, and each opens more of the system.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Plan</th><th>What is open</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Starter</strong></td><td>Products and photos, rate card, customers, invoices and printing, receipts, payments, purchases, returns, stock, reports, backup &mdash; and attendance.</td></tr>
+      <tr><td><strong>Growth</strong></td><td>Everything in Starter, plus quotations, orders, challans, price lists, the driver's phone screen, production and vans.</td></tr>
+      <tr><td><strong>Full</strong></td><td>Everything, including WhatsApp messaging, broadcasts, catalogues and the full accounts book.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>To activate a key: paste it in the box and press <kbd>Activate</kbd>. The screen then shows the plan name and the date.</p>
+
+  <div class="note">
+    <p><b>During a trial.</b> A trial opens every feature for a set number of days &mdash; use the time to try messaging and production properly. When it ends, nothing is lost and nothing stops: the shop simply returns to its paid plan, and the screens above that plan stop appearing in the menu. Your data stays exactly where it is.</p>
+  </div>
+</section>
+
+<p class="part-head">Part H · Reference</p>
+
+<section class="ch" id="c36">
+  <h3><span class="num">36</span><span>Telugu word list</span></h3>
+
+  <p>Every business word this system uses, in one place.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>English</th><th>Telugu</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Item / Product</td><td class="tel">సరుకు</td><td>A thing you make, buy or sell.</td></tr>
+      <tr><td>Section</td><td class="tel">విభాగం</td><td>One part of the factory, run by one mestri.</td></tr>
+      <tr><td>Mestri</td><td class="tel">మేస్త్రీ</td><td>The head workman of a section.</td></tr>
+      <tr><td>Unit of measure</td><td class="tel">కొలత</td><td>Kilo, gram, litre, piece, box.</td></tr>
+      <tr><td>Pack type</td><td class="tel">ప్యాకింగ్ రకం</td><td>Packet, tin, cover, loose.</td></tr>
+      <tr><td>Rate</td><td class="tel">రేటు</td><td>Price for one unit.</td></tr>
+      <tr><td>MRP</td><td class="tel">గరిష్ఠ చిల్లర ధర</td><td>Highest price printed on the pack.</td></tr>
+      <tr><td>Net weight</td><td class="tel">నికర బరువు</td><td>Weight of the goods without the packing.</td></tr>
+      <tr><td>Reorder level</td><td class="tel">మళ్లీ కొనే స్థాయి</td><td>Stock level at which to buy more.</td></tr>
+      <tr><td>Shelf life</td><td class="tel">నిల్వ కాలం</td><td>How many days it stays good.</td></tr>
+      <tr><td>Customer</td><td class="tel">కస్టమర్ / వ్యాపారి</td><td>The shop you sell to.</td></tr>
+      <tr><td>Supplier</td><td class="tel">సప్లయర్</td><td>The one you buy from.</td></tr>
+      <tr><td>Quotation</td><td class="tel">ధర పత్రం</td><td>A written price offer. Not a bill.</td></tr>
+      <tr><td>Order</td><td class="tel">ఆర్డర్</td><td>What a customer asked for.</td></tr>
+      <tr><td>Challan</td><td class="tel">డెలివరీ చలానా</td><td>Paper sent with goods. No prices.</td></tr>
+      <tr><td>Invoice / Bill</td><td class="tel">బిల్లు</td><td>The document for a confirmed sale.</td></tr>
+      <tr><td>Sales return</td><td class="tel">తిరిగి వచ్చిన సరుకు</td><td>Goods the customer sent back.</td></tr>
+      <tr><td>Receipt</td><td class="tel">వసూలు రసీదు</td><td>Money taken from a customer.</td></tr>
+      <tr><td>Payment</td><td class="tel">చెల్లింపు</td><td>Money you paid out.</td></tr>
+      <tr><td>Receipt mode</td><td class="tel">వసూలు విధానం</td><td>Cash, UPI, cheque, bank.</td></tr>
+      <tr><td>Expense head</td><td class="tel">ఖర్చు రకం</td><td>Diesel, wages, rent, current.</td></tr>
+      <tr><td>Outstanding</td><td class="tel">బాకీ</td><td>What is still owed.</td></tr>
+      <tr><td>Credit limit</td><td class="tel">అప్పు పరిమితి</td><td>The most you will let them owe.</td></tr>
+      <tr><td>Ledger</td><td class="tel">ఖాతా</td><td>One party's full account.</td></tr>
+      <tr><td>Ageing</td><td class="tel">బాకీ వయసు</td><td>How old the unpaid amount is.</td></tr>
+      <tr><td>Day book</td><td class="tel">రోజు పుస్తకం</td><td>All money in and out on one day.</td></tr>
+      <tr><td>Trial balance</td><td class="tel">అంకెల సరిపోలిక</td><td>Debits must equal credits.</td></tr>
+      <tr><td>Balance sheet</td><td class="tel">ఆస్తి-అప్పుల పట్టిక</td><td>What you own against what you owe.</td></tr>
+      <tr><td>Stock</td><td class="tel">నిల్వ</td><td>What you have right now.</td></tr>
+      <tr><td>Closing stock</td><td class="tel">మిగులు నిల్వ</td><td>What is left at the end.</td></tr>
+      <tr><td>Location / Godown</td><td class="tel">స్థలం / గోడౌన్</td><td>Where the stock sits.</td></tr>
+      <tr><td>Transfer</td><td class="tel">బదిలీ</td><td>Moving stock place to place.</td></tr>
+      <tr><td>Stock count</td><td class="tel">నిల్వ లెక్కింపు</td><td>Counting by hand and matching the book.</td></tr>
+      <tr><td>Batch</td><td class="tel">బ్యాచ్ / తయారీ</td><td>One run of making something.</td></tr>
+      <tr><td>Recipe</td><td class="tel">తయారీ విధానం</td><td>What goes into making a product.</td></tr>
+      <tr><td>Variance</td><td class="tel">తేడా</td><td>Expected against actual.</td></tr>
+      <tr><td>Route</td><td class="tel">రూట్ / మార్గం</td><td>The van's daily path.</td></tr>
+      <tr><td>Trip</td><td class="tel">ట్రిప్</td><td>One van's day out.</td></tr>
+      <tr><td>Attendance</td><td class="tel">హాజరు</td><td>Who came, for how long.</td></tr>
+      <tr><td>Wages</td><td class="tel">కూలి / జీతం</td><td>Pay for days worked.</td></tr>
+      <tr><td>Incentive</td><td class="tel">ప్రోత్సాహకం</td><td>Extra pay on performance.</td></tr>
+      <tr><td>Audit trail</td><td class="tel">మార్పుల రికార్డు</td><td>Who changed what, and when.</td></tr>
+      <tr><td>Backup</td><td class="tel">భద్రపరచడం</td><td>A safe copy of everything.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="ch" id="c37">
+  <h3><span class="num">37</span><span>When something goes wrong</span></h3>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>What you see</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>A menu item is missing</td><td>Your role does not include it. Ask the owner to check <span class="path">Setup › Permissions</span>. If the whole group is missing, the plan may not cover it &mdash; see chapter 35.</td></tr>
+      <tr><td>The product photo did not save</td><td>You uploaded it but did not press <kbd>Save</kbd> on the product form. Do it again and save. Chapter 12.</td></tr>
+      <tr><td>The rate card is empty</td><td>No product in that section has a photo. Untick "Only products with a photo", or add photos.</td></tr>
+      <tr><td>A product is not in the item list when billing</td><td>It is inactive, or its type is Raw material, which cannot be billed.</td></tr>
+      <tr><td>Stock looks wrong</td><td>Open <span class="path">Stock › Movements</span> for that item. Every in and out is listed with its document. The gap is almost always an unentered purchase or an unposted batch.</td></tr>
+      <tr><td>A customer says they paid but still shows outstanding</td><td>The receipt was not entered, or it was entered against a different customer with a similar name. Check <span class="path">Reports › Receipts register</span> for that date.</td></tr>
+      <tr><td>Attendance is blank for one person</td><td>Their Punchly name is not linked to their ERP name. <span class="path">Setup › Attendance</span>. Chapter 30.</td></tr>
+      <tr><td>Attendance is blank for everyone</td><td>The Punchly connection is down. Press <kbd>Sync now</kbd>; if it still fails, the message on screen says why. Send that message to support.</td></tr>
+      <tr><td>The driver's phone shows an Outbox number</td><td>No signal. It clears itself. If it does not clear in a day, ask them to open the app where there is signal.</td></tr>
+      <tr><td>WhatsApp messages are not going out</td><td>Check <span class="path">Messaging › Log</span> for the reason, and whether quiet hours are on.</td></tr>
+      <tr><td>The screen says your licence has expired</td><td>Chapter 35. Nothing is lost; the shop goes read-only until a key is entered.</td></tr>
+      <tr><td>Something else</td><td>Take a photo of the whole screen, including the message, before you click anything. That photo is what lets support fix it in minutes instead of hours.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="ch" id="c38">
+  <h3><span class="num">38</span><span>The daily routine</span></h3>
+
+  <p>If you only remember one page of this handbook, make it this one.</p>
+
+  <h4>Every morning</h4>
+  <ul>
+    <li>Open the Dashboard. Yesterday's sales, today's collections due, low stock &mdash; all on one screen.</li>
+    <li>Check <span class="path">Attendance</span> for rows marked needs review.</li>
+    <li>Start the day's trips and print the loading sheets.</li>
+  </ul>
+
+  <h4>Through the day</h4>
+  <ul>
+    <li>Bills as the goods go out. Not in the evening from a notebook.</li>
+    <li>Receipts the moment the money is taken.</li>
+    <li>Purchase bills the day they arrive.</li>
+  </ul>
+
+  <h4>Every evening</h4>
+  <ul>
+    <li>Close the trips. Returns in, collections checked against the cash.</li>
+    <li>Post the day's production batches.</li>
+    <li>Open <span class="path">Accounts › Day book</span> and check it against the cash box.</li>
+  </ul>
+
+  <h4>Every week</h4>
+  <ul>
+    <li><span class="path">Reports › Outstanding ageing</span> &mdash; the collection list.</li>
+    <li><span class="path">Stock › Low stock</span> &mdash; before the purchase run.</li>
+  </ul>
+
+  <h4>Every month</h4>
+  <ul>
+    <li>A physical stock count.</li>
+    <li><span class="path">Attendance › Wages</span> for the pay run.</li>
+    <li><span class="path">Reports › Route profit</span> and the sales reports.</li>
+    <li>Download one backup to your own computer.</li>
+  </ul>
+
+  <div class="note">
+    <p><b>The one rule underneath all of it.</b> Enter things when they happen, not later. A system fed the same day answers every question in seconds. A system fed on Saturday from memory is just a slower notebook.</p>
+  </div>
+</section>
+
+<footer class="doc">
+  <p><b>Jyothi Foods ERP</b> &mdash; staff handbook, September 2026. Written for people who have never used an ERP before. Keep a printed copy near the billing computer.</p>
+  <p>Built and supported by <b>Nikki Technologies</b> &nbsp;·&nbsp; support@nikkitechnologies.com</p>
+</footer>
+
+</main>
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('printBtn');
+  if (btn) btn.addEventListener('click', function () { window.print(); });
+
+  // Contents filter: hide chapters that don't match, and any part heading left empty.
+  var filter = document.getElementById('filter');
+  var toc = document.getElementById('toc');
+  if (filter && toc) {
+    filter.addEventListener('input', function () {
+      var q = filter.value.trim().toLowerCase();
+      var items = Array.prototype.slice.call(toc.children);
+      items.forEach(function (li) {
+        if (li.classList.contains('part')) return;
+        var hit = !q || li.textContent.toLowerCase().indexOf(q) !== -1;
+        li.classList.toggle('hide', !hit);
+      });
+      // A part heading is only useful while something under it is still showing.
+      var current = null, shown = 0;
+      items.forEach(function (li) {
+        if (li.classList.contains('part')) {
+          if (current) current.classList.toggle('hide', shown === 0);
+          current = li; shown = 0;
+        } else if (!li.classList.contains('hide')) {
+          shown++;
+        }
+      });
+      if (current) current.classList.toggle('hide', shown === 0);
+    });
+  }
+
+  // Mark the chapter you are reading in the rail.
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.classList.remove('on'); });
+      var a = byId[e.target.id];
+      if (a) a.classList.add('on');
+    });
+  }, { rootMargin: '0px 0px -75% 0px', threshold: 0 });
+  document.querySelectorAll('section.ch').forEach(function (s) { obs.observe(s); });
+})();
+</script>

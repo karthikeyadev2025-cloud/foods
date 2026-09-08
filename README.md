@@ -9,6 +9,7 @@ Accounting · stock · production · vehicles · staff · customer messaging.
 2. **`docs/BUILD_TASKS.md`** — sequenced tasks, in order, with acceptance criteria.
 3. **`docs/PROJECT_PLAN.md`** — full functional spec, module by module.
 4. **`docs/reference/`** — the client's original files. Check work against these.
+5. **`docs/DEPLOY.md`** — put it on the web (Vercel) · **`docs/DESKTOP.md`** — the Windows installer, licensing, offline.
 
 ## Setup
 

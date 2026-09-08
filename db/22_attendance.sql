@@ -70,8 +70,13 @@ create table if not exists punchly_settings (
   half_day_hours  numeric(5,2) not null default 4 check (half_day_hours > 0),
   /** Fill wage_amount from staff.daily_wage as the rows come in. */
   auto_wage       boolean not null default true,
-  /** Their GPS is personal data under the DPDP Act; off unless the client asks. */
-  store_location  boolean not null default false,
+  /**
+   * Where each punch was made. The client wants it — a van salesman punching from the
+   * route is the whole point of the geofence — so it is kept by default. It is still
+   * personal data under the DPDP Act: switching this off drops the coordinates on the
+   * way in, and clears the ones already stored on the next read of those days.
+   */
+  store_location  boolean not null default true,
   backfill_from   date,
   last_sync_at    timestamptz,
   last_sync_note  text,
@@ -81,6 +86,8 @@ alter table punchly_settings
   /** Punchly asks for one wider pull a week, to catch what an admin corrected after the fact. */
   add column if not exists reconcile_days integer not null default 14 check (reconcile_days between 2 and 366),
   add column if not exists last_reconcile_at timestamptz;
+-- create table if not exists leaves an older table's defaults alone, so say it again here
+alter table punchly_settings alter column store_location set default true;
 alter table punchly_settings enable row level security;
 drop policy if exists org_scope on punchly_settings;
 

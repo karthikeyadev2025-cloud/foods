@@ -78,7 +78,7 @@ begin
   assert r.st = 'present' and r.in_time = '09:00' and r.out_time = '18:30' and r.worked_hours = 9.5 and r.ot_hours = 1.5
      and r.wage_amount = 600 and r.np = 2 and r.branch_name = 'Guntur' and r.shift_name = 'General'
      and not r.needs_review and r.source = 'punchly', format('ramesh d1 %s', to_jsonb(r));
-  assert r.latitude is null, 'GPS is not kept unless the client asks for it';
+  assert r.latitude = 16.306700, 'where the punch was made is kept';
 
   select status::text as st, worked_hours, wage_amount, needs_review into r from attendance where staff_id = v_laxmi and work_date = d1;
   assert r.st = 'half_day' and r.worked_hours = 3 and r.wage_amount = 250 and r.needs_review, format('laxmi d1 %s', to_jsonb(r));
@@ -113,13 +113,22 @@ begin
   select status::text as st, source into r from attendance where staff_id = v_laxmi and work_date = d1;
   assert r.st = 'leave' and r.source = 'manual', 'the hand-typed leave survived the sync';
 
-  -- ===== GPS only when the client turns it on =====
+  -- ===== switching the location off drops it, and clears what was already kept =====
+  select latitude, longitude into r from attendance where staff_id = v_ramesh and work_date = d1;
+  assert r.latitude = 16.306700 and r.longitude = 80.436500, format('GPS kept by default %s', to_jsonb(r));
+  perform set_config('request.jwt.claim.sub', uid_owner::text, true); set local role authenticated;
+  perform save_punchly_settings(jsonb_build_object('store_location', false));
+  reset role; perform set_config('request.jwt.claim.sub', '', true);
+  perform upsert_punchly_attendance(v_org, v_punches);
+  select latitude, longitude into r from attendance where staff_id = v_ramesh and work_date = d1;
+  assert r.latitude is null and r.longitude is null, format('switched off, the old coordinates go too %s', to_jsonb(r));
+  -- and back on again, because the client does want it
   perform set_config('request.jwt.claim.sub', uid_owner::text, true); set local role authenticated;
   perform save_punchly_settings(jsonb_build_object('store_location', true));
   reset role; perform set_config('request.jwt.claim.sub', '', true);
   perform upsert_punchly_attendance(v_org, v_punches);
-  select latitude, longitude into r from attendance where staff_id = v_ramesh and work_date = d1;
-  assert r.latitude = 16.306700 and r.longitude = 80.436500, format('GPS once asked for %s', to_jsonb(r));
+  select latitude into r from attendance where staff_id = v_ramesh and work_date = d1;
+  assert r.latitude = 16.306700, format('on again %s', to_jsonb(r));
 
   -- ===== what the sync asks for: history first, then today and yesterday =====
   select org_id, from_date, to_date, is_backfill, api_key into r from punchly_due();

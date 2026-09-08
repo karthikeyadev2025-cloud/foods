@@ -144,8 +144,9 @@ export function PunchlyPanel({ compact }: { compact?: boolean }) {
           <span>
             Keep the punch location
             <span className="block text-xs text-muted-foreground">
-              Punchly sends the GPS position of each punch. That is personal data under the DPDP Act — leave this off unless you
-              have told the staff and have a reason to keep it.
+              Punchly sends where each punch was made, and whether it was inside the site. That is personal data under the DPDP
+              Act, so keep it only while the staff have been told. Switching this off drops the coordinates as they arrive, and
+              erases the ones already stored as those days are read again.
             </span>
           </span>
         </label>

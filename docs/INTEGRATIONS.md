@@ -98,9 +98,11 @@ sync, not ours, and this paragraph is not legal advice.
 
 What the build does about it:
 
-- **Store the minimum.** Every punch carries GPS. `store_location` is **off** by default and the
-  coordinates are dropped on the way in. Turn it on only if the client has told the staff and has
-  a reason to keep it.
+- **Store what is actually used.** Every punch carries GPS, and Punchly says whether it was inside
+  the site. The client wants both — a van salesman punching from the route is the point of the
+  geofence — so `store_location` is **on**. Switching it off drops the coordinates on the way in
+  *and* erases the ones already stored as those days are read again, so it is a real off switch
+  rather than a filter on new rows.
 - **Restrict access inside the ERP too.** `attendance` is gated on the Payments module, so a store
   keeper, a driver or a production head cannot read anybody's wages or movements. The roster
   screen, which rewrites staff rows, is the owner's and the admin's alone.

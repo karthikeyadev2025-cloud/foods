@@ -1,0 +1,32 @@
+# electron-builder — Windows installer for the desktop shell (docs/DESKTOP.md).
+appId: in.jyothifoods.erp
+productName: Jyothi Foods ERP
+copyright: Jyothi Foods
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+asar: true
+npmRebuild: false
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: ${productName}-Setup-${version}.${ext}
+  # Signing: set CSC_LINK (path or base64 of the .pfx) and CSC_KEY_PASSWORD in the
+  # environment before `npm run desktop:dist`; electron-builder signs the exe and the
+  # installer. Without them the build is unsigned and SmartScreen warns on first run.
+  signingHashAlgorithms: [sha256]
+  verifyUpdateCodeSignature: false
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Jyothi Foods ERP
+  runAfterFinish: true
+publish: null

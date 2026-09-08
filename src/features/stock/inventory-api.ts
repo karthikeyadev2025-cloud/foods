@@ -1,4 +1,4 @@
-import { expectRows, supabase } from '@/lib/supabase';
+import { expectRows, queuedRpc, supabase } from '@/lib/supabase';
 import type { Database } from '@/types/supabase';
 
 type Views = Database['public']['Views'];
@@ -59,10 +59,8 @@ export function getTransferLines(id: string): Promise<TransferLineRow[]> {
   return expectRows(supabase.from('v_stock_transfer_lines').select('*').eq('transfer_id', id).order('item_code'));
 }
 
-export async function saveStockTransfer(header: { from_location: string; to_location: string; txn_date: string; notes?: string | null }, lines: { item_id: string; boxes: number }[]): Promise<string> {
-  const { data, error } = await supabase.rpc('save_stock_transfer', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) });
-  if (error) throw error;
-  return data;
+export function saveStockTransfer(header: { from_location: string; to_location: string; txn_date: string; notes?: string | null }, lines: { item_id: string; boxes: number }[]): Promise<string> {
+  return queuedRpc('save_stock_transfer', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) }, 'Stock transfer');
 }
 
 // ---------------- physical counts ----------------

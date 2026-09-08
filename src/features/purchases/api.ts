@@ -1,5 +1,5 @@
 import { currentOrgId } from '@/features/auth/api';
-import { expectOk, expectOne, expectRows, supabase } from '@/lib/supabase';
+import { expectOk, expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
 import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
 import type { Database } from '@/types/supabase';
 
@@ -63,10 +63,8 @@ export interface PurchaseLineInput {
 }
 
 /** Saves, posts stock in, and journals Dr Purchases / Cr Creditors (+ any cash paid). Final on save. */
-export async function savePurchase(header: PurchaseHeaderInput, lines: PurchaseLineInput[]): Promise<string> {
-  const { data, error } = await supabase.rpc('save_purchase', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) });
-  if (error) throw error;
-  return data;
+export function savePurchase(header: PurchaseHeaderInput, lines: PurchaseLineInput[]): Promise<string> {
+  return queuedRpc('save_purchase', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) }, 'Purchase bill');
 }
 
 // ------------------------------------------------------------------

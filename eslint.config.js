@@ -5,10 +5,17 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'src/types/supabase.ts'] },
+  { ignores: ['dist', 'dist-electron', 'release', 'node_modules', 'src/types/supabase.ts'] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['electron/**/*.{ts,cts}'],
+    languageOptions: { ecmaVersion: 2022, globals: globals.node },
+    rules: { '@typescript-eslint/no-explicit-any': 'error' },
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
+    ignores: ['electron/**'],
     languageOptions: {
       ecmaVersion: 2022,
       globals: globals.browser,

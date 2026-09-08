@@ -1,4 +1,4 @@
-import { expectOne, expectRows, supabase } from '@/lib/supabase';
+import { expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
 import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
 import type { Database } from '@/types/supabase';
 
@@ -92,13 +92,8 @@ export interface InvoiceLineInput {
 }
 
 /** Save a draft (create or replace lines). Numbering, packing snapshot and totals happen in the DB. */
-export async function saveInvoice(header: InvoiceHeaderInput, lines: InvoiceLineInput[]): Promise<string> {
-  const { data, error } = await supabase.rpc('save_invoice', {
-    p_header: { ...header },
-    p_lines: lines.map((l) => ({ ...l })),
-  });
-  if (error) throw error;
-  return data;
+export function saveInvoice(header: InvoiceHeaderInput, lines: InvoiceLineInput[]): Promise<string> {
+  return queuedRpc('save_invoice', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) }, header.id ? 'Invoice changes' : 'New invoice');
 }
 
 export async function setInvoiceStatus(id: string, status: InvoiceStatus): Promise<void> {

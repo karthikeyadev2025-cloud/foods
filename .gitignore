@@ -5,6 +5,7 @@ dist/
 *.log
 .DS_Store
 /release
+dist-electron/
 *.tsbuildinfo
 # Supabase CLI scratch state
 supabase/.temp/

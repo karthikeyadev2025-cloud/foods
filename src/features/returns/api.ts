@@ -1,4 +1,4 @@
-import { expectOne, expectRows, supabase } from '@/lib/supabase';
+import { expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
 import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
 import type { Database } from '@/types/supabase';
 
@@ -64,8 +64,6 @@ export interface ReturnLineInput {
   new_rate?: number | null;
 }
 
-export async function saveSalesReturn(header: ReturnHeaderInput, lines: ReturnLineInput[]): Promise<string> {
-  const { data, error } = await supabase.rpc('save_sales_return', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) });
-  if (error) throw error;
-  return data;
+export function saveSalesReturn(header: ReturnHeaderInput, lines: ReturnLineInput[]): Promise<string> {
+  return queuedRpc('save_sales_return', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) }, 'Sales return');
 }

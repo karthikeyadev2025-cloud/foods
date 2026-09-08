@@ -1,7 +1,8 @@
-import { createBrowserRouter, type RouteObject } from 'react-router-dom';
+import { createBrowserRouter, createHashRouter, type RouteObject } from 'react-router-dom';
 import { AppShell } from '@/app/layout/AppShell';
 import { AccountsPage } from '@/features/accounts/routes/AccountsPage';
 import { NotFound } from '@/app/routes/NotFound';
+import { OutboxPage } from '@/app/routes/OutboxPage';
 import { RequireAuth } from '@/features/auth/components/RequireAuth';
 import { RequireModule } from '@/features/auth/components/RequireModule';
 import { LoginPage } from '@/features/auth/routes/LoginPage';
@@ -37,6 +38,7 @@ import { TripDetailPage } from '@/features/vehicles/routes/TripDetailPage';
 import { TripPrintPage } from '@/features/vehicles/routes/TripPrintPage';
 import { TripsPage } from '@/features/vehicles/routes/TripsPage';
 import { VehiclesPage } from '@/features/vehicles/routes/VehiclesPage';
+import { isDesktop } from '@/lib/desktop';
 import type { ModuleKey } from '@/lib/permissions';
 
 /** Mount a feature's routes behind its module guard. */
@@ -48,8 +50,10 @@ function guarded(module: ModuleKey, children: RouteObject[]): RouteObject {
  * Route table. `/login` is the only public route. Everything else sits behind
  * RequireAuth (session + org) and, per feature, RequireModule (role permission).
  * RLS is the real boundary; these guards decide what to draw.
+ * The desktop shell loads dist/index.html from disk, so it routes by hash.
  */
-export const router = createBrowserRouter([
+const createRouter = isDesktop() ? createHashRouter : createBrowserRouter;
+export const router = createRouter([
   { path: '/login', element: <LoginPage /> },
   {
     element: <RequireAuth />,
@@ -158,6 +162,7 @@ export const router = createBrowserRouter([
             { path: 'setup/wizard/:step', element: <SetupWizard /> },
             { path: 'setup/:tab', element: <SetupPage /> },
           ]),
+          { path: 'outbox', element: <OutboxPage /> },
           { path: '*', element: <NotFound /> },
         ],
       },

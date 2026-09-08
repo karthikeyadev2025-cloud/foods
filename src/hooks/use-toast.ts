@@ -2,6 +2,7 @@
 // so `toastError(err)` below is the one path every api.ts failure should take.
 import * as React from 'react';
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
+import { OfflineQueuedError } from '@/lib/offline';
 
 const TOAST_LIMIT = 3;
 const TOAST_REMOVE_DELAY = 5000;
@@ -99,6 +100,9 @@ interface PgLikeError {
 
 /** Surface any failure to the user and log the Postgres error code. Never swallow. */
 function toastError(err: unknown, title = 'Something went wrong') {
+  if (err instanceof OfflineQueuedError) {
+    return toast({ title: 'Saved to the outbox', description: `${err.label} will be sent as soon as the connection is back.` });
+  }
   const e = (typeof err === 'object' && err !== null ? err : {}) as PgLikeError;
   const message = e.message ?? (err instanceof Error ? err.message : String(err));
   console.error('[erp]', e.code ?? '', message, e.details ?? '', e.hint ?? '');

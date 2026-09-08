@@ -2371,6 +2371,67 @@ export type Database = {
           },
         ]
       }
+      license_devices: {
+        Row: {
+          activated_at: string
+          activated_by: string | null
+          app_version: string | null
+          device_id: string
+          device_name: string | null
+          id: string
+          last_seen: string
+          org_id: string
+          platform: string | null
+        }
+        Insert: {
+          activated_at?: string
+          activated_by?: string | null
+          app_version?: string | null
+          device_id: string
+          device_name?: string | null
+          id?: string
+          last_seen?: string
+          org_id: string
+          platform?: string | null
+        }
+        Update: {
+          activated_at?: string
+          activated_by?: string | null
+          app_version?: string | null
+          device_id?: string
+          device_name?: string | null
+          id?: string
+          last_seen?: string
+          org_id?: string
+          platform?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_devices_activated_by_fkey"
+            columns: ["activated_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_devices_activated_by_fkey"
+            columns: ["activated_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "license_devices_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_devices_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       message_log: {
         Row: {
           attempts: number
@@ -3017,13 +3078,17 @@ export type Database = {
           interest_pct_pa: number
           is_active: boolean
           jurisdiction: string | null
+          license_grace_days: number
           license_key: string | null
+          license_max_devices: number
           license_valid_till: string | null
+          licensed_to: string | null
           logo_url: string | null
           name: string
           phone: string | null
           signature_url: string | null
           tagline: string | null
+          trial_days: number
         }
         Insert: {
           address?: string | null
@@ -3038,13 +3103,17 @@ export type Database = {
           interest_pct_pa?: number
           is_active?: boolean
           jurisdiction?: string | null
+          license_grace_days?: number
           license_key?: string | null
+          license_max_devices?: number
           license_valid_till?: string | null
+          licensed_to?: string | null
           logo_url?: string | null
           name: string
           phone?: string | null
           signature_url?: string | null
           tagline?: string | null
+          trial_days?: number
         }
         Update: {
           address?: string | null
@@ -3059,13 +3128,17 @@ export type Database = {
           interest_pct_pa?: number
           is_active?: boolean
           jurisdiction?: string | null
+          license_grace_days?: number
           license_key?: string | null
+          license_max_devices?: number
           license_valid_till?: string | null
+          licensed_to?: string | null
           logo_url?: string | null
           name?: string
           phone?: string | null
           signature_url?: string | null
           tagline?: string | null
+          trial_days?: number
         }
         Relationships: []
       }
@@ -7571,6 +7644,46 @@ export type Database = {
           },
         ]
       }
+      v_license_devices: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          activated_by_name: string | null
+          app_version: string | null
+          device_id: string | null
+          device_name: string | null
+          id: string | null
+          last_seen: string | null
+          org_id: string | null
+          platform: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_devices_activated_by_fkey"
+            columns: ["activated_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_devices_activated_by_fkey"
+            columns: ["activated_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "license_devices_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_devices_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       v_me: {
         Row: {
           address: string | null
@@ -9647,6 +9760,16 @@ export type Database = {
         }[]
       }
       acct: { Args: { p_code: string; p_org: string }; Returns: string }
+      activate_license: {
+        Args: {
+          p_app_version?: string
+          p_device_id: string
+          p_device_name?: string
+          p_key: string
+          p_platform?: string
+        }
+        Returns: Json
+      }
       apply_discount_schemes: { Args: { p_invoice: string }; Returns: Json }
       assign_price_list: {
         Args: { p_list: string; p_route?: string; p_town?: string }
@@ -10032,6 +10155,15 @@ export type Database = {
       }
       invoice_message_vars: { Args: { p_invoice: string }; Returns: Json }
       is_service_call: { Args: Record<PropertyKey, never>; Returns: boolean }
+      issue_license: {
+        Args: {
+          p_licensed_to?: string
+          p_max_devices?: number
+          p_org: string
+          p_valid_till: string
+        }
+        Returns: string
+      }
       item_by_barcode: {
         Args: { p_code: string }
         Returns: {
@@ -10065,6 +10197,23 @@ export type Database = {
           line_id: number
           narration: string
         }[]
+      }
+      license_blocked: { Args: { p_org: string }; Returns: boolean }
+      license_hash: { Args: { p_key: string }; Returns: string }
+      license_state: {
+        Args: { p_org: string }
+        Returns: {
+          days_left: number
+          grace_days: number
+          read_only: boolean
+          status: string
+          trial_days: number
+          valid_till: string
+        }[]
+      }
+      license_status: {
+        Args: { p_app_version?: string; p_device_id?: string }
+        Returns: Json
       }
       location_stock_base: {
         Args: { p_date?: string; p_item: string; p_location: string }
@@ -10295,9 +10444,14 @@ export type Database = {
           town: string
         }[]
       }
+      remove_license_device: { Args: { p_id: string }; Returns: undefined }
       render_template: {
         Args: { p_body: string; p_vars: Json }
         Returns: string
+      }
+      renew_license: {
+        Args: { p_org: string; p_valid_till: string }
+        Returns: undefined
       }
       reorder_sections: { Args: { p_ids: string[] }; Returns: undefined }
       restore_org_snapshot: { Args: { p: Json }; Returns: Json }

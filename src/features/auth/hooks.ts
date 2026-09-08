@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useMemo } from 'react';
+import { getLicenseStatus, type LicenseStatus } from '@/features/license/api';
 import type { ModuleKey } from '@/lib/permissions';
 import { getMe, getRolePermissions, type Me } from './api';
 
@@ -32,21 +33,43 @@ export function useMe() {
   });
 }
 
+/**
+ * The licence state (db/18_licensing.sql). Checked on start, on focus and every half
+ * hour; the last answer is kept in the persisted cache so it survives going offline.
+ */
+export function useLicense() {
+  const me = useMe();
+  const orgId = me.data?.org_id ?? null;
+  return useQuery<LicenseStatus>({
+    queryKey: ['license', orgId],
+    queryFn: getLicenseStatus,
+    enabled: Boolean(orgId),
+    staleTime: 5 * 60_000,
+    refetchInterval: 30 * 60_000,
+    refetchOnWindowFocus: true,
+    retry: 2,
+  });
+}
+
 export interface Permissions {
   isOwner: boolean;
   canView: (module: ModuleKey) => boolean;
   canEdit: (module: ModuleKey) => boolean;
   canDelete: (module: ModuleKey) => boolean;
+  /** The licence has lapsed: everything can be viewed and exported, nothing created (T11.2). */
+  readOnly: boolean;
   /** True while the role's rows are still loading; callers should not show or hide on it. */
   loading: boolean;
 }
 
 /**
  * Mirrors db/06_setup.sql `can_view` / `can_edit` / `can_delete` for the UI.
- * RLS is the boundary; this only decides what to draw.
+ * RLS is the boundary; this only decides what to draw. A lapsed licence turns
+ * every edit right off here (the DB blocks document creation on its own).
  */
 export function usePermissions(): Permissions {
   const me = useMe();
+  const license = useLicense();
   const role = me.data?.role ?? null;
   const orgId = me.data?.org_id ?? null;
   const perms = useQuery({
@@ -55,6 +78,7 @@ export function usePermissions(): Permissions {
     enabled: Boolean(orgId && role && role !== 'owner'),
     staleTime: 5 * 60_000,
   });
+  const readOnly = license.data?.read_only ?? false;
 
   return useMemo(() => {
     const isOwner = role === 'owner';
@@ -63,11 +87,12 @@ export function usePermissions(): Permissions {
     return {
       isOwner,
       canView: (m) => isOwner || Boolean(find(m)?.can_view),
-      canEdit: (m) => isOwner || Boolean(find(m)?.can_edit),
-      canDelete: (m) => isOwner || Boolean(find(m)?.can_delete),
+      canEdit: (m) => !readOnly && (isOwner || Boolean(find(m)?.can_edit)),
+      canDelete: (m) => !readOnly && (isOwner || Boolean(find(m)?.can_delete)),
+      readOnly,
       loading: me.isLoading || (!isOwner && perms.isLoading),
     };
-  }, [role, perms.data, perms.isLoading, me.isLoading]);
+  }, [role, perms.data, perms.isLoading, me.isLoading, readOnly]);
 }
 
 export type { Me };

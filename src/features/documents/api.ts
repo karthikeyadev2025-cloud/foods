@@ -1,5 +1,5 @@
 import { currentOrgId } from '@/features/auth/api';
-import { expectOk, expectOne, expectRows, supabase } from '@/lib/supabase';
+import { expectOk, expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
 import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
 import type { Database } from '@/types/supabase';
 
@@ -96,10 +96,8 @@ export type QuotationHeaderInput = {
 };
 export type LineInput = { item_id: string; boxes: number; rate?: number | null };
 
-export async function saveQuotation(header: QuotationHeaderInput, lines: LineInput[]): Promise<string> {
-  const { data, error } = await supabase.rpc('save_quotation', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) });
-  if (error) throw error;
-  return data;
+export function saveQuotation(header: QuotationHeaderInput, lines: LineInput[]): Promise<string> {
+  return queuedRpc('save_quotation', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) }, 'Quotation');
 }
 
 export async function setQuotationState(id: string, state: 'open' | 'cancelled'): Promise<void> {
@@ -146,10 +144,8 @@ export type OrderHeaderInput = {
   source_inbound_id?: string | null;
 };
 
-export async function saveOrder(header: OrderHeaderInput, lines: LineInput[]): Promise<string> {
-  const { data, error } = await supabase.rpc('save_order', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) });
-  if (error) throw error;
-  return data;
+export function saveOrder(header: OrderHeaderInput, lines: LineInput[]): Promise<string> {
+  return queuedRpc('save_order', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) }, 'Order');
 }
 
 export async function cancelOrder(id: string): Promise<void> {
@@ -191,10 +187,8 @@ export function getChallanLines(id: string): Promise<ChallanLineRow[]> {
 
 export type ChallanHeaderInput = { id?: string; customer_id: string; challan_date: string; location_id: string; vehicle_id?: string | null; notes?: string | null };
 
-export async function saveChallan(header: ChallanHeaderInput, lines: { item_id: string; boxes: number }[]): Promise<string> {
-  const { data, error } = await supabase.rpc('save_challan', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) });
-  if (error) throw error;
-  return data;
+export function saveChallan(header: ChallanHeaderInput, lines: { item_id: string; boxes: number }[]): Promise<string> {
+  return queuedRpc('save_challan', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) }, 'Delivery challan');
 }
 
 export async function cancelChallan(id: string): Promise<void> {
@@ -223,10 +217,8 @@ export function getPurchaseReturnLines(id: string): Promise<PurchaseReturnLineRo
 export type PurchaseReturnHeaderInput = { supplier_id: string; purchase_id?: string | null; return_date: string; location_id: string; notes?: string | null };
 export type PurchaseReturnLineInput = { item_id: string; qty: number; uom_id?: string | null; rate: number };
 
-export async function savePurchaseReturn(header: PurchaseReturnHeaderInput, lines: PurchaseReturnLineInput[]): Promise<string> {
-  const { data, error } = await supabase.rpc('save_purchase_return', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) });
-  if (error) throw error;
-  return data;
+export function savePurchaseReturn(header: PurchaseReturnHeaderInput, lines: PurchaseReturnLineInput[]): Promise<string> {
+  return queuedRpc('save_purchase_return', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) }, 'Purchase return');
 }
 
 // ---------------- price lists ----------------

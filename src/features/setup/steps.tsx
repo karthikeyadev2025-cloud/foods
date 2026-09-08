@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import { AuditPanel } from './components/AuditPanel';
 import { BackupPanel } from './components/BackupPanel';
 import { ImportPanel } from './components/ImportPanel';
+import { LicencePanel } from './components/LicencePanel';
 import { PrintDesigner } from './components/PrintDesigner';
 import { OrgProfileForm } from './components/OrgProfileForm';
 import { PermissionsMatrix } from './components/PermissionsMatrix';
@@ -113,6 +114,12 @@ export const SETUP_STEPS: SetupStep[] = [
     label: 'Audit trail',
     why: 'Who changed what, and when. Nothing here can be edited or deleted.',
     Component: AuditPanel,
+  },
+  {
+    slug: 'licence',
+    label: 'Licence',
+    why: 'Enter the licence key on each device. Past the grace days the app is read-only until renewed.',
+    Component: LicencePanel,
   },
   {
     slug: 'import',

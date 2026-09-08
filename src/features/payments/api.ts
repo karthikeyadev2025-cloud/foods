@@ -1,4 +1,4 @@
-import { expectRows, supabase } from '@/lib/supabase';
+import { expectRows, queuedRpc, supabase } from '@/lib/supabase';
 import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
 import type { Database } from '@/types/supabase';
 
@@ -44,8 +44,6 @@ export interface PaymentInput {
   bank_name?: string | null;
 }
 
-export async function savePayment(input: PaymentInput): Promise<string> {
-  const { data, error } = await supabase.rpc('save_payment', { p: { ...input } });
-  if (error) throw error;
-  return data;
+export function savePayment(input: PaymentInput): Promise<string> {
+  return queuedRpc('save_payment', { p: { ...input } }, 'Payment');
 }

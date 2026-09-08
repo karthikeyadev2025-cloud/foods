@@ -1,4 +1,4 @@
-import { expectOne, expectRows, supabase } from '@/lib/supabase';
+import { expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
 import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
 import type { Database } from '@/types/supabase';
 
@@ -62,12 +62,10 @@ export interface AllocationInput {
 }
 
 /** Empty allocations = FIFO over the customer's open invoices. */
-export async function saveReceipt(header: ReceiptHeaderInput, lines: ReceiptLineInput[], allocations: AllocationInput[]): Promise<string> {
-  const { data, error } = await supabase.rpc('save_receipt', {
-    p_header: { ...header },
-    p_lines: lines.map((l) => ({ ...l })),
-    p_allocations: allocations.map((a) => ({ ...a })),
-  });
-  if (error) throw error;
-  return data;
+export function saveReceipt(header: ReceiptHeaderInput, lines: ReceiptLineInput[], allocations: AllocationInput[]): Promise<string> {
+  return queuedRpc(
+    'save_receipt',
+    { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })), p_allocations: allocations.map((a) => ({ ...a })) },
+    'Receipt',
+  );
 }

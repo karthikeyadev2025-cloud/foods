@@ -51,13 +51,15 @@ scripts/    importers and data tools
 seed/       generated master data from the client's spreadsheets
 docs/       plan, task list, client reference files
 supabase/   edge functions
+electron/   desktop shell (main + preload) — docs/DESKTOP.md
 src/
   app/        routes, layout, providers, nav
   features/   one folder per domain — api.ts · schema.ts · components/ · routes/
   components/ shared UI only (shadcn/ui under components/ui)
-  hooks/      shared hooks (use-toast)
-  lib/        supabase client · format (₹, Indian grouping, DD-MM-YYYY) ·
-              units (boxes ↔ units ↔ pieces, invoice line maths) · money (amount in words)
+  hooks/      shared hooks (use-toast, use-offline)
+  lib/        supabase client (+ queuedRpc / outbox replay) · offline (outbox store) · desktop bridge ·
+              format (₹, Indian grouping, DD-MM-YYYY) · units (boxes ↔ units ↔ pieces, invoice
+              line maths) · money (amount in words)
   types/      generated Supabase types
 ```
 
@@ -91,6 +93,8 @@ src/
 | T9 Inventory depth | ✅ `db/16_inventory.sql`. **Batches & expiry**: closing a production batch creates the item batch with expiry = making date + shelf life; balances are FEFO (whatever left the item is charged to the earliest-expiring batch first); expiry report by days, "expiring this week" on the dashboard; van loading shows which batch to pull per line. **Barcodes**: two EAN-13 codes per finished item (box and unit) with a real check digit, label sheet (3 per row, copies), and scanning into the invoice CODE box adds one box or one jar and accumulates on repeat scans. **Godown transfers**: location to location in one note, two ledger rows per line, printable. **Physical count**: open a sheet per location (optionally a section) with the system figure frozen, print it blank, type counted boxes as you go, post — every difference against the LIVE figure becomes an adjustment row, so sales made while counting are not double-counted. `db/tests/13_inventory.sql`. |
 
 | T10 Owner control | ✅ `db/17_owner.sql`. **Business profile**: logo and signature (public `branding` bucket), tagline, email, bank details, and the app's web address for links in messages. **Print designer**: one template per document (invoice, quotation, challan) — paper A4 / A5 / thermal 80 / thermal 58, every header block and column switchable, the numbered terms editable (placeholders `{breakage}` `{interest}` `{credit_days}` `{jurisdiction}` keep them tied to the profile), header and footer lines, live preview; the three prints share one sheet (`src/components/print/SalesDocPrint.tsx`). **Backup & restore**: `org_snapshot()` is the whole org as one JSON file; `backup-org` stores it in the private `backups` bucket (manual "Back up now", or pg_cron hourly asking `backups_due()` — daily / weekly at a set hour, keep N copies); `restore-backup` puts the org back exactly (rows copied with triggers off, sequences moved, staff logins and the audit trail kept) after the owner types the trade name. **Audit trail**: one trigger on forty masters, settings and document headers writes who / when / what changed (updates keep only the changed fields, secrets never), viewer with date, screen, user, action and text filters and a before / after diff. **Transaction messages**: per-document "attach the document" switch (the message carries the print-page link from the app's web address). **Users**: set a new password for a user (edge function `reset-password`). `db/tests/14_owner.sql` includes a snapshot → mutate → restore round trip. |
+
+| T11 Desktop | ✅ `db/18_licensing.sql`, `electron/`, `docs/DESKTOP.md`. **Shell**: the same build in an Electron window (hash router, relative assets, sandboxed preload with a stable device id, single instance, links open outside); `npm run desktop:dist` makes the NSIS installer, signed when `CSC_LINK` / `CSC_KEY_PASSWORD` are set. **Licensing**: the vendor issues a key with `issue_license()` (only its SHA-256 lives in `orgs.license_key`); owner/admin activates it per device (device limit, owner removes devices); `license_status()` is checked at start, on focus and every 30 min; trial → active → grace → expired, and past the grace days the app is **read-only** — every screen, report and export works, every edit right is off in the UI, and `enforce_license()` blocks new documents in the database itself (service role exempt). **Offline**: the query cache is persisted to IndexedDB so screens already seen open without a connection; document saves that cannot reach the server go to an outbox and are replayed in order when the connection returns (automatic, or "Send now"), with rejected items kept for retry or discard. `db/tests/15_licensing.sql`. |
 
 **Still needed from the client to finish T0.6:** units per box (and pack type) for the 64 codes in
 `seed/unmatched_items.csv` with a blank `units_per_box`, the four duplicated stock-sheet rows resolved,

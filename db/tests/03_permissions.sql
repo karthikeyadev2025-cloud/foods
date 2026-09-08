@@ -27,7 +27,7 @@ begin
   select count(*) into n from v_me;
   assert n = 1, 'v_me should return the caller';
   select count(*) into n from role_permissions;
-  assert n = 7 * 14, format('seed should create 7 roles × 14 modules = 98 rows, got %s', n);
+  assert n = 7 * 15, format('seed should create 7 roles × 15 modules = 105 rows, got %s', n);
 
   begin
     perform bootstrap_org('SECOND ORG', 'Owner again');

@@ -21,6 +21,7 @@ export const MODULES = [
   { key: 'production', label: 'Production' },
   { key: 'vehicles', label: 'Vehicles' },
   { key: 'messaging', label: 'Messaging' },
+  { key: 'attendance', label: 'Attendance' },
   { key: 'reports', label: 'Reports' },
   { key: 'setup', label: 'Setup' },
 ] as const;
@@ -43,13 +44,13 @@ export const planLabel = (p: PlanKey | null | undefined): string => PLANS.find((
 
 export const FEATURES = [
   { key: 'core', label: 'Billing & collection', plan: 'starter', detail: 'Items, customers, invoices and prints, receipts, stock on hand, the day’s reports, setup and users' },
+  { key: 'attendance', label: 'Attendance & wages', plan: 'starter', detail: 'The daily register, hours and wages per staff, and the Punchly phone-punch sync' },
   { key: 'purchases', label: 'Purchases', plan: 'growth', detail: 'Supplier bills, suppliers, purchase returns' },
   { key: 'returns', label: 'Sales returns', plan: 'growth', detail: 'Fresh return, rate difference and damage return' },
   { key: 'payments', label: 'Payments & accounts', plan: 'growth', detail: 'Payments, expenses, cash and bank books, cheques, journal, trial balance, P&L, balance sheet' },
   { key: 'production', label: 'Production', plan: 'growth', detail: 'Recipes, batches, chief actuals, variance' },
   { key: 'vehicles', label: 'Vans & trips', plan: 'growth', detail: 'Trips, van loading, loading sheet, settlement' },
   { key: 'documents', label: 'Quotations & pricing', plan: 'growth', detail: 'Quotations, sale and purchase orders, delivery challans, price lists, discount schemes' },
-  { key: 'attendance', label: 'Attendance & wages', plan: 'growth', detail: 'The daily register, hours and wages per staff, and the Punchly phone-punch sync' },
   { key: 'messaging', label: 'WhatsApp & calls', plan: 'full', detail: 'Templates, payment reminders, broadcasts, inbound orders, reminder and order-taking calls' },
   { key: 'inventory', label: 'Batches & barcodes', plan: 'full', detail: 'Batch and expiry tracking, barcode labels, godown transfers, physical stock counts' },
   { key: 'owner', label: 'Owner control', plan: 'full', detail: 'Print designer, backup and restore, audit trail' },
@@ -61,7 +62,8 @@ export const FEATURES = [
 export type FeatureKey = (typeof FEATURES)[number]['key'];
 export const featureInfo = (f: FeatureKey) => FEATURES.find((x) => x.key === f);
 
-/** Which feature a module belongs to — the eight Starter modules are all `core`. */
+/** Which feature a module belongs to. Attendance is its own, so Starter can open it
+ * while Payments stays shut; everything else Starter has is `core`. */
 export function moduleFeature(m: ModuleKey): FeatureKey {
   switch (m) {
     case 'purchases':
@@ -70,6 +72,7 @@ export function moduleFeature(m: ModuleKey): FeatureKey {
     case 'production':
     case 'vehicles':
     case 'messaging':
+    case 'attendance':
       return m;
     default:
       return 'core';

@@ -64,8 +64,10 @@ begin
          format('the step-down must not stop them billing %s', j);
   assert j->>'plan' = 'starter' and j->>'paid_plan' = 'starter', format('back to what was paid %s', j);
   assert j->>'plan_trial_days_left' is null, 'no trial running any more';
-  assert j->'features' = '["core"]'::jsonb, format('starter features %s', j->'features');
-  assert not has_feature('messaging') and not has_feature('purchases') and not has_feature('attendance');
+  assert j->'features' = '["core", "attendance"]'::jsonb, format('starter features %s', j->'features');
+  -- attendance is a Starter feature, so it survives the step-down; the rest does not
+  assert has_feature('core') and has_feature('attendance');
+  assert not has_feature('messaging') and not has_feature('purchases') and not has_feature('payments');
 
   -- billing and collection carry on exactly as before
   perform set_invoice_status(save_invoice(jsonb_build_object('customer_id', v_cust, 'invoice_date', current_date, 'location_id', v_loc),

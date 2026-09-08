@@ -176,30 +176,26 @@ begin
 
   reset role; perform set_config('request.jwt.claim.sub', '', true);
 
-  -- ===== the plan caps it: Starter has no attendance =====
+  -- ===== attendance is in the CHEAPEST plan: a shop that only bills still pays staff =====
   perform set_license_plan(v_org, 'starter');
   perform set_config('request.jwt.claim.sub', uid_owner::text, true); set local role authenticated;
-  begin
-    perform attendance_summary(d1, v_today);
-    assert false, 'Starter must not reach the wage sheet';
-  exception when others then null; end;
-  begin
-    perform save_attendance(jsonb_build_object('staff_id', v_ramesh, 'work_date', current_date, 'status', 'present'));
-    assert false, 'Starter must not be able to write attendance';
-  exception when others then null; end;
-  -- attendance lives in the Payments module, which Starter does not have at all, so the
-  -- rows are hidden rather than merely frozen — nothing is deleted, and Growth brings
-  -- them all back untouched
-  select count(*) into n from attendance; assert n = 0, format('Starter hides the whole module, found %s', n);
+  select count(*) into n from attendance_summary(d1, v_today); assert n = 6, format('Starter runs the wage sheet, %s staff', n);
+  select count(*) into n from attendance; assert n = 3, format('and sees every row, found %s', n);
+  perform save_attendance(jsonb_build_object('staff_id', v_suresh1, 'work_date', v_today, 'status', 'present'));
+  select count(*) into n from attendance; assert n = 4, 'and can still write one';
+  delete from attendance where staff_id = v_suresh1 and work_date = v_today;
+
+  -- it is its own module now, not a corner of Payments — so the plan opens it while the
+  -- books stay shut, which is the whole point of putting it in Starter
+  j := license_status();
+  assert j->'features' ? 'attendance' and not (j->'features' ? 'payments'),
+         format('attendance without payments %s', j->'features');
+  assert jsonb_array_length(j->'catalogue') = 14, format('catalogue %s', jsonb_array_length(j->'catalogue'));
 
   reset role; perform set_config('request.jwt.claim.sub', '', true);
   perform set_license_plan(v_org, 'growth');
   perform set_config('request.jwt.claim.sub', uid_owner::text, true); set local role authenticated;
-  select count(*) into n from attendance; assert n = 3, format('Growth gives every row back, found %s', n);
-  select count(*) into n from attendance_summary(d1, v_today); assert n = 6, format('Growth opens it again, %s staff', n);
-  j := license_status();
-  assert j->'features' ? 'attendance', format('growth features %s', j->'features');
-  assert jsonb_array_length(j->'catalogue') = 14, format('catalogue %s', jsonb_array_length(j->'catalogue'));
+  select count(*) into n from attendance_summary(d1, v_today); assert n = 6, format('Growth too, %s staff', n);
 
   -- ===== somebody asks to be forgotten (DPDP) =====
   perform set_config('request.jwt.claim.sub', uid_acct::text, true);

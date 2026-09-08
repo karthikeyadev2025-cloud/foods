@@ -42,7 +42,7 @@ export function AttendancePage({ tab = 'register' }: { tab?: AttendanceTab }) {
   const me = useMe();
   const [from, setFrom] = useState(monthStart);
   const [to, setTo] = useState(() => toISODate());
-  const canEdit = perms.canEdit('payments');
+  const canEdit = perms.canEdit('attendance');
   // Syncing rewrites staff rows as it links people, so it is the owner's and admin's
   const canSync = me.data?.role === 'owner' || me.data?.role === 'admin';
   const qc = useQueryClient();

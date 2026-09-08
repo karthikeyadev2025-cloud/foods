@@ -152,10 +152,10 @@ export const router = createRouter([
             { path: 'payments', element: <PaymentsPage /> },
             { path: 'accounts', element: <AccountsPage /> },
             { path: 'accounts/:tab', element: <AccountsPage /> },
-            licensed('attendance', [
-              { path: 'attendance', element: <AttendancePage /> },
-              { path: 'attendance/wages', element: <AttendancePage tab="wages" /> },
-            ]),
+          ]),
+          guarded('attendance', [
+            { path: 'attendance', element: <AttendancePage /> },
+            { path: 'attendance/wages', element: <AttendancePage tab="wages" /> },
           ]),
           guarded('stock', [
             { path: 'stock', element: <StockPage /> },

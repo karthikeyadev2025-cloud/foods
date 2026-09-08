@@ -12,13 +12,13 @@ Each includes everything in the one before it.
 | | Starter | Growth | Full |
 | --- | :---: | :---: | :---: |
 | **Billing & collection** — items, customers, invoices and prints, receipts, stock on hand, the day's reports, setup, users, permissions | ● | ● | ● |
+| **Attendance & wages** — the daily register, hours and wages per staff, the Punchly phone-punch sync | ● | ● | ● |
 | **Purchases** — supplier bills, suppliers, purchase returns | | ● | ● |
 | **Sales returns** — fresh return, rate difference, damage return | | ● | ● |
 | **Payments & accounts** — payments, expenses, cash and bank books, cheques, journal, trial balance, P&L, balance sheet | | ● | ● |
 | **Production** — recipes, batches, chief actuals, variance | | ● | ● |
 | **Vans & trips** — trips, van loading, loading sheet, settlement | | ● | ● |
 | **Quotations & pricing** — quotations, sale and purchase orders, delivery challans, price lists, discount schemes | | ● | ● |
-| **Attendance & wages** — the daily register, hours and wages per staff, the Punchly phone-punch sync | | ● | ● |
 | **WhatsApp & calls** — templates, reminders, broadcasts, inbound orders, reminder and order-taking calls | | | ● |
 | **Batches & barcodes** — batch and expiry tracking, barcode labels, godown transfers, stock counts | | | ● |
 | **Owner control** — print designer, backup and restore, audit trail | | | ● |
@@ -26,9 +26,12 @@ Each includes everything in the one before it.
 | **Driver's phone** — van sales, on-the-spot receipts, delivery proof | | | ● |
 | **Desktop & offline** — the installed Windows app, working without a connection | | | ● |
 
-**Starter** is a shop that bills and collects. **Growth** is the whole operation on paper —
-buying, paying, accounts, production, vans, documents and the staff register. **Full** is the
-operation running itself.
+**Starter** is a shop that bills, collects and pays its staff. **Growth** is the whole operation
+on paper — buying, paying, accounts, production, vans and documents. **Full** is the operation
+running itself.
+
+Attendance sits in Starter deliberately: a shop small enough to want only billing still has
+people to pay, and the wage sheet is the one thing they would otherwise keep in a notebook.
 
 ## Price ladder
 
@@ -108,19 +111,32 @@ with the plan, or `set_license_plan` on its own.
 
 ## Moving a feature between plans
 
-One array — in `db/21_plans.sql`, or in whichever later migration last re-created it
-(`db/22_attendance.sql` does, to add attendance):
+One array — but in **whichever migration last re-created `plan_features()`**, not
+necessarily `21_plans.sql`. Today that is `db/27_attendance_in_starter.sql`:
 
 ```sql
 create or replace function plan_features(p_plan text) returns text[] ...
-    when 'growth' then array['core', 'purchases', ... ]
+    when 'starter' then array['core', 'attendance']
 ```
 
 and the matching copy in `src/lib/permissions.ts` (`FEATURES`), which only decides what to
-draw. `db/tests/18_plans.sql` covers the whole ladder; `db/tests/19_attendance.sql` covers the
-attendance cap.
+draw. `db/tests/18_plans.sql` covers the whole ladder; `db/tests/19_attendance.sql` and
+`db/tests/20_plan_trial.sql` cover attendance and the trial.
 
-A feature capped **above** the module it lives in also needs the restrictive
-`plan_insert` / `plan_update` / `plan_delete` policies on its own tables, so reads stay and
-writes stop. A feature capped at the same plan as its module (attendance and Payments, say)
-is already handled by the module gate: its rows are simply not visible below that plan.
+**Check which file owns it before editing.** Postgres keeps whichever definition ran last,
+so editing 21 when 27 is the live owner changes nothing, and *re-running* 21 silently
+reverts 27. That has already cost real time here — see the header of `db/26_repair.sql`.
+
+## A feature and its module are two different gates
+
+`can_view(module)` is asked **before** the plan is consulted, so a feature is only reachable
+if its module is too. Two consequences worth knowing:
+
+- A feature capped **above** its module (quotations inside Invoices, batches inside Stock)
+  needs the restrictive `plan_insert` / `plan_update` / `plan_delete` policies on its own
+  tables: reads stay, writes stop.
+- A feature that must open **below** its module needs a module of its own. Attendance rode
+  on Payments until `db/27_attendance_in_starter.sql`, which meant it could never appear in
+  Starter — the plan would allow it and the module would still hide every row. Giving it its
+  own module is what made Starter possible, and it is the better shape anyway: who may see
+  wages is a different question from who may see the cash book.

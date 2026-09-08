@@ -49,7 +49,7 @@ begin
 
   j := license_status();
   assert j->>'plan' = 'starter' and j->>'status' = 'active' and (j->>'read_only')::boolean = false, format('starter %s', j);
-  assert j->'features' = '["core"]'::jsonb, format('starter features %s', j->'features');
+  assert j->'features' = '["core", "attendance"]'::jsonb, format('starter features %s', j->'features');
 
   -- billing and collection still work
   assert can_view('invoices') and can_edit('invoices') and can_view('receipts') and can_view('items') and can_view('setup');

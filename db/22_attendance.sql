@@ -451,7 +451,17 @@ begin
       from staff st where st.org_id = my_org_id() and st.is_active order by st.full_name;
 end $$;
 
-/** The sync writing back what happened — including the runs that failed. */
+/**
+ * The sync writing back what happened — including the runs that failed.
+ *
+ * The drop matters. This function gained p_reconciled after an earlier copy of this file
+ * had already been applied somewhere, and `create or replace` cannot replace a function
+ * whose argument list has changed — it adds a second one alongside. Both would then answer
+ * to a three-argument call, and Postgres refuses to guess: "function punchly_note(uuid,
+ * text, boolean) is not unique". The file applies cleanly and breaks at the first call.
+ * Any later change to these arguments needs the same treatment.
+ */
+drop function if exists punchly_note(uuid, text, boolean);
 create or replace function punchly_note(p_org uuid, p_note text, p_ok boolean default true,
                                         p_reconciled boolean default false) returns void
 language plpgsql security definer set search_path = public as $$

@@ -90,6 +90,9 @@ begin
 
   -- ===== settings + scheduler =====
   select auto_enabled, keep_copies, frequency into r from get_backup_settings(); assert r.auto_enabled and r.keep_copies = 30 and r.frequency = 'daily', 'defaults';
+  -- Push the run hour away from now rather than trusting the default to differ. The
+  -- default is 23:00 IST, so this assertion failed for one hour every night.
+  update backup_settings set run_at = (((now() at time zone 'Asia/Kolkata')::time) + interval '3 hours')::time where org_id = v_org;
   select count(*) into n from backups_due(); assert n = 0, 'not due outside the run hour';
   update backup_settings set run_at = ((now() at time zone 'Asia/Kolkata')::time) where org_id = v_org;
   select count(*) into n from backups_due(); assert n = 1, 'due this hour';

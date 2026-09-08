@@ -77,6 +77,17 @@ returns message_templates language sql stable as $$
    limit 1;
 $$;
 
+/**
+ * The three-argument version from 13_messaging.sql has to go, or it sits there
+ * for ever as the one thing that can undo this file: it ignores the channel, so
+ * a three-argument call quietly hands a WhatsApp text to a voice call — exactly
+ * what the two clauses above exist to prevent. Nothing calls it any more
+ * (queue_message is replaced just below), and leaving a dead overload beside a
+ * live one is how the next person reintroduces the bug by writing the obvious
+ * call. Postgres resolves function bodies at run time, so this drop is safe here.
+ */
+drop function if exists pick_template(uuid, msg_purpose, text);
+
 alter table message_log
   add column if not exists not_before timestamptz,
   add column if not exists call_status text,

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, ArrowRight, Boxes, Factory, FileText, IndianRupee, MessageSquare, Truck, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Boxes, Factory, FileText, IndianRupee, Landmark, MessageSquare, Truck, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -57,6 +57,14 @@ export function DashboardPage() {
         <Tile perms={perms} module="vehicles" to="/vehicles/trips" icon={Truck} label="Vehicles out" value={s ? int(s.vehicles_out) : null} sub="dispatched, not yet settled" />
         <Tile perms={perms} module="production" to="/production" icon={Factory} label="Batches open" value={s ? int(s.batches_open) : null} sub="waiting for the chief's actuals" />
       </div>
+      {perms.canView('payments') && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Tile perms={perms} module="payments" to="/accounts" icon={Wallet} label="Cash in hand" value={s ? money(s.cash_balance) : null} sub="cash book balance" tone={s && s.cash_balance < 0 ? 'bad' : undefined} />
+          <Tile perms={perms} module="payments" to="/accounts" icon={Landmark} label="Bank" value={s ? money(s.bank_balance) : null} sub="bank book balance" tone={s && s.bank_balance < 0 ? 'bad' : undefined} />
+          <Tile perms={perms} module="payments" to="/accounts/cheques" icon={FileText} label="Cheques in hand" value={s ? money(s.cheques_in_hand) : null} sub={s && s.cheques_due > 0 ? `${int(s.cheques_due)} due within 3 days` : 'received, not yet cleared'} tone={s && s.cheques_due > 0 ? 'warn' : undefined} />
+          <Tile perms={perms} module="payments" to="/purchases/suppliers" icon={IndianRupee} label="Payable to suppliers" value={s ? money(s.payables) : null} sub="bills less payments" />
+        </div>
+      )}
 
       <div className="grid gap-3 lg:grid-cols-5">
         <Card className="lg:col-span-3">

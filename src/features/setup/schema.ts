@@ -41,6 +41,8 @@ export const receiptModeSchema = z.object({
   name,
   is_collection: z.boolean(),
   needs_reference: z.boolean(),
+  is_cheque: z.boolean(),
+  account_id: z.string(),
   sort_order: sortOrder,
   is_active: z.boolean(),
 });

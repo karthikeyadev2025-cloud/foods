@@ -81,7 +81,7 @@ export function ReceiptsPage() {
   );
 }
 
-interface ModeLine { key: string; mode_id: string; amount: string; reference: string }
+interface ModeLine { key: string; mode_id: string; amount: string; reference: string; cheque_date: string; bank_name: string }
 let seq = 0;
 
 export function ReceiptNewPage() {
@@ -100,7 +100,7 @@ export function ReceiptNewPage() {
   useEffect(() => {
     if (modes.data && lines.length === 0) {
       const cash = modes.data.find((m) => m.is_active && m.code.toUpperCase() === 'CASH') ?? modes.data.find((m) => m.is_active);
-      if (cash) setLines([{ key: `m${++seq}`, mode_id: cash.id, amount: '', reference: '' }]);
+      if (cash) setLines([{ key: `m${++seq}`, mode_id: cash.id, amount: '', reference: '', cheque_date: '', bank_name: '' }]);
     }
   }, [modes.data, lines.length]);
 
@@ -129,7 +129,7 @@ export function ReceiptNewPage() {
       if (onAccount < 0) throw new Error('Allocations exceed the receipt total');
       return saveReceipt(
         { customer_id: customer.id, receipt_date: date, narration: narration || null },
-        ls.map((l) => ({ mode_id: l.mode_id, amount: toNumber(l.amount), reference: l.reference.trim() || null })),
+        ls.map((l) => ({ mode_id: l.mode_id, amount: toNumber(l.amount), reference: l.reference.trim() || null, cheque_date: l.cheque_date || null, bank_name: l.bank_name.trim() || null })),
         manual ? Object.entries(allocations).filter(([, v]) => v > 0).map(([invoice_id, v]) => ({ invoice_id, amount: v })) : [],
       );
     },
@@ -171,12 +171,19 @@ export function ReceiptNewPage() {
                     {(modes.data ?? []).filter((mm) => mm.is_active).map((mm) => <option key={mm.id} value={mm.id}>{mm.code}{mm.is_collection ? '' : ' (deduction)'}</option>)}
                   </NativeSelect>
                   <Input type="number" step="0.01" className="num h-8" aria-label={`Amount ${m?.code ?? ''}`} placeholder="Amount" value={l.amount} onChange={(ev) => setLines((p) => p.map((x) => x.key === l.key ? { ...x, amount: ev.target.value } : x))} />
-                  <Input className="h-8" aria-label={`Reference ${m?.code ?? ''}`} placeholder={m?.needs_reference ? 'Reference (required)' : 'Reference'} value={l.reference} onChange={(ev) => setLines((p) => p.map((x) => x.key === l.key ? { ...x, reference: ev.target.value } : x))} />
+                  <Input className="h-8" aria-label={`Reference ${m?.code ?? ''}`} placeholder={m?.is_cheque ? 'Cheque no. (required)' : m?.needs_reference ? 'Reference (required)' : 'Reference'} value={l.reference} onChange={(ev) => setLines((p) => p.map((x) => x.key === l.key ? { ...x, reference: ev.target.value } : x))} />
                   <Button type="button" variant="ghost" size="icon" aria-label="Remove line" onClick={() => setLines((p) => p.filter((x) => x.key !== l.key))}><Trash2 className="text-destructive" /></Button>
+                  {m?.is_cheque && (
+                    <div className="col-span-4 grid grid-cols-[8rem_1fr_1fr_2rem] items-center gap-2">
+                      <span className="text-xs text-muted-foreground">cheque</span>
+                      <Input type="date" className="h-8" aria-label="Cheque date" value={l.cheque_date} onChange={(ev) => setLines((p) => p.map((x) => x.key === l.key ? { ...x, cheque_date: ev.target.value } : x))} />
+                      <Input className="h-8" aria-label="Bank" placeholder="Bank" value={l.bank_name} onChange={(ev) => setLines((p) => p.map((x) => x.key === l.key ? { ...x, bank_name: ev.target.value } : x))} />
+                    </div>
+                  )}
                 </div>
               );
             })}
-            <Button type="button" variant="outline" size="sm" onClick={() => { const m = modes.data?.find((mm) => mm.is_active); if (m) setLines((p) => [...p, { key: `m${++seq}`, mode_id: m.id, amount: '', reference: '' }]); }}><Plus /> Add mode</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => { const m = modes.data?.find((mm) => mm.is_active); if (m) setLines((p) => [...p, { key: `m${++seq}`, mode_id: m.id, amount: '', reference: '', cheque_date: '', bank_name: '' }]); }}><Plus /> Add mode</Button>
             <div className="flex justify-between border-t pt-2 text-sm font-semibold"><span>Total</span><span className="tabular-nums">{amount(total)}</span></div>
           </CardContent>
         </Card>

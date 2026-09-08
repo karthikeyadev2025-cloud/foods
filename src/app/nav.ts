@@ -4,6 +4,7 @@ import {
   Boxes,
   Factory,
   FileText,
+  Landmark,
   LayoutDashboard,
   MessageSquare,
   Package,
@@ -53,6 +54,7 @@ export const NAV: NavGroup[] = [
       { to: '/returns', label: 'Returns', icon: RotateCcw, module: 'returns' },
       { to: '/receipts', label: 'Receipts', icon: Receipt, module: 'receipts' },
       { to: '/payments', label: 'Payments', icon: Wallet, module: 'payments' },
+      { to: '/accounts', label: 'Accounts', icon: Landmark, module: 'payments' },
     ],
   },
   {

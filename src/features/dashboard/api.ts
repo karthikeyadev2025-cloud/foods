@@ -18,6 +18,11 @@ export interface DashboardSummary {
   vehicles_out: number;
   batches_open: number;
   pending_orders: number;
+  cash_balance: number;
+  bank_balance: number;
+  cheques_in_hand: number;
+  cheques_due: number;
+  payables: number;
 }
 
 export async function dashboardSummary(orgId: string, date: string): Promise<DashboardSummary> {
@@ -36,6 +41,11 @@ export async function dashboardSummary(orgId: string, date: string): Promise<Das
     vehicles_out: n('vehicles_out'),
     batches_open: n('batches_open'),
     pending_orders: n('pending_orders'),
+    cash_balance: n('cash_balance'),
+    bank_balance: n('bank_balance'),
+    cheques_in_hand: n('cheques_in_hand'),
+    cheques_due: n('cheques_due'),
+    payables: n('payables'),
   };
 }
 

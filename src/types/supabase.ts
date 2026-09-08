@@ -61,6 +61,12 @@ export type Database = {
             referencedColumns: ["account_id"]
           },
           {
+            foreignKeyName: "account_transactions_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "account_transactions_created_by_fkey"
             columns: ["created_by"]
             referencedRelation: "staff"
@@ -95,6 +101,7 @@ export type Database = {
           narration: string | null
           org_id: string
           to_account: string
+          transfer_no: string | null
           txn_date: string
         }
         Insert: {
@@ -105,6 +112,7 @@ export type Database = {
           narration?: string | null
           org_id: string
           to_account: string
+          transfer_no?: string | null
           txn_date?: string
         }
         Update: {
@@ -115,6 +123,7 @@ export type Database = {
           narration?: string | null
           org_id?: string
           to_account?: string
+          transfer_no?: string | null
           txn_date?: string
         }
         Relationships: [
@@ -143,6 +152,12 @@ export type Database = {
             referencedColumns: ["account_id"]
           },
           {
+            foreignKeyName: "account_transfers_from_account_fkey"
+            columns: ["from_account"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "account_transfers_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "orgs"
@@ -165,6 +180,12 @@ export type Database = {
             columns: ["to_account"]
             referencedRelation: "v_account_balances"
             referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "account_transfers_to_account_fkey"
+            columns: ["to_account"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -745,12 +766,16 @@ export type Database = {
           account_id: string | null
           amount: number
           bank_name: string | null
+          bounced_on: string | null
           cheque_date: string | null
           cheque_no: string
           cleared_on: string | null
+          created_at: string
           customer_id: string | null
+          deposited_on: string | null
           direction: Database["public"]["Enums"]["cheque_direction"]
           id: string
+          mode_id: string | null
           notes: string | null
           org_id: string
           party_kind: string | null
@@ -763,12 +788,16 @@ export type Database = {
           account_id?: string | null
           amount: number
           bank_name?: string | null
+          bounced_on?: string | null
           cheque_date?: string | null
           cheque_no: string
           cleared_on?: string | null
+          created_at?: string
           customer_id?: string | null
+          deposited_on?: string | null
           direction: Database["public"]["Enums"]["cheque_direction"]
           id?: string
+          mode_id?: string | null
           notes?: string | null
           org_id: string
           party_kind?: string | null
@@ -781,12 +810,16 @@ export type Database = {
           account_id?: string | null
           amount?: number
           bank_name?: string | null
+          bounced_on?: string | null
           cheque_date?: string | null
           cheque_no?: string
           cleared_on?: string | null
+          created_at?: string
           customer_id?: string | null
+          deposited_on?: string | null
           direction?: Database["public"]["Enums"]["cheque_direction"]
           id?: string
+          mode_id?: string | null
           notes?: string | null
           org_id?: string
           party_kind?: string | null
@@ -809,6 +842,12 @@ export type Database = {
             referencedColumns: ["account_id"]
           },
           {
+            foreignKeyName: "cheques_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cheques_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
@@ -825,6 +864,12 @@ export type Database = {
             columns: ["customer_id"]
             referencedRelation: "v_customer_outstanding"
             referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "cheques_mode_id_fkey"
+            columns: ["mode_id"]
+            referencedRelation: "receipt_modes"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "cheques_org_id_fkey"
@@ -2020,6 +2065,7 @@ export type Database = {
           org_id: string
           ref_id: string | null
           ref_table: string | null
+          reversed_by: string | null
           reverses_entry_id: string | null
         }
         Insert: {
@@ -2033,6 +2079,7 @@ export type Database = {
           org_id: string
           ref_id?: string | null
           ref_table?: string | null
+          reversed_by?: string | null
           reverses_entry_id?: string | null
         }
         Update: {
@@ -2046,6 +2093,7 @@ export type Database = {
           org_id?: string
           ref_id?: string | null
           ref_table?: string | null
+          reversed_by?: string | null
           reverses_entry_id?: string | null
         }
         Relationships: [
@@ -2074,9 +2122,27 @@ export type Database = {
             referencedColumns: ["org_id"]
           },
           {
+            foreignKeyName: "journal_entries_reversed_by_fkey"
+            columns: ["reversed_by"]
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reversed_by_fkey"
+            columns: ["reversed_by"]
+            referencedRelation: "v_journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "journal_entries_reverses_entry_id_fkey"
             columns: ["reverses_entry_id"]
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reverses_entry_id_fkey"
+            columns: ["reverses_entry_id"]
+            referencedRelation: "v_journal_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -2084,6 +2150,7 @@ export type Database = {
       journal_lines: {
         Row: {
           account_id: string
+          cash_account_id: string | null
           credit: number
           debit: number
           entry_id: string
@@ -2092,6 +2159,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          cash_account_id?: string | null
           credit?: number
           debit?: number
           entry_id: string
@@ -2100,6 +2168,7 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          cash_account_id?: string | null
           credit?: number
           debit?: number
           entry_id?: string
@@ -2116,13 +2185,43 @@ export type Database = {
           {
             foreignKeyName: "journal_lines_account_id_fkey"
             columns: ["account_id"]
+            referencedRelation: "v_ledger_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_account_id_fkey"
+            columns: ["account_id"]
             referencedRelation: "v_trial_balance"
             referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "journal_lines_cash_account_id_fkey"
+            columns: ["cash_account_id"]
+            referencedRelation: "cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_cash_account_id_fkey"
+            columns: ["cash_account_id"]
+            referencedRelation: "v_account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "journal_lines_cash_account_id_fkey"
+            columns: ["cash_account_id"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "journal_lines_entry_id_fkey"
             columns: ["entry_id"]
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_entry_id_fkey"
+            columns: ["entry_id"]
+            referencedRelation: "v_journal_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -2181,6 +2280,12 @@ export type Database = {
             referencedColumns: ["account_id"]
           },
           {
+            foreignKeyName: "ledger_accounts_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ledger_accounts_customer_id_fkey"
             columns: ["customer_id"]
             referencedRelation: "customers"
@@ -2214,6 +2319,12 @@ export type Database = {
             foreignKeyName: "ledger_accounts_parent_id_fkey"
             columns: ["parent_id"]
             referencedRelation: "ledger_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "v_ledger_accounts"
             referencedColumns: ["id"]
           },
           {
@@ -2894,6 +3005,7 @@ export type Database = {
           payment_date: string
           payment_no: string | null
           reference: string | null
+          reversal_of: string | null
           staff_id: string | null
           supplier_id: string | null
         }
@@ -2910,6 +3022,7 @@ export type Database = {
           payment_date?: string
           payment_no?: string | null
           reference?: string | null
+          reversal_of?: string | null
           staff_id?: string | null
           supplier_id?: string | null
         }
@@ -2926,6 +3039,7 @@ export type Database = {
           payment_date?: string
           payment_no?: string | null
           reference?: string | null
+          reversal_of?: string | null
           staff_id?: string | null
           supplier_id?: string | null
         }
@@ -2941,6 +3055,12 @@ export type Database = {
             columns: ["account_id"]
             referencedRelation: "v_account_balances"
             referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "payments_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "payments_created_by_fkey"
@@ -2977,6 +3097,18 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "payments_reversal_of_fkey"
+            columns: ["reversal_of"]
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_reversal_of_fkey"
+            columns: ["reversal_of"]
+            referencedRelation: "v_payment_list"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "payments_staff_id_fkey"
@@ -3948,9 +4080,11 @@ export type Database = {
       }
       receipt_modes: {
         Row: {
+          account_id: string | null
           code: string
           id: string
           is_active: boolean
+          is_cheque: boolean
           is_collection: boolean
           name: string
           needs_reference: boolean
@@ -3958,9 +4092,11 @@ export type Database = {
           sort_order: number
         }
         Insert: {
+          account_id?: string | null
           code: string
           id?: string
           is_active?: boolean
+          is_cheque?: boolean
           is_collection?: boolean
           name: string
           needs_reference?: boolean
@@ -3968,9 +4104,11 @@ export type Database = {
           sort_order?: number
         }
         Update: {
+          account_id?: string | null
           code?: string
           id?: string
           is_active?: boolean
+          is_cheque?: boolean
           is_collection?: boolean
           name?: string
           needs_reference?: boolean
@@ -3978,6 +4116,24 @@ export type Database = {
           sort_order?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "receipt_modes_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_modes_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "receipt_modes_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "receipt_modes_org_id_fkey"
             columns: ["org_id"]
@@ -4003,6 +4159,7 @@ export type Database = {
           org_id: string
           receipt_date: string
           receipt_no: string | null
+          reversal_of: string | null
           total_amount: number
           trip_id: string | null
           vehicle_id: string | null
@@ -4017,6 +4174,7 @@ export type Database = {
           org_id: string
           receipt_date?: string
           receipt_no?: string | null
+          reversal_of?: string | null
           total_amount?: number
           trip_id?: string | null
           vehicle_id?: string | null
@@ -4031,6 +4189,7 @@ export type Database = {
           org_id?: string
           receipt_date?: string
           receipt_no?: string | null
+          reversal_of?: string | null
           total_amount?: number
           trip_id?: string | null
           vehicle_id?: string | null
@@ -4047,6 +4206,12 @@ export type Database = {
             columns: ["account_id"]
             referencedRelation: "v_account_balances"
             referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "receipts_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "receipts_created_by_fkey"
@@ -4089,6 +4254,18 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "receipts_reversal_of_fkey"
+            columns: ["reversal_of"]
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_reversal_of_fkey"
+            columns: ["reversal_of"]
+            referencedRelation: "v_receipt_list"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "receipts_trip_id_fkey"
@@ -5183,6 +5360,84 @@ export type Database = {
           },
         ]
       }
+      v_account_transfers: {
+        Row: {
+          amount: number | null
+          created_by: string | null
+          created_by_name: string | null
+          from_account: string | null
+          from_name: string | null
+          id: string | null
+          narration: string | null
+          org_id: string | null
+          to_account: string | null
+          to_name: string | null
+          transfer_no: string | null
+          txn_date: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_transfers_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transfers_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "account_transfers_from_account_fkey"
+            columns: ["from_account"]
+            referencedRelation: "cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transfers_from_account_fkey"
+            columns: ["from_account"]
+            referencedRelation: "v_account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "account_transfers_from_account_fkey"
+            columns: ["from_account"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transfers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transfers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "account_transfers_to_account_fkey"
+            columns: ["to_account"]
+            referencedRelation: "cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transfers_to_account_fkey"
+            columns: ["to_account"]
+            referencedRelation: "v_account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "account_transfers_to_account_fkey"
+            columns: ["to_account"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_batch_ingredients: {
         Row: {
           amount: number | null
@@ -5441,6 +5696,166 @@ export type Database = {
             foreignKeyName: "broadcasts_template_id_fkey"
             columns: ["template_id"]
             referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_cash_bank_accounts: {
+        Row: {
+          account_last4: string | null
+          as_on: string | null
+          balance: number | null
+          bank_name: string | null
+          cheques_pending: number | null
+          id: string | null
+          ifsc: string | null
+          is_active: boolean | null
+          kind: Database["public"]["Enums"]["account_kind"] | null
+          last_txn_date: string | null
+          name: string | null
+          opening_balance: number | null
+          org_id: string | null
+        }
+        Insert: {
+          account_last4?: string | null
+          as_on?: string | null
+          balance?: never
+          bank_name?: string | null
+          cheques_pending?: never
+          id?: string | null
+          ifsc?: string | null
+          is_active?: boolean | null
+          kind?: Database["public"]["Enums"]["account_kind"] | null
+          last_txn_date?: never
+          name?: string | null
+          opening_balance?: number | null
+          org_id?: string | null
+        }
+        Update: {
+          account_last4?: string | null
+          as_on?: string | null
+          balance?: never
+          bank_name?: string | null
+          cheques_pending?: never
+          id?: string | null
+          ifsc?: string | null
+          is_active?: boolean | null
+          kind?: Database["public"]["Enums"]["account_kind"] | null
+          last_txn_date?: never
+          name?: string | null
+          opening_balance?: number | null
+          org_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_bank_accounts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_bank_accounts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      v_cheques: {
+        Row: {
+          account_id: string | null
+          account_name: string | null
+          amount: number | null
+          bank_name: string | null
+          bounced_on: string | null
+          cheque_date: string | null
+          cheque_no: string | null
+          cleared_on: string | null
+          created_at: string | null
+          customer_id: string | null
+          days_to_date: number | null
+          deposited_on: string | null
+          direction: Database["public"]["Enums"]["cheque_direction"] | null
+          doc_no: string | null
+          id: string | null
+          is_due: boolean | null
+          mode_code: string | null
+          mode_id: string | null
+          notes: string | null
+          org_id: string | null
+          party_kind: string | null
+          party_name: string | null
+          party_town: string | null
+          ref_id: string | null
+          ref_table: string | null
+          state: Database["public"]["Enums"]["cheque_state"] | null
+          supplier_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cheques_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "cheques_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_outstanding"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "cheques_mode_id_fkey"
+            columns: ["mode_id"]
+            referencedRelation: "receipt_modes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "cheques_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
             referencedColumns: ["id"]
           },
         ]
@@ -6002,6 +6417,256 @@ export type Database = {
             foreignKeyName: "items_section_id_fkey"
             columns: ["section_id"]
             referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_journal_entries: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
+          doc_no: string | null
+          entry_date: string | null
+          entry_no: string | null
+          id: string | null
+          is_manual: boolean | null
+          is_reversed: boolean | null
+          line_count: number | null
+          narration: string | null
+          org_id: string | null
+          ref_id: string | null
+          ref_table: string | null
+          reversed_by: string | null
+          reverses_entry_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "journal_entries_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reversed_by_fkey"
+            columns: ["reversed_by"]
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reversed_by_fkey"
+            columns: ["reversed_by"]
+            referencedRelation: "v_journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reverses_entry_id_fkey"
+            columns: ["reverses_entry_id"]
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reverses_entry_id_fkey"
+            columns: ["reverses_entry_id"]
+            referencedRelation: "v_journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_journal_lines: {
+        Row: {
+          account_code: string | null
+          account_id: string | null
+          account_name: string | null
+          account_type: Database["public"]["Enums"]["account_type"] | null
+          cash_account_id: string | null
+          cash_account_name: string | null
+          credit: number | null
+          debit: number | null
+          entry_date: string | null
+          entry_id: string | null
+          id: number | null
+          narration: string | null
+          org_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "journal_lines_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "ledger_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_ledger_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_trial_balance"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "journal_lines_cash_account_id_fkey"
+            columns: ["cash_account_id"]
+            referencedRelation: "cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_cash_account_id_fkey"
+            columns: ["cash_account_id"]
+            referencedRelation: "v_account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "journal_lines_cash_account_id_fkey"
+            columns: ["cash_account_id"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_entry_id_fkey"
+            columns: ["entry_id"]
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_entry_id_fkey"
+            columns: ["entry_id"]
+            referencedRelation: "v_journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_ledger_accounts: {
+        Row: {
+          account_id: string | null
+          balance: number | null
+          code: string | null
+          customer_id: string | null
+          id: string | null
+          is_active: boolean | null
+          is_system: boolean | null
+          line_count: number | null
+          name: string | null
+          org_id: string | null
+          parent_id: string | null
+          parent_name: string | null
+          supplier_id: string | null
+          total_credit: number | null
+          total_debit: number | null
+          type: Database["public"]["Enums"]["account_type"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_accounts_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_account_balances"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_account_id_fkey"
+            columns: ["account_id"]
+            referencedRelation: "v_cash_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_outstanding"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "ledger_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "v_ledger_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "v_trial_balance"
+            referencedColumns: ["account_id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_accounts_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
             referencedColumns: ["id"]
           },
         ]
@@ -7246,9 +7911,42 @@ export type Database = {
       }
     }
     Functions: {
+      account_book: {
+        Args: { p_account: string; p_from?: string; p_to?: string }
+        Returns: {
+          balance: number
+          doc: string
+          doc_id: string
+          doc_no: string
+          money_in: number
+          money_out: number
+          narration: string
+          party: string
+          txn_date: string
+          txn_id: number
+        }[]
+      }
       acct: { Args: { p_code: string; p_org: string }; Returns: string }
+      balance_sheet: {
+        Args: { p_as_on?: string; p_org: string }
+        Returns: {
+          amount: number
+          code: string
+          name: string
+          section: string
+        }[]
+      }
       bootstrap_org: {
         Args: { p_full_name: string; p_org_name: string; p_phone?: string }
+        Returns: string
+      }
+      bounce_cheque: {
+        Args: {
+          p_cancel?: boolean
+          p_charges?: number
+          p_cheque: string
+          p_date?: string
+        }
         Returns: string
       }
       breakage_credit: {
@@ -7270,6 +7968,15 @@ export type Database = {
       can_edit: { Args: { p_module: string }; Returns: boolean }
       can_view: { Args: { p_module: string }; Returns: boolean }
       cancel_production_batch: { Args: { p_batch: string }; Returns: undefined }
+      cash_flow: {
+        Args: { p_from: string; p_org: string; p_to: string }
+        Returns: {
+          head: string
+          inflow: number
+          outflow: number
+          sort: number
+        }[]
+      }
       claim_queued_messages: {
         Args: { p_limit?: number; p_org: string }
         Returns: {
@@ -7302,6 +8009,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      clear_cheque: {
+        Args: { p_cheque: string; p_date?: string }
+        Returns: undefined
       }
       close_production_batch: { Args: { p_batch: string }; Returns: undefined }
       closing_stock_report: {
@@ -7377,11 +8088,29 @@ export type Database = {
         Args: { p_date?: string; p_org: string }
         Returns: Json
       }
+      day_book: {
+        Args: { p_date: string; p_org: string }
+        Returns: {
+          amount: number
+          at: string
+          direction: string
+          doc: string
+          doc_id: string
+          doc_no: string
+          narration: string
+          party: string
+        }[]
+      }
       dearmor: { Args: { "": string }; Returns: string }
+      deposit_cheque: {
+        Args: { p_account: string; p_cheque: string; p_date?: string }
+        Returns: undefined
+      }
       effective_unit_rate: {
         Args: { p_customer: string; p_date?: string; p_item: string }
         Returns: number
       }
+      ensure_default_accounts: { Args: { p_org: string }; Returns: undefined }
       ensure_system_accounts: { Args: { p_org: string }; Returns: undefined }
       gen_random_uuid: { Args: Record<PropertyKey, never>; Returns: string }
       gen_salt: { Args: { "": string }; Returns: string }
@@ -7424,6 +8153,33 @@ export type Database = {
       }
       invoice_message_vars: { Args: { p_invoice: string }; Returns: Json }
       is_service_call: { Args: Record<PropertyKey, never>; Returns: boolean }
+      item_profit: {
+        Args: { p_from: string; p_group?: string; p_org: string; p_to: string }
+        Returns: {
+          boxes: number
+          cost_value: number
+          gross_profit: number
+          group_key: string
+          group_label: string
+          margin_pct: number
+          qty: number
+          sale_value: number
+        }[]
+      }
+      ledger_account_book: {
+        Args: { p_account: string; p_from?: string; p_to?: string }
+        Returns: {
+          balance: number
+          credit: number
+          debit: number
+          doc_no: string
+          entry_date: string
+          entry_id: string
+          entry_no: string
+          line_id: number
+          narration: string
+        }[]
+      }
       mark_message_status: {
         Args: {
           p_at?: string
@@ -7433,6 +8189,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      money_account: {
+        Args: {
+          p_explicit?: string
+          p_mode_account: string
+          p_mode_code: string
+          p_org: string
+        }
+        Returns: string
+      }
+      money_code: { Args: { p_account: string }; Returns: string }
       my_org_id: { Args: Record<PropertyKey, never>; Returns: string }
       my_role: {
         Args: Record<PropertyKey, never>
@@ -7510,6 +8276,18 @@ export type Database = {
         }
         Returns: string
       }
+      post_money: {
+        Args: {
+          p_account: string
+          p_amount: number
+          p_date: string
+          p_narration: string
+          p_org: string
+          p_ref_id: string
+          p_ref_table: string
+        }
+        Returns: number
+      }
       post_purchase_stock: { Args: { p_purchase: string }; Returns: undefined }
       post_return_stock: { Args: { p_return: string }; Returns: undefined }
       production_variance: {
@@ -7529,6 +8307,15 @@ export type Database = {
           labour_cost: number
           plates: number
           total_cost: number
+        }[]
+      }
+      profit_and_loss: {
+        Args: { p_from: string; p_org: string; p_to: string }
+        Returns: {
+          amount: number
+          code: string
+          name: string
+          section: string
         }[]
       }
       qty_to_pieces: {
@@ -7601,6 +8388,10 @@ export type Database = {
         }
         Returns: number
       }
+      reverse_manual_journal: {
+        Args: { p_date?: string; p_entry: string }
+        Returns: string
+      }
       rotate_webhook_secret: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -7635,6 +8426,7 @@ export type Database = {
         }[]
       }
       save_invoice: { Args: { p_header: Json; p_lines: Json }; Returns: string }
+      save_manual_journal: { Args: { p: Json }; Returns: string }
       save_messaging_settings: { Args: { p: Json }; Returns: Json }
       save_payment: { Args: { p: Json }; Returns: string }
       save_purchase: {
@@ -7653,6 +8445,7 @@ export type Database = {
         Args: { p_header: Json; p_lines: Json }
         Returns: string
       }
+      save_transfer: { Args: { p: Json }; Returns: string }
       seed_role_permissions: { Args: { p_org: string }; Returns: undefined }
       send_custom_message: {
         Args: { p_body: string; p_customer: string; p_media_url?: string }
@@ -7711,6 +8504,19 @@ export type Database = {
       to_base_qty: {
         Args: { p_item: string; p_qty: number; p_uom: string }
         Returns: number
+      }
+      trial_balance: {
+        Args: { p_from?: string; p_org: string; p_to?: string }
+        Returns: {
+          account_id: string
+          closing: number
+          code: string
+          credit: number
+          debit: number
+          name: string
+          opening: number
+          type: Database["public"]["Enums"]["account_type"]
+        }[]
       }
       trial_balance_check: {
         Args: { p_from?: string; p_org: string; p_to?: string }

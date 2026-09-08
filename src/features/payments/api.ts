@@ -40,6 +40,8 @@ export interface PaymentInput {
   amount: number;
   reference: string | null;
   narration: string | null;
+  cheque_date?: string | null;
+  bank_name?: string | null;
 }
 
 export async function savePayment(input: PaymentInput): Promise<string> {

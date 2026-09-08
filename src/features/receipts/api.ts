@@ -51,7 +51,10 @@ export interface ReceiptHeaderInput {
 export interface ReceiptLineInput {
   mode_id: string;
   amount: number;
+  /** Cheque number for a cheque mode, UTR / slip otherwise. */
   reference: string | null;
+  cheque_date?: string | null;
+  bank_name?: string | null;
 }
 export interface AllocationInput {
   invoice_id: string;

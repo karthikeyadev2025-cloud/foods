@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { listCashBankAccounts } from '@/features/accounts/api';
 import { usePermissions } from '@/features/auth/hooks';
 import {
   expenseHeadsApi,
@@ -163,30 +164,34 @@ export function PackTypesPanel({ compact }: { compact?: boolean }) {
 // Receipt modes
 // ------------------------------------------------------------------
 const MODE_STANDARD: ReceiptModeInput[] = [
-  { code: 'CASH', name: 'Cash', is_collection: true, needs_reference: false, sort_order: 1, is_active: true },
-  { code: 'BANK', name: 'Bank transfer', is_collection: true, needs_reference: true, sort_order: 2, is_active: true },
-  { code: 'UPI', name: 'UPI', is_collection: true, needs_reference: true, sort_order: 3, is_active: true },
-  { code: 'CHEQUE', name: 'Cheque', is_collection: true, needs_reference: true, sort_order: 4, is_active: true },
+  { code: 'CASH', name: 'Cash', is_collection: true, needs_reference: false, is_cheque: false, account_id: '', sort_order: 1, is_active: true },
+  { code: 'BANK', name: 'Bank transfer', is_collection: true, needs_reference: true, is_cheque: false, account_id: '', sort_order: 2, is_active: true },
+  { code: 'UPI', name: 'UPI', is_collection: true, needs_reference: true, is_cheque: false, account_id: '', sort_order: 3, is_active: true },
+  { code: 'CHEQUE', name: 'Cheque', is_collection: true, needs_reference: true, is_cheque: true, account_id: '', sort_order: 4, is_active: true },
   // TODO(client): BSR meaning unknown — collection mode or deduction head? Kept as collection until confirmed.
-  { code: 'BSR', name: 'BSR', is_collection: true, needs_reference: true, sort_order: 5, is_active: true },
-  { code: 'BRK', name: 'Breakage', is_collection: false, needs_reference: false, sort_order: 6, is_active: true },
-  { code: 'ADJ', name: 'Adjustment', is_collection: false, needs_reference: false, sort_order: 7, is_active: true },
+  { code: 'BSR', name: 'BSR', is_collection: true, needs_reference: true, is_cheque: false, account_id: '', sort_order: 5, is_active: true },
+  { code: 'BRK', name: 'Breakage', is_collection: false, needs_reference: false, is_cheque: false, account_id: '', sort_order: 6, is_active: true },
+  { code: 'ADJ', name: 'Adjustment', is_collection: false, needs_reference: false, is_cheque: false, account_id: '', sort_order: 7, is_active: true },
 ];
 
 export function ReceiptModesPanel({ compact }: { compact?: boolean }) {
   const rights = useSetupRights();
+  const accounts = useQuery({ queryKey: ['accounts', 'cash_bank'], queryFn: listCashBankAccounts });
+  const accountOptions = [{ value: '', label: 'By kind (CASH → cash, others → bank)' }, ...(accounts.data ?? []).filter((a) => a.is_active).map((a) => ({ value: a.id ?? '', label: `${a.name} (${a.kind})` }))];
   const config: MasterConfig<Row<'receipt_modes'>, ReceiptModeInput> = {
     key: 'receipt_modes',
     title: 'Receipt modes',
     singular: 'Receipt mode',
     exportName: 'receipt-modes',
     description:
-      'Each active mode becomes a column on the receipts register. "Collection" modes are money in; deduction heads reduce the bill instead. "Needs reference" asks for a cheque / UTR / slip number.',
+      'Each active mode becomes a column on the receipts register. "Collection" modes are money in; deduction heads reduce the bill instead. "Needs reference" asks for a cheque / UTR / slip number. A cheque mode books the cheque (Accounts → Cheques) instead of the bank until it clears.',
     columns: [
       { key: 'code', label: 'Code' },
       { key: 'name', label: 'Name' },
       { key: 'is_collection', label: 'Collection' },
       { key: 'needs_reference', label: 'Needs ref.' },
+      { key: 'is_cheque', label: 'Cheque' },
+      { key: 'account_id', label: 'Lands in', render: (r) => accounts.data?.find((a) => a.id === r.account_id)?.name ?? <span className="text-muted-foreground">by kind</span> },
       { key: 'sort_order', label: 'Order', align: 'right' },
       activeCol,
     ],
@@ -195,23 +200,27 @@ export function ReceiptModesPanel({ compact }: { compact?: boolean }) {
       { name: 'name', label: 'Name', half: true },
       { name: 'is_collection', label: 'Collection (money in)', type: 'checkbox', half: true },
       { name: 'needs_reference', label: 'Needs a reference number', type: 'checkbox', half: true },
+      { name: 'is_cheque', label: 'This is a cheque mode', type: 'checkbox', half: true },
+      { name: 'account_id', label: 'Money lands in', type: 'select', options: accountOptions, half: true },
       { name: 'sort_order', label: 'Sort order', type: 'number', half: true },
       { name: 'is_active', label: 'Active', type: 'checkbox', half: true },
     ],
     schema: receiptModeSchema,
-    defaults: { code: '', name: '', is_collection: true, needs_reference: false, sort_order: 0, is_active: true },
+    defaults: { code: '', name: '', is_collection: true, needs_reference: false, is_cheque: false, account_id: '', sort_order: 0, is_active: true },
     toForm: (r) => ({
       code: r.code,
       name: r.name,
       is_collection: r.is_collection,
       needs_reference: r.needs_reference,
+      is_cheque: r.is_cheque,
+      account_id: r.account_id ?? '',
       sort_order: r.sort_order,
       is_active: r.is_active,
     }),
     rowLabel: (r) => r.code,
     list: receiptModesApi.list,
-    create: (v) => receiptModesApi.create({ ...v, code: v.code.toUpperCase() }),
-    update: (id, v) => receiptModesApi.update(id, { ...v, code: v.code.toUpperCase() }),
+    create: (v) => receiptModesApi.create({ ...v, code: v.code.toUpperCase(), account_id: v.account_id || null }),
+    update: (id, v) => receiptModesApi.update(id, { ...v, code: v.code.toUpperCase(), account_id: v.account_id || null }),
     remove: receiptModesApi.remove,
     suggestions: {
       label: 'Add standard modes',

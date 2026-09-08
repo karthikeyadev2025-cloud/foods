@@ -1,5 +1,6 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 import { AppShell } from '@/app/layout/AppShell';
+import { AccountsPage } from '@/features/accounts/routes/AccountsPage';
 import { NotFound } from '@/app/routes/NotFound';
 import { RequireAuth } from '@/features/auth/components/RequireAuth';
 import { RequireModule } from '@/features/auth/components/RequireModule';
@@ -81,7 +82,11 @@ export const router = createBrowserRouter([
             { path: 'receipts/new', element: <ReceiptNewPage /> },
             { path: 'receipts/:id', element: <ReceiptViewPage /> },
           ]),
-          guarded('payments', [{ path: 'payments', element: <PaymentsPage /> }]),
+          guarded('payments', [
+            { path: 'payments', element: <PaymentsPage /> },
+            { path: 'accounts', element: <AccountsPage /> },
+            { path: 'accounts/:tab', element: <AccountsPage /> },
+          ]),
           guarded('stock', [
             { path: 'stock', element: <StockPage /> },
             { path: 'stock/movements', element: <StockPage tab="movements" /> },

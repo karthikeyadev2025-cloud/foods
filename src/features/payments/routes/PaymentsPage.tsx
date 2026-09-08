@@ -39,6 +39,8 @@ const paymentSchema = z.object({
   amount: z.coerce.number().positive('Amount must be greater than zero'),
   reference: z.string().trim().max(60),
   narration: z.string().trim().max(200),
+  cheque_date: z.string(),
+  bank_name: z.string().trim().max(80),
 });
 type PaymentForm = z.infer<typeof paymentSchema>;
 
@@ -110,11 +112,13 @@ function PaymentDialog({ onClose }: { onClose: () => void }) {
   const staff = useQuery({ queryKey: ['setup', 'staff'], queryFn: listStaff });
   const heads = useQuery({ queryKey: ['setup', 'expense_heads'], queryFn: expenseHeadsApi.list });
   const modes = useQuery({ queryKey: ['setup', 'receipt_modes'], queryFn: receiptModesApi.list });
-  const form = useForm<PaymentForm>({ resolver: zodResolver(paymentSchema), defaultValues: { kind: 'expense', party_id: '', payment_date: toISODate(), mode_id: '', amount: 0, reference: '', narration: '' } });
+  const form = useForm<PaymentForm>({ resolver: zodResolver(paymentSchema), defaultValues: { kind: 'expense', party_id: '', payment_date: toISODate(), mode_id: '', amount: 0, reference: '', narration: '', cheque_date: '', bank_name: '' } });
   const e = form.formState.errors;
   const kind = form.watch('kind');
   const modeId = form.watch('mode_id');
-  const needsRef = modes.data?.find((m) => m.id === modeId)?.needs_reference ?? false;
+  const mode = modes.data?.find((m) => m.id === modeId);
+  const needsRef = mode?.needs_reference ?? false;
+  const isCheque = mode?.is_cheque ?? false;
 
   const save = useMutation({
     mutationFn: (v: PaymentForm) =>
@@ -127,6 +131,8 @@ function PaymentDialog({ onClose }: { onClose: () => void }) {
         amount: v.amount,
         reference: v.reference || null,
         narration: v.narration || null,
+        cheque_date: v.cheque_date || null,
+        bank_name: v.bank_name || null,
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['payments'] });
@@ -165,7 +171,13 @@ function PaymentDialog({ onClose }: { onClose: () => void }) {
             </NativeSelect>
           </Field>
           <Field label="Amount (₹)" htmlFor="pm-amount" error={e.amount?.message}><Input id="pm-amount" type="number" step="0.01" className="num" autoFocus {...form.register('amount')} /></Field>
-          <Field label={needsRef ? 'Reference (required)' : 'Reference'} htmlFor="pm-ref" error={e.reference?.message}><Input id="pm-ref" {...form.register('reference')} /></Field>
+          <Field label={isCheque ? 'Cheque no. (required)' : needsRef ? 'Reference (required)' : 'Reference'} htmlFor="pm-ref" error={e.reference?.message}><Input id="pm-ref" {...form.register('reference')} /></Field>
+          {isCheque && (
+            <>
+              <Field label="Cheque date" htmlFor="pm-chq-date"><Input id="pm-chq-date" type="date" {...form.register('cheque_date')} /></Field>
+              <Field label="Bank" htmlFor="pm-bank" help="Marked cleared later under Accounts → Cheques."><Input id="pm-bank" {...form.register('bank_name')} /></Field>
+            </>
+          )}
           <Field label="Narration" htmlFor="pm-narr" error={e.narration?.message} className="col-span-2"><Input id="pm-narr" {...form.register('narration')} /></Field>
           <DialogFooter className="col-span-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>

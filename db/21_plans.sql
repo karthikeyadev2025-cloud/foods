@@ -495,7 +495,11 @@ declare v_key text; raw text;
 begin
   if not is_service_call() then raise exception 'Licences are issued by the vendor only'; end if;
   if p_plan not in ('starter', 'growth', 'full') then raise exception 'Plan must be starter, growth or full'; end if;
-  raw := upper(encode(gen_random_bytes(10), 'hex'));   -- 20 hex chars
+  -- 20 hex characters of randomness. gen_random_uuid() is core Postgres and is
+  -- always visible; gen_random_bytes() is pgcrypto, which Supabase installs into
+  -- the extensions schema, and this function pins search_path to public — so the
+  -- pgcrypto call resolved on a plain Postgres and failed on the real one.
+  raw := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 20));
   v_key := 'JF-' || substr(raw, 1, 5) || '-' || substr(raw, 6, 5) || '-' || substr(raw, 11, 5) || '-' || substr(raw, 16, 5);
   update orgs set license_key = license_hash(v_key), license_valid_till = p_valid_till,
                   licensed_to = coalesce(p_licensed_to, licensed_to), license_max_devices = coalesce(p_max_devices, license_max_devices),

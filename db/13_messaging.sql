@@ -16,7 +16,9 @@ create table if not exists messaging_settings (
   org_id           uuid primary key references orgs(id) on delete cascade,
   api_url          text not null default 'https://heynikki.in',
   api_key          text,
-  webhook_secret   text not null default encode(gen_random_bytes(24), 'hex'),
+  -- 48 hex characters, from core gen_random_uuid() rather than pgcrypto's
+  -- gen_random_bytes() — see rotate_webhook_secret() below for why.
+  webhook_secret   text not null default substr(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''), 1, 48),
   sender_number    text,
   default_language text not null default 'te',
   quiet_from       time not null default '21:00',
@@ -25,6 +27,10 @@ create table if not exists messaging_settings (
   is_enabled       boolean not null default false,
   updated_at       timestamptz not null default now()
 );
+-- `create table if not exists` leaves an existing table's defaults alone, so state it
+-- again here: a database built before the pgcrypto fix still carries the old expression.
+alter table messaging_settings alter column webhook_secret
+  set default substr(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''), 1, 48);
 alter table messaging_settings enable row level security;
 create unique index if not exists messaging_settings_secret_idx on messaging_settings(webhook_secret);
 
@@ -77,7 +83,11 @@ end $$;
 
 create or replace function rotate_webhook_secret() returns text
 language plpgsql security definer set search_path = public as $$
-declare v_secret text := encode(gen_random_bytes(24), 'hex');
+-- gen_random_bytes() is pgcrypto. Supabase installs pgcrypto into the extensions
+-- schema, and this function pins search_path to public, so the call resolves on a
+-- plain Postgres and fails on Supabase with "function does not exist".
+-- gen_random_uuid() is core Postgres and needs no extension at all.
+declare v_secret text := substr(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''), 1, 48);
 begin
   if not can_edit('messaging') then raise exception 'Only a role with Messaging edit rights can rotate the secret'; end if;
   update messaging_settings set webhook_secret = v_secret, updated_at = now() where org_id = my_org_id();
@@ -638,11 +648,19 @@ end $$;
  * (pg_trgm). Quantity is converted to boxes when the UOM is the item's unit. Anything
  * not matched by code, or below 0.7 confidence, is low_confidence for the screen to flag.
  */
+/**
+ * Matching what the customer said to real items. The fuzzy name match uses
+ * similarity(), which belongs to pg_trgm — and Supabase keeps its extensions in a
+ * schema called `extensions`, not in public. So the search_path is pinned to both:
+ * a schema that does not exist is ignored, which makes this work on Supabase and on
+ * a plain Postgres alike. Without it the match works from the SQL Editor, whose
+ * session happens to see `extensions`, and fails from the app, whose role may not.
+ */
 create or replace function inbound_order_lines(p_order uuid)
 returns table (idx integer, raw_code text, raw_name text, qty numeric, uom text, confidence numeric,
                item_id uuid, item_code text, item_name text, units_per_box integer, base_uom text,
                boxes numeric, rate numeric, match text, low_confidence boolean)
-language sql stable as $$
+language sql stable set search_path = public, extensions as $$
   with o as (select * from inbound_orders where id = p_order),
   raw as (
     select x.ord::int as idx, x.e->>'item_code' as raw_code, coalesce(x.e->>'item_name', x.e->>'name') as raw_name,

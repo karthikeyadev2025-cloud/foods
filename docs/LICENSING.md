@@ -28,18 +28,26 @@ Each includes everything in the one before it.
 **Starter** is a shop that bills and collects. **Growth** is the whole operation on paper.
 **Full** is the operation running itself.
 
-## Suggested price ladder
+## Price ladder
 
-The project is ₹3,80,000. A split that matches how much of the build each plan carries:
+The project is ₹3,80,000, taken in three steps.
 
-| Plan | This step | Paid to date |
-| --- | ---: | ---: |
-| Starter | ₹1,10,000 | ₹1,10,000 |
-| Growth | ₹1,30,000 | ₹2,40,000 |
-| Full | ₹1,40,000 | ₹3,80,000 |
+| Plan | This step | Paid to date | Share |
+| --- | ---: | ---: | ---: |
+| Starter | ₹50,000 | ₹50,000 | 13% |
+| Growth | ₹1,50,000 | ₹2,00,000 | 39% |
+| Full | ₹1,80,000 | ₹3,80,000 | 47% |
 
-These are yours to change — the plans are what the code enforces, the prices are not in
-the code at all.
+Starter is deliberately a low way in: it gets the client billing on the system, off their
+old book, and using it every day. Once the counter runs on it, Growth is what makes the
+rest of the business legible — buying, paying, accounts, production, vans — and Full is
+the part that saves labour rather than recording it: WhatsApp and voice, batches, the
+owner tools, the driver's phone, the desktop app. The two upgrades carry 86% of the price
+because they carry most of the build.
+
+These figures are not in the code. The plans are what the app enforces; the prices are
+whatever you invoice. Renewal after `license_valid_till` — an annual maintenance charge,
+say — is a separate commercial matter and is not part of the ₹3,80,000 build price.
 
 ## Issuing a key
 

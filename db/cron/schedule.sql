@@ -32,4 +32,12 @@ select cron.schedule('nikki-send', '*/5 * * * *', $$select call_edge_function('n
 -- (Setup → Backup: on/off, daily or weekly, time, copies to keep). Checked hourly at :05.
 select cron.schedule('backup-org', '5 * * * *', $$select call_edge_function('backup-org')$$);
 
--- To stop: select cron.unschedule('run-reminders'); select cron.unschedule('nikki-send'); select cron.unschedule('backup-org');
+-- Punchly has no webhooks, so the punches are fetched rather than delivered. Twice an
+-- hour is well inside the key's 1000-requests-an-hour limit (two calls per organisation
+-- per run) and keeps the register close enough to live. The first run after a backfill
+-- date is entered walks the whole history in yearly chunks, moving its marker as it goes;
+-- every run after that reads today and yesterday, because a phone that was out of signal
+-- delivers this morning's punch tonight.
+select cron.schedule('punchly-sync', '12,42 * * * *', $$select call_edge_function('punchly-sync')$$);
+
+-- To stop: select cron.unschedule('run-reminders'); select cron.unschedule('nikki-send'); select cron.unschedule('backup-org'); select cron.unschedule('punchly-sync');

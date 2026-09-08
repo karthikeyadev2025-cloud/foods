@@ -33,7 +33,7 @@ begin
   -- ===== a fresh organisation is Full for its trial, so the client sees everything =====
   j := license_status();
   assert j->>'plan' = 'full' and j->>'plan_name' = 'Full', format('trial plan %s', j);
-  assert jsonb_array_length(j->'catalogue') = 13, format('catalogue %s', jsonb_array_length(j->'catalogue'));
+  assert jsonb_array_length(j->'catalogue') = 14, format('catalogue %s', jsonb_array_length(j->'catalogue'));
   assert has_feature('messaging') and has_feature('owner') and has_feature('core');
   -- work made while everything was open
   v_inv := save_invoice(jsonb_build_object('customer_id', v_cust, 'invoice_date', current_date, 'location_id', v_loc), jsonb_build_array(jsonb_build_object('item_id', v_item, 'boxes', 2, 'rate', 42)));

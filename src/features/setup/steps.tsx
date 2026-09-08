@@ -6,6 +6,7 @@ import { ImportPanel } from './components/ImportPanel';
 import { IncentivesPanel } from './components/IncentivesPanel';
 import { LicencePanel } from './components/LicencePanel';
 import { PrintDesigner } from './components/PrintDesigner';
+import { PunchlyPanel } from './components/PunchlyPanel';
 import { OrgProfileForm } from './components/OrgProfileForm';
 import { PermissionsMatrix } from './components/PermissionsMatrix';
 import { UsersPanel } from './components/UsersPanel';
@@ -121,6 +122,13 @@ export const SETUP_STEPS: SetupStep[] = [
     label: 'Audit trail',
     why: 'Who changed what, and when. Nothing here can be edited or deleted.',
     Component: AuditPanel,
+  },
+  {
+    slug: 'attendance',
+    feature: 'attendance',
+    label: 'Attendance',
+    why: 'The Punchly key, what counts as a full day, whether wages fill themselves in — and which Punchly person is which staff member.',
+    Component: PunchlyPanel,
   },
   {
     slug: 'incentives',

@@ -10,7 +10,8 @@ Accounting · stock · production · vehicles · staff · customer messaging.
 3. **`docs/PROJECT_PLAN.md`** — full functional spec, module by module.
 4. **`docs/reference/`** — the client's original files. Check work against these.
 5. **`docs/DEPLOY.md`** — put it on the web (Vercel) · **`docs/DESKTOP.md`** — the Windows installer, offline ·
-   **`docs/LICENSING.md`** — the three keys, what each unlocks, and how to issue one.
+   **`docs/LICENSING.md`** — the three keys, what each unlocks, and how to issue one ·
+   **`docs/INTEGRATIONS.md`** — the two outside services: Hey Nikki and Punchly.
 
 ## Setup
 
@@ -102,6 +103,8 @@ src/
 
 | T12b Voice calls | ✅ `db/20_voice.sql`. Calls ride the same queue as WhatsApp (`message_log`, channel `ivr_call`) with the same switch, quiet hours and daily cap, plus their own switch, caller number, voice, retry count and delay (Messaging → Settings). **Scripts**: a template with channel "Voice call" is read out by Hey Nikki's Telugu / English voice; a call only ever picks a call script, a text never does. **Reminder calls**: a reminder rule on channel "Voice call" rings instead of texting; the customer presses 1 (will pay this week → a promise date on the customer that holds every reminder until it passes), 2 (already paid) or 3 (call me back); unanswered or busy calls retry after the set delay, then fail; duration, keys, transcript and recording show on the Log. **Order-taking calls**: Broadcasts → "Call for orders" rings a route / town / recent buyers with the order script (it mentions their last bill's items); what the bot hears comes back through `nikki-inbound` with our call id, lands in the Orders queue linked to the call, and is confirmed by a person as always. Edge functions `nikki-send`, `nikki-status` and `nikki-inbound` speak the voice shape in `supabase/functions/_shared/nikki.ts`, which is the ERP's best guess until Hey Nikki's voice docs arrive — only that file and the two webhooks change then. `db/tests/17_voice.sql`. |
 
+| T13 Attendance & Punchly | ✅ `db/22_attendance.sql`. **The register** (Attendance): one row per person per day — first check-in, last check-out, hours, overtime, status and the day's wage — with a "days to check" filter for anything odd, and a **Days & wages** sheet totalling present / half / absent / leave, hours, overtime and what each person is owed for the period (printable and to Excel). Any day can be typed or corrected by hand, and a row touched by hand is never overwritten by a later sync. **Punchly** (Setup → Attendance): the phone app the staff punch on, read every half hour by the `punchly-sync` edge function — Punchly has no webhooks, so it is polled. Punches fold into days in `upsert_punchly_attendance()`, grouped on Punchly's IST `attendance_date` (grouping on the UTC timestamp would put a night shift on the wrong day); the length of a full day is settable, shorter days become half days, and anything under the flag hour, missing a check-out or punched outside the geofence is marked to check. The wage follows `staff.daily_wage` — full day, half for half — unless that is switched off. Yesterday is re-read on every run, because a phone out of signal delivers this morning's punch tonight; entering a history date backfills the past in yearly chunks behind a marker that resumes where a failed run stopped. People are tied on Punchly's `user_id` (its `staff_id` can be renamed by whoever runs Punchly), linked automatically on one unambiguous name and by hand otherwise — an unmatched person is skipped, and matching them later brings their whole history in on the next read. The key is a server-side secret: `punchly_settings` has no policy for signed-in users at all, and the screen only ever sees its last four characters. GPS comes with every punch and is dropped unless the client asks to keep it (DPDP Act). Attendance is a **Growth** feature. `db/tests/19_attendance.sql`. |
+
 **Still needed from the client to finish T0.6:** units per box (and pack type) for the 64 codes in
 `seed/unmatched_items.csv` with a blank `units_per_box`, the four duplicated stock-sheet rows resolved,
 and the rate list. Each is a re-run of the importer, not a developer task.
@@ -120,6 +123,14 @@ Settings into the Hey Nikki console, and the API key from Hey Nikki into the sam
 ```bash
 supabase functions deploy nikki-send run-reminders
 supabase functions deploy nikki-inbound nikki-status --no-verify-jwt
+```
+
+For attendance (T13): deploy `punchly-sync`, then paste the Punchly API key into Setup → Attendance
+and switch it on. `db/cron/schedule.sql` reads it twice an hour. The key needs the `attendance:read`
+and `staff:read` scopes; there is nothing to configure on the Punchly side, because the ERP only reads.
+
+```bash
+supabase functions deploy punchly-sync
 ```
 
 Then disable public sign-ups in the Supabase dashboard (Authentication → Providers → Email). The owner

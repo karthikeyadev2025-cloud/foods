@@ -49,6 +49,7 @@ export const FEATURES = [
   { key: 'production', label: 'Production', plan: 'growth', detail: 'Recipes, batches, chief actuals, variance' },
   { key: 'vehicles', label: 'Vans & trips', plan: 'growth', detail: 'Trips, van loading, loading sheet, settlement' },
   { key: 'documents', label: 'Quotations & pricing', plan: 'growth', detail: 'Quotations, sale and purchase orders, delivery challans, price lists, discount schemes' },
+  { key: 'attendance', label: 'Attendance & wages', plan: 'growth', detail: 'The daily register, hours and wages per staff, and the Punchly phone-punch sync' },
   { key: 'messaging', label: 'WhatsApp & calls', plan: 'full', detail: 'Templates, payment reminders, broadcasts, inbound orders, reminder and order-taking calls' },
   { key: 'inventory', label: 'Batches & barcodes', plan: 'full', detail: 'Batch and expiry tracking, barcode labels, godown transfers, physical stock counts' },
   { key: 'owner', label: 'Owner control', plan: 'full', detail: 'Print designer, backup and restore, audit trail' },

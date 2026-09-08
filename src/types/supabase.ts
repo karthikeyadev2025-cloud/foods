@@ -191,37 +191,73 @@ export type Database = {
       }
       attendance: {
         Row: {
+          branch_name: string | null
+          first_in_at: string | null
           id: string
           in_time: string | null
+          last_out_at: string | null
+          latitude: number | null
+          longitude: number | null
+          needs_review: boolean
+          notes: string | null
           org_id: string
           ot_hours: number | null
           out_time: string | null
+          punches: number
+          shift_name: string | null
+          source: string
           staff_id: string
           status: Database["public"]["Enums"]["attend_status"]
+          updated_at: string
           wage_amount: number | null
           work_date: string
+          worked_hours: number | null
         }
         Insert: {
+          branch_name?: string | null
+          first_in_at?: string | null
           id?: string
           in_time?: string | null
+          last_out_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          needs_review?: boolean
+          notes?: string | null
           org_id: string
           ot_hours?: number | null
           out_time?: string | null
+          punches?: number
+          shift_name?: string | null
+          source?: string
           staff_id: string
           status?: Database["public"]["Enums"]["attend_status"]
+          updated_at?: string
           wage_amount?: number | null
           work_date: string
+          worked_hours?: number | null
         }
         Update: {
+          branch_name?: string | null
+          first_in_at?: string | null
           id?: string
           in_time?: string | null
+          last_out_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          needs_review?: boolean
+          notes?: string | null
           org_id?: string
           ot_hours?: number | null
           out_time?: string | null
+          punches?: number
+          shift_name?: string | null
+          source?: string
           staff_id?: string
           status?: Database["public"]["Enums"]["attend_status"]
+          updated_at?: string
           wage_amount?: number | null
           work_date?: string
+          worked_hours?: number | null
         }
         Relationships: [
           {
@@ -3830,6 +3866,64 @@ export type Database = {
           },
         ]
       }
+      punchly_settings: {
+        Row: {
+          api_key: string | null
+          api_url: string
+          auto_wage: boolean
+          backfill_from: string | null
+          full_day_hours: number
+          half_day_hours: number
+          is_enabled: boolean
+          last_sync_at: string | null
+          last_sync_note: string | null
+          org_id: string
+          store_location: boolean
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string | null
+          api_url?: string
+          auto_wage?: boolean
+          backfill_from?: string | null
+          full_day_hours?: number
+          half_day_hours?: number
+          is_enabled?: boolean
+          last_sync_at?: string | null
+          last_sync_note?: string | null
+          org_id: string
+          store_location?: boolean
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string | null
+          api_url?: string
+          auto_wage?: boolean
+          backfill_from?: string | null
+          full_day_hours?: number
+          half_day_hours?: number
+          is_enabled?: boolean
+          last_sync_at?: string | null
+          last_sync_note?: string | null
+          org_id?: string
+          store_location?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punchly_settings_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchly_settings_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       purchase_items: {
         Row: {
           amount: number
@@ -5251,36 +5345,45 @@ export type Database = {
           auth_uid: string | null
           created_at: string
           daily_wage: number | null
+          designation: string | null
           full_name: string
           id: string
           is_active: boolean
           is_mestry: boolean
           org_id: string
           phone: string | null
+          punchly_staff_id: string | null
+          punchly_user_id: string | null
           role: Database["public"]["Enums"]["staff_role"]
         }
         Insert: {
           auth_uid?: string | null
           created_at?: string
           daily_wage?: number | null
+          designation?: string | null
           full_name: string
           id?: string
           is_active?: boolean
           is_mestry?: boolean
           org_id: string
           phone?: string | null
+          punchly_staff_id?: string | null
+          punchly_user_id?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
         }
         Update: {
           auth_uid?: string | null
           created_at?: string
           daily_wage?: number | null
+          designation?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
           is_mestry?: boolean
           org_id?: string
           phone?: string | null
+          punchly_staff_id?: string | null
+          punchly_user_id?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
         }
         Relationships: [
@@ -10007,6 +10110,47 @@ export type Database = {
         Args: { p_customers?: string[]; p_route?: string; p_staff: string }
         Returns: number
       }
+      attendance_register: {
+        Args: { p_from: string; p_staff?: string; p_to: string }
+        Returns: {
+          branch_name: string
+          full_name: string
+          id: string
+          in_time: string
+          needs_review: boolean
+          notes: string
+          ot_hours: number
+          out_time: string
+          punches: number
+          role: Database["public"]["Enums"]["staff_role"]
+          shift_name: string
+          source: string
+          staff_id: string
+          status: Database["public"]["Enums"]["attend_status"]
+          wage_amount: number
+          work_date: string
+          worked_hours: number
+        }[]
+      }
+      attendance_summary: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          absent: number
+          daily_wage: number
+          full_name: string
+          half_days: number
+          holidays: number
+          is_mestry: boolean
+          leave_days: number
+          needs_review: number
+          ot_hours: number
+          present: number
+          role: Database["public"]["Enums"]["staff_role"]
+          staff_id: string
+          wage: number
+          worked_hours: number
+        }[]
+      }
       audit_search: {
         Args: {
           p_action?: string
@@ -10366,6 +10510,7 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_punchly_settings: { Args: Record<PropertyKey, never>; Returns: Json }
       has_feature: { Args: { p_feature: string }; Returns: boolean }
       has_role: {
         Args: { p_roles: Database["public"]["Enums"]["staff_role"][] }
@@ -10482,6 +10627,10 @@ export type Database = {
       license_status: {
         Args: { p_app_version?: string; p_device_id?: string }
         Returns: Json
+      }
+      link_punchly_staff: {
+        Args: { p_staff: string; p_staff_code?: string; p_user_id: string }
+        Returns: undefined
       }
       location_stock_base: {
         Args: { p_date?: string; p_item: string; p_location: string }
@@ -10738,6 +10887,39 @@ export type Database = {
           section: string
         }[]
       }
+      punchly_advance: {
+        Args: { p_now?: string; p_org: string; p_through: string }
+        Returns: string
+      }
+      punchly_due: {
+        Args: { p_now?: string }
+        Returns: {
+          api_key: string
+          api_url: string
+          from_date: string
+          is_backfill: boolean
+          org_id: string
+          to_date: string
+        }[]
+      }
+      punchly_note: {
+        Args: { p_note: string; p_ok?: boolean; p_org: string }
+        Returns: undefined
+      }
+      punchly_roster: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          daily_wage: number
+          designation: string
+          full_name: string
+          id: string
+          is_linked: boolean
+          is_mestry: boolean
+          punchly_staff_id: string
+          punchly_user_id: string
+          role: Database["public"]["Enums"]["staff_role"]
+        }[]
+      }
       qty_to_pieces: {
         Args: { p_item: string; p_qty: number; p_uom: string }
         Returns: number
@@ -10874,6 +11056,7 @@ export type Database = {
           qty: number
         }[]
       }
+      save_attendance: { Args: { p: Json }; Returns: string }
       save_challan: { Args: { p_header: Json; p_lines: Json }; Returns: string }
       save_invoice: { Args: { p_header: Json; p_lines: Json }; Returns: string }
       save_manual_journal: { Args: { p: Json }; Returns: string }
@@ -10881,6 +11064,7 @@ export type Database = {
       save_order: { Args: { p_header: Json; p_lines: Json }; Returns: string }
       save_payment: { Args: { p: Json }; Returns: string }
       save_print_template: { Args: { p: Json }; Returns: string }
+      save_punchly_settings: { Args: { p: Json }; Returns: Json }
       save_purchase: {
         Args: { p_header: Json; p_lines: Json }
         Returns: string
@@ -11054,6 +11238,14 @@ export type Database = {
       update_stock_count: {
         Args: { p_count: string; p_lines: Json }
         Returns: number
+      }
+      upsert_punchly_attendance: {
+        Args: { p_org: string; p_rows: Json }
+        Returns: Json
+      }
+      upsert_punchly_staff: {
+        Args: { p_org: string; p_rows: Json }
+        Returns: Json
       }
       van_load: {
         Args: { p_from_location: string; p_lines: Json; p_trip: string }

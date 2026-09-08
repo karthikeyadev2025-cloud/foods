@@ -3,6 +3,7 @@ import { AppShell } from '@/app/layout/AppShell';
 import { MobileShell } from '@/app/layout/MobileShell';
 import { MBillPage, MCollectPage, MStockPage, MStopPage, MStopsPage, MTripPage } from '@/features/mobile/routes/pages';
 import { AccountsPage } from '@/features/accounts/routes/AccountsPage';
+import { AttendancePage } from '@/features/attendance/routes/AttendancePage';
 import { NotFound } from '@/app/routes/NotFound';
 import { OutboxPage } from '@/app/routes/OutboxPage';
 import { RequireAuth } from '@/features/auth/components/RequireAuth';
@@ -151,6 +152,10 @@ export const router = createRouter([
             { path: 'payments', element: <PaymentsPage /> },
             { path: 'accounts', element: <AccountsPage /> },
             { path: 'accounts/:tab', element: <AccountsPage /> },
+            licensed('attendance', [
+              { path: 'attendance', element: <AttendancePage /> },
+              { path: 'attendance/wages', element: <AttendancePage tab="wages" /> },
+            ]),
           ]),
           guarded('stock', [
             { path: 'stock', element: <StockPage /> },

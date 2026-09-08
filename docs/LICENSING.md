@@ -18,6 +18,7 @@ Each includes everything in the one before it.
 | **Production** — recipes, batches, chief actuals, variance | | ● | ● |
 | **Vans & trips** — trips, van loading, loading sheet, settlement | | ● | ● |
 | **Quotations & pricing** — quotations, sale and purchase orders, delivery challans, price lists, discount schemes | | ● | ● |
+| **Attendance & wages** — the daily register, hours and wages per staff, the Punchly phone-punch sync | | ● | ● |
 | **WhatsApp & calls** — templates, reminders, broadcasts, inbound orders, reminder and order-taking calls | | | ● |
 | **Batches & barcodes** — batch and expiry tracking, barcode labels, godown transfers, stock counts | | | ● |
 | **Owner control** — print designer, backup and restore, audit trail | | | ● |
@@ -25,8 +26,9 @@ Each includes everything in the one before it.
 | **Driver's phone** — van sales, on-the-spot receipts, delivery proof | | | ● |
 | **Desktop & offline** — the installed Windows app, working without a connection | | | ● |
 
-**Starter** is a shop that bills and collects. **Growth** is the whole operation on paper.
-**Full** is the operation running itself.
+**Starter** is a shop that bills and collects. **Growth** is the whole operation on paper —
+buying, paying, accounts, production, vans, documents and the staff register. **Full** is the
+operation running itself.
 
 ## Price ladder
 
@@ -106,7 +108,8 @@ with the plan, or `set_license_plan` on its own.
 
 ## Moving a feature between plans
 
-One array in `db/21_plans.sql`:
+One array — in `db/21_plans.sql`, or in whichever later migration last re-created it
+(`db/22_attendance.sql` does, to add attendance):
 
 ```sql
 create or replace function plan_features(p_plan text) returns text[] ...
@@ -114,4 +117,10 @@ create or replace function plan_features(p_plan text) returns text[] ...
 ```
 
 and the matching copy in `src/lib/permissions.ts` (`FEATURES`), which only decides what to
-draw. `db/tests/18_plans.sql` covers the whole ladder.
+draw. `db/tests/18_plans.sql` covers the whole ladder; `db/tests/19_attendance.sql` covers the
+attendance cap.
+
+A feature capped **above** the module it lives in also needs the restrictive
+`plan_insert` / `plan_update` / `plan_delete` policies on its own tables, so reads stay and
+writes stop. A feature capped at the same plan as its module (attendance and Payments, say)
+is already handled by the module gate: its rows are simply not visible below that plan.

@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   BarChart3,
   Boxes,
+  CalendarCheck,
   ClipboardList,
   FileSignature,
   PackageOpen,
@@ -75,6 +76,7 @@ export const NAV: NavGroup[] = [
       { to: '/stock', label: 'Stock', icon: Boxes, module: 'stock' },
       { to: '/production', label: 'Production', icon: Factory, module: 'production' },
       { to: '/vehicles', label: 'Vehicles', icon: Truck, module: 'vehicles' },
+      { to: '/attendance', label: 'Attendance', icon: CalendarCheck, module: 'payments', feature: 'attendance' },
       { to: '/messaging', label: 'Messaging', icon: MessageSquare, module: 'messaging' },
     ],
   },

@@ -11,8 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useMe } from '@/features/auth/hooks';
+import { FeatureLocked } from '@/features/auth/components/RequireFeature';
+import { useMe, usePermissions } from '@/features/auth/hooks';
 import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
+import type { FeatureKey } from '@/lib/permissions';
 import { listStaff, receiptModesApi, routesApi } from '@/features/setup/api';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, int, qty, toISODate, toNumber } from '@/lib/format';
@@ -22,17 +24,17 @@ import {
   type LedgerRow, type RegisterRow, type SalesGroup,
 } from '../api';
 
-const TABS = [
+const TABS: { key: string; label: string; feature?: FeatureKey }[] = [
   { key: 'register', label: 'Receipts register' },
   { key: 'ledger', label: 'Customer ledger' },
   { key: 'ageing', label: 'Outstanding ageing' },
   { key: 'modes', label: 'Collection by mode' },
   { key: 'routes', label: 'Route-wise' },
   { key: 'sales', label: 'Sales' },
-  { key: 'profit', label: 'Route profit' },
-  { key: 'incentives', label: 'Incentives' },
-] as const;
-export type ReportTab = (typeof TABS)[number]['key'];
+  { key: 'profit', label: 'Route profit', feature: 'insights' },
+  { key: 'incentives', label: 'Incentives', feature: 'insights' },
+];
+export type ReportTab = 'register' | 'ledger' | 'ageing' | 'modes' | 'routes' | 'sales' | 'profit' | 'incentives';
 
 /** First of the current month — the client's registers are monthly by habit. */
 function monthStart(): string {
@@ -41,11 +43,22 @@ function monthStart(): string {
 }
 
 export function ReportsPage({ tab = 'register' }: { tab?: ReportTab }) {
+  const perms = usePermissions();
+  const open = (f: FeatureKey | undefined) => !f || perms.has(f);
+  const locked = TABS.find((t) => t.key === tab && !open(t.feature))?.feature;
+  if (locked) {
+    return (
+      <div className="space-y-3">
+        <PageHeader title="Reports" />
+        <FeatureLocked feature={locked} />
+      </div>
+    );
+  }
   return (
     <div className="space-y-3">
       <PageHeader title="Reports" description="Every figure is a SUM over the same tables the screens write. Nothing here is stored separately." />
       <nav className="no-print flex flex-wrap gap-1 border-b" aria-label="Reports">
-        {TABS.map((t) => (
+        {TABS.filter((t) => open(t.feature)).map((t) => (
           <NavLink key={t.key} to={t.key === 'register' ? '/reports' : `/reports/${t.key}`} end className={({ isActive }) => cn('-mb-px border-b-2 px-3 py-1.5 text-sm', isActive ? 'border-primary font-medium text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
             {t.label}
           </NavLink>

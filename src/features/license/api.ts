@@ -1,8 +1,9 @@
 import { deviceInfo } from '@/lib/desktop';
+import type { FeatureKey, PlanKey } from '@/lib/permissions';
 import { expectRows, supabase } from '@/lib/supabase';
 import type { Database } from '@/types/supabase';
 
-/** From license_status() in db/18_licensing.sql. */
+/** From license_status() in db/18_licensing.sql and db/21_plans.sql. */
 export interface LicenseStatus {
   status: 'trial' | 'unlicensed' | 'active' | 'grace' | 'expired';
   valid_till: string | null;
@@ -16,6 +17,11 @@ export interface LicenseStatus {
   max_devices: number;
   this_device_known: boolean;
   checked_at: string;
+  /** Which of the three keys is active, and what it unlocks. */
+  plan: PlanKey;
+  plan_name: string;
+  features: FeatureKey[];
+  catalogue: { feature: FeatureKey; label: string; plan: PlanKey; detail: string }[];
 }
 
 export type LicenseDevice = Database['public']['Views']['v_license_devices']['Row'];

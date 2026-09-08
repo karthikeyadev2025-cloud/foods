@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, Trash2 } from 'lucide-react';
+import { Check, KeyRound, Lock, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Field } from '@/components/Field';
 import { Spinner } from '@/components/Spinner';
@@ -7,13 +7,64 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useLicense, useMe } from '@/features/auth/hooks';
+import { useLicense, useMe, usePermissions } from '@/features/auth/hooks';
 import { activateLicense, LICENSE_LABEL, listLicenseDevices, removeLicenseDevice } from '@/features/license/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { deviceInfo } from '@/lib/desktop';
 import { dateDMY, dateTimeDMY } from '@/lib/format';
+import { FEATURES, PLANS } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
 
 const DEVICES_KEY = ['license', 'devices'] as const;
+
+/**
+ * The three keys, what each opens, and where this organisation sits. Locked rows are
+ * shown rather than hidden: the owner should be able to see what the next key buys.
+ */
+function PlanLadder() {
+  const perms = usePermissions();
+  return (
+    <section>
+      <h3 className="mb-1 text-sm font-medium">What each key opens</h3>
+      <p className="mb-2 max-w-2xl text-sm text-muted-foreground">
+        Each plan includes everything in the one before it. Moving up is a new key — nothing is reinstalled, and nothing
+        already entered is lost.
+      </p>
+      <div className="grid gap-3 lg:grid-cols-3">
+        {PLANS.map((p) => {
+          const mine = p.key === perms.plan;
+          return (
+            <div key={p.key} className={cn('rounded-md border p-3', mine && 'border-primary bg-primary/5')}>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">{p.label}</span>
+                {mine && <Badge>current</Badge>}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{p.blurb}</p>
+              <ul className="mt-2 space-y-1 text-sm">
+                {FEATURES.filter((f) => f.plan === p.key).map((f) => {
+                  const on = perms.has(f.key);
+                  return (
+                    <li key={f.key} className="flex items-start gap-1.5">
+                      {on ? (
+                        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden />
+                      ) : (
+                        <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                      )}
+                      <span className={on ? '' : 'text-muted-foreground'}>
+                        {f.label}
+                        <span className="block text-xs text-muted-foreground">{f.detail}</span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 /**
  * Licence: the state the app runs in, the key entry, and the devices the key is
@@ -74,6 +125,9 @@ export function LicencePanel({ compact }: { compact?: boolean }) {
               <Badge variant={tone}>{LICENSE_LABEL[s.status]}</Badge>
               {s.read_only && <span className="text-destructive">read-only</span>}
             </div>
+            <div>
+              Plan <Badge variant="secondary">{s.plan_name}</Badge>
+            </div>
             {s.licensed_to && <div>Licensed to <span className="font-medium">{s.licensed_to}</span></div>}
             <div>
               {s.status === 'trial' && `Trial ends ${s.valid_till ? dateDMY(s.valid_till) : ''} (${s.days_left} day${s.days_left === 1 ? '' : 's'} left).`}
@@ -114,6 +168,8 @@ export function LicencePanel({ compact }: { compact?: boolean }) {
           </div>
         </div>
       ) : null}
+
+      <PlanLadder />
 
       <div>
         <h3 className="mb-1 text-sm font-medium">Activated devices</h3>

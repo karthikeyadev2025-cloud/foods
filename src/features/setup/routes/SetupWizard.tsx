@@ -1,6 +1,7 @@
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/features/auth/hooks';
 import { cn } from '@/lib/utils';
 import { SETUP_STEPS } from '../steps';
 
@@ -11,24 +12,27 @@ import { SETUP_STEPS } from '../steps';
 export function SetupWizard() {
   const { step } = useParams();
   const navigate = useNavigate();
-  const index = step ? SETUP_STEPS.findIndex((s) => s.slug === step) : 0;
+  const perms = usePermissions();
+  // A step the licence plan does not include is not part of the walk-through at all.
+  const steps = SETUP_STEPS.filter((s) => !s.feature || perms.has(s.feature));
+  const index = step ? steps.findIndex((s) => s.slug === step) : 0;
   if (index < 0) return <Navigate to="/setup/wizard" replace />;
-  const current = SETUP_STEPS[index];
+  const current = steps[index];
   if (!current) return <Navigate to="/setup" replace />;
-  const prev = SETUP_STEPS[index - 1];
-  const next = SETUP_STEPS[index + 1];
+  const prev = steps[index - 1];
+  const next = steps[index + 1];
 
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <div>
         <h1 className="text-xl font-semibold">Set up JYOTHI FOODS</h1>
         <p className="text-sm text-muted-foreground">
-          Step {index + 1} of {SETUP_STEPS.length}. Everything here can be changed later under Setup.
+          Step {index + 1} of {steps.length}. Everything here can be changed later under Setup.
         </p>
       </div>
 
       <ol className="flex flex-wrap gap-1" aria-label="Steps">
-        {SETUP_STEPS.map((s, i) => (
+        {steps.map((s, i) => (
           <li key={s.slug}>
             <Link
               to={`/setup/wizard/${s.slug}`}

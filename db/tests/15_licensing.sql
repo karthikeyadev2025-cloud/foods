@@ -7,7 +7,7 @@ grant usage on schema public to authenticated;
 grant all on all tables in schema public to authenticated;
 grant all on all sequences in schema public to authenticated;
 grant execute on all functions in schema public to authenticated;
-revoke execute on function issue_license(uuid, date, text, integer) from authenticated;
+revoke execute on function issue_license(uuid, date, text, integer, text) from authenticated;
 revoke execute on function renew_license(uuid, date) from authenticated;
 
 do $$

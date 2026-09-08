@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import type { FeatureKey } from '@/lib/permissions';
 import { AuditPanel } from './components/AuditPanel';
 import { BackupPanel } from './components/BackupPanel';
 import { ImportPanel } from './components/ImportPanel';
@@ -25,6 +26,8 @@ export interface SetupStep {
   /** One line shown in the wizard explaining why this step exists. */
   why: string;
   Component: ComponentType<{ compact?: boolean }>;
+  /** Set when the step belongs to a licence plan feature rather than to Setup itself. */
+  feature?: FeatureKey;
 }
 
 /**
@@ -100,24 +103,28 @@ export const SETUP_STEPS: SetupStep[] = [
   },
   {
     slug: 'print',
+    feature: 'owner',
     label: 'Print designer',
     why: 'Paper size, which columns and blocks each printed document shows, and the wording of the numbered terms.',
     Component: PrintDesigner,
   },
   {
     slug: 'backup',
+    feature: 'owner',
     label: 'Backup',
     why: 'A copy of everything, on a schedule and on demand, and the way back if something goes badly wrong.',
     Component: BackupPanel,
   },
   {
     slug: 'audit',
+    feature: 'owner',
     label: 'Audit trail',
     why: 'Who changed what, and when. Nothing here can be edited or deleted.',
     Component: AuditPanel,
   },
   {
     slug: 'incentives',
+    feature: 'insights',
     label: 'Incentives',
     why: 'What a salesman or driver earns on sales, collection, boxes or new shops, and which route is whose.',
     Component: IncentivesPanel,

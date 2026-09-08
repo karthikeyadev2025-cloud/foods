@@ -3250,6 +3250,7 @@ export type Database = {
           license_grace_days: number
           license_key: string | null
           license_max_devices: number
+          license_plan: string
           license_valid_till: string | null
           licensed_to: string | null
           logo_url: string | null
@@ -3275,6 +3276,7 @@ export type Database = {
           license_grace_days?: number
           license_key?: string | null
           license_max_devices?: number
+          license_plan?: string
           license_valid_till?: string | null
           licensed_to?: string | null
           logo_url?: string | null
@@ -3300,6 +3302,7 @@ export type Database = {
           license_grace_days?: number
           license_key?: string | null
           license_max_devices?: number
+          license_plan?: string
           license_valid_till?: string | null
           licensed_to?: string | null
           logo_url?: string | null
@@ -10318,6 +10321,15 @@ export type Database = {
           value_at_rate: number
         }[]
       }
+      feature_catalogue: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          detail: string
+          feature: string
+          label: string
+          plan: string
+        }[]
+      }
       fefo_suggest: {
         Args: { p_boxes: number; p_item: string }
         Returns: {
@@ -10354,6 +10366,7 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      has_feature: { Args: { p_feature: string }; Returns: boolean }
       has_role: {
         Args: { p_roles: Database["public"]["Enums"]["staff_role"][] }
         Returns: boolean
@@ -10414,6 +10427,7 @@ export type Database = {
           p_licensed_to?: string
           p_max_devices?: number
           p_org: string
+          p_plan?: string
           p_valid_till: string
         }
         Returns: string
@@ -10500,6 +10514,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      module_feature: { Args: { p_module: string }; Returns: string }
       money_account: {
         Args: {
           p_explicit?: string
@@ -10543,6 +10558,7 @@ export type Database = {
         }
       }
       my_org_id: { Args: Record<PropertyKey, never>; Returns: string }
+      my_plan: { Args: Record<PropertyKey, never>; Returns: string }
       my_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["staff_role"]
@@ -10644,6 +10660,8 @@ export type Database = {
         Args: { p_item: string; p_pieces: number; p_uom: string }
         Returns: number
       }
+      plan_features: { Args: { p_plan: string }; Returns: string[] }
+      plan_label: { Args: { p_plan: string }; Returns: string }
       post_challan_stock: {
         Args: { p_challan: string; p_date: string; p_sign: number }
         Returns: undefined
@@ -10785,6 +10803,7 @@ export type Database = {
         Returns: undefined
       }
       reorder_sections: { Args: { p_ids: string[] }; Returns: undefined }
+      require_feature: { Args: { p_feature: string }; Returns: undefined }
       restore_org_snapshot: { Args: { p: Json }; Returns: Json }
       reverse_journal: {
         Args: {
@@ -10902,6 +10921,10 @@ export type Database = {
           p_status: Database["public"]["Enums"]["invoice_status"]
         }
         Returns: undefined
+      }
+      set_license_plan: {
+        Args: { p_org: string; p_plan: string }
+        Returns: string
       }
       set_price_list_rate: {
         Args: { p_item: string; p_list: string; p_rate: number }

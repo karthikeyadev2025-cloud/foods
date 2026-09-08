@@ -1,12 +1,16 @@
 import { Link, Navigate, NavLink, useParams } from 'react-router-dom';
 import { Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FeatureLocked } from '@/features/auth/components/RequireFeature';
+import { usePermissions } from '@/features/auth/hooks';
 import { cn } from '@/lib/utils';
-import { SETUP_STEPS } from '../steps';
+import { SETUP_STEPS, type SetupStep } from '../steps';
 
 /** Setup: one tab per configuration screen. Same components as the wizard. */
 export function SetupPage() {
   const { tab } = useParams();
+  const perms = usePermissions();
+  const open = (s: SetupStep) => !s.feature || perms.has(s.feature);
   const current = SETUP_STEPS.find((s) => s.slug === tab);
   if (!tab) return <Navigate to={`/setup/${SETUP_STEPS[0]?.slug ?? 'org'}`} replace />;
   if (!current) return <Navigate to="/setup" replace />;
@@ -22,7 +26,7 @@ export function SetupPage() {
         </Button>
       </div>
       <nav aria-label="Setup sections" className="flex flex-wrap gap-1 border-b">
-        {SETUP_STEPS.map((s) => (
+        {SETUP_STEPS.filter(open).map((s) => (
           <NavLink
             key={s.slug}
             to={`/setup/${s.slug}`}
@@ -39,7 +43,7 @@ export function SetupPage() {
           </NavLink>
         ))}
       </nav>
-      <current.Component />
+      {open(current) ? <current.Component /> : <FeatureLocked feature={current.feature!} />}
     </div>
   );
 }

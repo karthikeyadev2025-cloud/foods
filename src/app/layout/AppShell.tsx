@@ -31,9 +31,10 @@ export function AppShell() {
     onError: (err) => toastError(err, 'Could not sign out'),
   });
 
-  const groups = NAV.map((g) => ({ ...g, items: g.items.filter((i) => perms.canView(i.module)) })).filter(
-    (g) => g.items.length > 0,
-  );
+  const groups = NAV.map((g) => ({
+    ...g,
+    items: g.items.filter((i) => perms.canView(i.module) && (!i.feature || perms.has(i.feature))),
+  })).filter((g) => g.items.length > 0);
 
   return (
     <div className="flex h-screen overflow-hidden">

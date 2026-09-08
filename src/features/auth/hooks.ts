@@ -2,7 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useMemo } from 'react';
 import { getLicenseStatus, type LicenseStatus } from '@/features/license/api';
-import type { ModuleKey } from '@/lib/permissions';
+import { moduleFeature, planLabel, type FeatureKey, type ModuleKey, type PlanKey } from '@/lib/permissions';
 import { getMe, getRolePermissions, type Me } from './api';
 
 export interface SessionState {
@@ -56,6 +56,10 @@ export interface Permissions {
   canView: (module: ModuleKey) => boolean;
   canEdit: (module: ModuleKey) => boolean;
   canDelete: (module: ModuleKey) => boolean;
+  /** Is this feature part of the org's licence plan (db/21_plans.sql)? */
+  has: (feature: FeatureKey) => boolean;
+  plan: PlanKey;
+  planName: string;
   /** The licence has lapsed: everything can be viewed and exported, nothing created (T11.2). */
   readOnly: boolean;
   /** True while the role's rows are still loading; callers should not show or hide on it. */
@@ -79,20 +83,28 @@ export function usePermissions(): Permissions {
     staleTime: 5 * 60_000,
   });
   const readOnly = license.data?.read_only ?? false;
+  const plan = (license.data?.plan ?? 'full') as PlanKey;
+  // Until the licence answers, assume open rather than flashing "locked" on every screen —
+  // the database refuses a locked feature either way.
+  const features = license.data?.features ?? null;
 
   return useMemo(() => {
     const isOwner = role === 'owner';
     const rows = perms.data ?? [];
     const find = (m: ModuleKey) => rows.find((r) => r.module === m);
+    const has = (f: FeatureKey) => features === null || features.includes(f);
     return {
       isOwner,
-      canView: (m) => isOwner || Boolean(find(m)?.can_view),
-      canEdit: (m) => !readOnly && (isOwner || Boolean(find(m)?.can_edit)),
-      canDelete: (m) => !readOnly && (isOwner || Boolean(find(m)?.can_delete)),
+      canView: (m) => has(moduleFeature(m)) && (isOwner || Boolean(find(m)?.can_view)),
+      canEdit: (m) => !readOnly && has(moduleFeature(m)) && (isOwner || Boolean(find(m)?.can_edit)),
+      canDelete: (m) => !readOnly && has(moduleFeature(m)) && (isOwner || Boolean(find(m)?.can_delete)),
+      has,
+      plan,
+      planName: planLabel(plan),
       readOnly,
       loading: me.isLoading || (!isOwner && perms.isLoading),
     };
-  }, [role, perms.data, perms.isLoading, me.isLoading, readOnly]);
+  }, [role, perms.data, perms.isLoading, me.isLoading, readOnly, plan, features]);
 }
 
 export type { Me };

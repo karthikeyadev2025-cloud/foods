@@ -21,7 +21,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react';
-import type { ModuleKey } from '@/lib/permissions';
+import type { FeatureKey, ModuleKey } from '@/lib/permissions';
 
 /**
  * Sidebar navigation. `module` is the key used by `role_permissions.module`;
@@ -32,6 +32,8 @@ export interface NavItem {
   label: string;
   icon: LucideIcon;
   module: ModuleKey;
+  /** Set when the screen needs more than its module: a licence plan feature too. */
+  feature?: FeatureKey;
 }
 
 export interface NavGroup {
@@ -49,15 +51,15 @@ export const NAV: NavGroup[] = [
     items: [
       { to: '/items', label: 'Items', icon: Package, module: 'items' },
       { to: '/customers', label: 'Customers', icon: Users, module: 'customers' },
-      { to: '/pricing', label: 'Pricing', icon: Tag, module: 'items' },
+      { to: '/pricing', label: 'Pricing', icon: Tag, module: 'items', feature: 'documents' },
     ],
   },
   {
     label: 'Transactions',
     items: [
-      { to: '/quotations', label: 'Quotations', icon: FileSignature, module: 'invoices' },
-      { to: '/orders', label: 'Orders', icon: ClipboardList, module: 'invoices' },
-      { to: '/challans', label: 'Challans', icon: PackageOpen, module: 'invoices' },
+      { to: '/quotations', label: 'Quotations', icon: FileSignature, module: 'invoices', feature: 'documents' },
+      { to: '/orders', label: 'Orders', icon: ClipboardList, module: 'invoices', feature: 'documents' },
+      { to: '/challans', label: 'Challans', icon: PackageOpen, module: 'invoices', feature: 'documents' },
       { to: '/invoices', label: 'Sales Invoices', icon: FileText, module: 'invoices' },
       { to: '/purchases', label: 'Purchases', icon: ShoppingCart, module: 'purchases' },
       { to: '/purchases/returns', label: 'Purchase Returns', icon: Undo2, module: 'purchases' },

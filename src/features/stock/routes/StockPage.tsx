@@ -12,8 +12,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useMe } from '@/features/auth/hooks';
+import { FeatureLocked } from '@/features/auth/components/RequireFeature';
+import { useMe, usePermissions } from '@/features/auth/hooks';
 import { searchItems, type ItemRow } from '@/features/items/api';
+import type { FeatureKey } from '@/lib/permissions';
 import { sectionsApi, stockLocationsApi } from '@/features/setup/api';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, dateTimeDMY, qty, toISODate, toNumber } from '@/lib/format';
@@ -21,35 +23,44 @@ import { cn } from '@/lib/utils';
 import { closingStock, listItemStock, stockMovements, type ClosingStockRow } from '../api';
 import { BarcodesPanel, BatchesPanel, CountsPanel, TransfersPanel } from '../components/inventory';
 
-const TABS = [
+const TABS: { key: string; label: string; feature?: FeatureKey }[] = [
   { key: 'closing', label: 'Closing stock' },
   { key: 'movements', label: 'Movements' },
   { key: 'low', label: 'Low stock' },
-  { key: 'batches', label: 'Batches & expiry' },
-  { key: 'transfers', label: 'Transfers' },
-  { key: 'counts', label: 'Stock count' },
-  { key: 'barcodes', label: 'Barcodes' },
-] as const;
-export type StockTab = (typeof TABS)[number]['key'];
+  { key: 'batches', label: 'Batches & expiry', feature: 'inventory' },
+  { key: 'transfers', label: 'Transfers', feature: 'inventory' },
+  { key: 'counts', label: 'Stock count', feature: 'inventory' },
+  { key: 'barcodes', label: 'Barcodes', feature: 'inventory' },
+];
+export type StockTab = 'closing' | 'movements' | 'low' | 'batches' | 'transfers' | 'counts' | 'barcodes';
 
 export function StockPage({ tab = 'closing' }: { tab?: StockTab }) {
+  const perms = usePermissions();
+  const open = (f: FeatureKey | undefined) => !f || perms.has(f);
+  const locked = TABS.find((t) => t.key === tab && !open(t.feature))?.feature;
   return (
     <div className="space-y-3">
       <PageHeader title="Stock" description="Every figure is a SUM over the ledger. Negative stock is shown and flagged, never hidden." />
       <nav className="flex gap-1 border-b" aria-label="Stock reports">
-        {TABS.map((t) => (
+        {TABS.filter((t) => open(t.feature)).map((t) => (
           <NavLink key={t.key} to={t.key === 'closing' ? '/stock' : `/stock/${t.key}`} end className={({ isActive }) => cn('-mb-px border-b-2 px-3 py-1.5 text-sm', isActive ? 'border-primary font-medium text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
             {t.label}
           </NavLink>
         ))}
       </nav>
-      {tab === 'closing' && <ClosingStock />}
-      {tab === 'movements' && <Movements />}
-      {tab === 'low' && <LowStock />}
-      {tab === 'batches' && <BatchesPanel />}
-      {tab === 'transfers' && <TransfersPanel />}
-      {tab === 'counts' && <CountsPanel />}
-      {tab === 'barcodes' && <BarcodesPanel />}
+      {locked ? (
+        <FeatureLocked feature={locked} />
+      ) : (
+        <>
+          {tab === 'closing' && <ClosingStock />}
+          {tab === 'movements' && <Movements />}
+          {tab === 'low' && <LowStock />}
+          {tab === 'batches' && <BatchesPanel />}
+          {tab === 'transfers' && <TransfersPanel />}
+          {tab === 'counts' && <CountsPanel />}
+          {tab === 'barcodes' && <BarcodesPanel />}
+        </>
+      )}
     </div>
   );
 }

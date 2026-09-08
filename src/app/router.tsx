@@ -40,12 +40,18 @@ import { TripDetailPage } from '@/features/vehicles/routes/TripDetailPage';
 import { TripPrintPage } from '@/features/vehicles/routes/TripPrintPage';
 import { TripsPage } from '@/features/vehicles/routes/TripsPage';
 import { VehiclesPage } from '@/features/vehicles/routes/VehiclesPage';
+import { RequireFeature } from '@/features/auth/components/RequireFeature';
 import { isDesktop } from '@/lib/desktop';
-import type { ModuleKey } from '@/lib/permissions';
+import type { FeatureKey, ModuleKey } from '@/lib/permissions';
 
 /** Mount a feature's routes behind its module guard. */
 function guarded(module: ModuleKey, children: RouteObject[]): RouteObject {
   return { element: <RequireModule module={module} />, children };
+}
+
+/** …and behind a licence plan feature, where the screen needs more than its module. */
+function licensed(feature: FeatureKey, children: RouteObject[]): RouteObject {
+  return { element: <RequireFeature feature={feature} />, children };
 }
 
 /**
@@ -69,20 +75,24 @@ export const router = createRouter([
       ]),
       guarded('vehicles', [{ path: '/vehicles/trips/:id/print', element: <TripPrintPage /> }]),
       guarded('stock', [
-        { path: '/stock/transfers/:id/print', element: <TransferPrintPage /> },
-        { path: '/stock/labels', element: <LabelsPrintPage /> },
+        licensed('inventory', [
+          { path: '/stock/transfers/:id/print', element: <TransferPrintPage /> },
+          { path: '/stock/labels', element: <LabelsPrintPage /> },
+        ]),
       ]),
       // The phone: the driver's trip, stops, van sales, receipts and delivery proof.
       {
         path: '/m',
         element: <MobileShell />,
         children: [
-          { index: true, element: <MTripPage /> },
-          { path: 'stops', element: <MStopsPage /> },
-          { path: 'stops/:customerId', element: <MStopPage /> },
-          { path: 'stops/:customerId/bill', element: <MBillPage /> },
-          { path: 'stops/:customerId/collect', element: <MCollectPage /> },
-          { path: 'stock', element: <MStockPage /> },
+          licensed('mobile', [
+            { index: true, element: <MTripPage /> },
+            { path: 'stops', element: <MStopsPage /> },
+            { path: 'stops/:customerId', element: <MStopPage /> },
+            { path: 'stops/:customerId/bill', element: <MBillPage /> },
+            { path: 'stops/:customerId/collect', element: <MCollectPage /> },
+            { path: 'stock', element: <MStockPage /> },
+          ]),
           { path: 'outbox', element: <OutboxPage /> },
         ],
       },
@@ -101,20 +111,24 @@ export const router = createRouter([
             { path: 'invoices', element: <InvoicesPage /> },
             { path: 'invoices/new', element: <InvoiceEditPage /> },
             { path: 'invoices/:id', element: <InvoiceEditPage /> },
-            { path: 'quotations', element: <QuotationsPage /> },
-            { path: 'quotations/new', element: <QuotationEditPage /> },
-            { path: 'quotations/:id', element: <QuotationEditPage /> },
-            { path: 'orders', element: <OrdersPage /> },
-            { path: 'orders/purchase', element: <OrdersPage kind="purchase" /> },
-            { path: 'orders/new', element: <OrderEditPage /> },
-            { path: 'orders/:id', element: <OrderEditPage /> },
-            { path: 'challans', element: <ChallansPage /> },
-            { path: 'challans/new', element: <ChallanEditPage /> },
-            { path: 'challans/:id', element: <ChallanEditPage /> },
+            licensed('documents', [
+              { path: 'quotations', element: <QuotationsPage /> },
+              { path: 'quotations/new', element: <QuotationEditPage /> },
+              { path: 'quotations/:id', element: <QuotationEditPage /> },
+              { path: 'orders', element: <OrdersPage /> },
+              { path: 'orders/purchase', element: <OrdersPage kind="purchase" /> },
+              { path: 'orders/new', element: <OrderEditPage /> },
+              { path: 'orders/:id', element: <OrderEditPage /> },
+              { path: 'challans', element: <ChallansPage /> },
+              { path: 'challans/new', element: <ChallanEditPage /> },
+              { path: 'challans/:id', element: <ChallanEditPage /> },
+            ]),
           ]),
           guarded('items', [
-            { path: 'pricing', element: <PriceListsPage /> },
-            { path: 'pricing/:tab', element: <PriceListsPage /> },
+            licensed('documents', [
+              { path: 'pricing', element: <PriceListsPage /> },
+              { path: 'pricing/:tab', element: <PriceListsPage /> },
+            ]),
           ]),
           guarded('purchases', [
             { path: 'purchases', element: <PurchasesPage /> },

@@ -30,20 +30,19 @@ Each includes everything in the one before it.
 
 ## Price ladder
 
-The project is ₹3,80,000, taken in three steps.
+The project is ₹3,80,000, taken in three roughly equal steps.
 
 | Plan | This step | Paid to date | Share |
 | --- | ---: | ---: | ---: |
-| Starter | ₹50,000 | ₹50,000 | 13% |
-| Growth | ₹1,50,000 | ₹2,00,000 | 39% |
-| Full | ₹1,80,000 | ₹3,80,000 | 47% |
+| Starter | ₹1,10,000 | ₹1,10,000 | 29% |
+| Growth | ₹1,30,000 | ₹2,40,000 | 34% |
+| Full | ₹1,40,000 | ₹3,80,000 | 37% |
 
-Starter is deliberately a low way in: it gets the client billing on the system, off their
-old book, and using it every day. Once the counter runs on it, Growth is what makes the
-rest of the business legible — buying, paying, accounts, production, vans — and Full is
-the part that saves labour rather than recording it: WhatsApp and voice, batches, the
-owner tools, the driver's phone, the desktop app. The two upgrades carry 86% of the price
-because they carry most of the build.
+Each step is priced close to the share of the build it carries, and each rises a little on
+the one before it: Starter gets the counter off the old book, Growth makes the rest of the
+business legible — buying, paying, accounts, production, vans — and Full is the part that
+saves labour rather than recording it: WhatsApp and voice, batches, the owner tools, the
+driver's phone, the desktop app.
 
 These figures are not in the code. The plans are what the app enforces; the prices are
 whatever you invoice. Renewal after `license_valid_till` — an annual maintenance charge,

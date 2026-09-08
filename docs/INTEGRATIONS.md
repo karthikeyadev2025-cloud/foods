@@ -75,10 +75,10 @@ brings their whole history in on the next read.
 `db/cron/schedule.sql` runs `punchly-sync` at :12 and :42 — two calls per organisation per run,
 nowhere near the hourly budget. `punchly_due()` decides what each run asks for, in this order:
 
-1. **Backfill** — with `backfill_from` set: history from that date, in chunks of 365 days (the
-   cap is 366; the extra day is not worth a `range_too_wide`). `punchly_advance()` moves the
-   marker after each chunk, so a run that dies half way resumes rather than starting again, and
-   the marker clears itself on reaching yesterday. Set the date once on the settings screen.
+1. **Backfill** — with `backfill_from` set: history from that date, a quarter at a time.
+   `punchly_advance()` moves the marker after each chunk, so a run that dies half way resumes
+   rather than starting again, and the marker clears itself on reaching yesterday. Set the date
+   once on the settings screen.
 2. **Reconcile** — every `reconcile_days` (14 by default), one wider pull. Punchly's own advice:
    a finished day does not change on its own, but an admin can correct it afterwards, and
    nothing else would ever notice.
@@ -87,6 +87,18 @@ nowhere near the hourly budget. `punchly_due()` decides what each run asks for, 
 The rate limit resets on the wall-clock hour, so a `429` can ask for most of an hour. The client
 waits only if `Retry-After` is 90 seconds or less; beyond that it stops and lets the next
 scheduled run continue, which costs nothing because the marker is where it left off.
+
+**Why a quarter and not the 366-day maximum.** A window's punches are all held in the edge
+function before the fold, because a day's check-in and check-out can land on different pages and
+folding half a day would write a day with no check-in. Punchly reckons fifty staff produce about
+30,000 rows a year, so a year in one window is several megabytes and five years for a larger
+client is far worse. A quarter keeps it to a few thousand rows and costs about the same number of
+requests — the row count drives the paging either way. Their own estimate for three years of
+history is roughly 90 requests against an allowance of 1000 an hour, so a backfill is cheap
+however it is sliced.
+
+**Dates are working days, not instants.** Punchly matches `from` and `to` against its own IST
+`attendance_date`, so `punchly_due()` works its dates out in IST too, and both ends are inclusive.
 
 ### Privacy
 

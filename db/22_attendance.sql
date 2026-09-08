@@ -199,6 +199,9 @@ end $$;
  *   ordinary  — yesterday and today. Yesterday because a phone out of signal at 08:42
  *               delivers its punch at 19:00, so a day is never finished on its first read.
  *
+ * The dates are worked out in IST, because Punchly matches from/to against its own IST
+ * attendance_date rather than an instant — these are working days, not timestamps.
+ *
  * This hands back the raw key, so only the service role may call it.
  */
 drop function if exists punchly_due(timestamptz);

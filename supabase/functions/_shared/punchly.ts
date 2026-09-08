@@ -40,6 +40,16 @@ export interface PunchlyPunch {
 const PAGE = 1000;
 /** Punchly rejects a span over 366 days. 365 leaves no room to argue about inclusivity. */
 const MAX_SPAN_DAYS = 365;
+/**
+ * How much history one chunk asks for. Well under the 366-day cap, and deliberately so:
+ * a whole window's punches are held in memory here before the fold, because a day's
+ * check-in and check-out can land on different pages and folding half a day would write
+ * a day with no check-in. Punchly reckons fifty staff make about 30,000 rows a year, so a
+ * year in one window is several megabytes and five years for a larger client is far worse.
+ * A quarter keeps that to a few thousand rows while costing about the same number of
+ * requests — the row count drives the paging either way.
+ */
+const BACKFILL_WINDOW_DAYS = 91;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Punchly said no in a way worth repeating to the owner rather than swallowing. */
@@ -134,11 +144,17 @@ function explain(status: number, code: string | undefined, waitSeconds: number, 
 }
 
 /**
- * Split a date range into chunks Punchly will accept. A first backfill can be years long;
- * asking for it in one go is a 400, and asking day by day would spend the hourly budget in
- * a fortnight of history.
+ * Split a date range into chunks. A first backfill can be years long; asking for it in one
+ * go is a 400, and asking day by day would spend the hourly budget in a fortnight of
+ * history. Windows are consecutive — the next starts the day after the last one ended, so
+ * there is no gap and no overlap. Both ends are inclusive, and both are matched against
+ * Punchly's IST `attendance_date`, so these are working days rather than instants.
+ *
+ * The default is a quarter, not the 366-day maximum: see BACKFILL_WINDOW_DAYS. Callers may
+ * ask for more, up to MAX_SPAN_DAYS, but never beyond it.
  */
-export function chunkRange(from: string, to: string, days = MAX_SPAN_DAYS - 1): Array<{ from: string; to: string }> {
+export function chunkRange(from: string, to: string, days = BACKFILL_WINDOW_DAYS): Array<{ from: string; to: string }> {
+  days = Math.min(days, MAX_SPAN_DAYS - 1);
   const day = 86400000;
   const start = Date.parse(from + 'T00:00:00Z');
   const end = Date.parse(to + 'T00:00:00Z');

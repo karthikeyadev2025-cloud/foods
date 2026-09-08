@@ -1,5 +1,8 @@
-// Writes public/icons/icon-192.png and icon-512.png: a flat brand-red tile with a
-// cream inner square — no image library needed. Run once: node scripts/make-icons.mjs
+// Writes the app marks — a flat brand-red tile with a cream inner square, no image
+// library needed. Run once: node scripts/make-icons.mjs
+//
+//   public/icons/icon-192.png, icon-512.png   the phone's home-screen icon (PWA)
+//   build/icon.ico                            the Windows exe and installer icon
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
@@ -56,6 +59,35 @@ function png(size) {
   ]);
 }
 
+/**
+ * A .ico is a small directory followed by the images. Windows Vista and later read
+ * PNG-compressed entries, so each size is the same PNG the web build uses.
+ */
+function ico(sizes) {
+  const images = sizes.map(png);
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0); // reserved
+  header.writeUInt16LE(1, 2); // 1 = icon
+  header.writeUInt16LE(sizes.length, 4);
+  let offset = 6 + sizes.length * 16;
+  const entries = sizes.map((size, i) => {
+    const e = Buffer.alloc(16);
+    e.writeUInt8(size >= 256 ? 0 : size, 0); // 0 means 256
+    e.writeUInt8(size >= 256 ? 0 : size, 1);
+    e.writeUInt8(0, 2); // colours in palette
+    e.writeUInt8(0, 3); // reserved
+    e.writeUInt16LE(1, 4); // colour planes
+    e.writeUInt16LE(32, 6); // bits per pixel
+    e.writeUInt32LE(images[i].length, 8);
+    e.writeUInt32LE(offset, 12);
+    offset += images[i].length;
+    return e;
+  });
+  return Buffer.concat([header, ...entries, ...images]);
+}
+
 mkdirSync('public/icons', { recursive: true });
 for (const size of [192, 512]) writeFileSync(`public/icons/icon-${size}.png`, png(size));
-console.log('wrote public/icons/icon-192.png and icon-512.png');
+mkdirSync('build', { recursive: true });
+writeFileSync('build/icon.ico', ico([16, 32, 48, 64, 128, 256]));
+console.log('wrote public/icons/icon-192.png, icon-512.png and build/icon.ico');

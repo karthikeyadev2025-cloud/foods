@@ -1,0 +1,59 @@
+# Builds the Windows installer on a real Windows machine.
+#
+# GitHub gives the .exe two ways:
+#   • every run attaches it under "Artifacts" on the run's page (kept 30 days)
+#   • pushing a tag like v0.2.0 also publishes it as a Release, which is the link to
+#     hand to whoever installs it
+#
+# Run it by hand: Actions → "Windows installer" → Run workflow.
+# It carries no Supabase keys: the app asks for the project once on first run
+# (docs/DESKTOP.md), so the same installer works on every PC.
+name: Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Checks
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test -- --run
+
+      - name: Build the installer
+        run: npm run desktop:dist
+
+      - name: Name what was built
+        shell: bash
+        run: ls -la release/*.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jyothi-foods-erp-windows
+          path: release/*.exe
+          if-no-files-found: error
+
+      - name: Publish the release on a tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.exe
+          generate_release_notes: true

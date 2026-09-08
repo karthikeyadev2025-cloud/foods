@@ -3875,9 +3875,11 @@ export type Database = {
           full_day_hours: number
           half_day_hours: number
           is_enabled: boolean
+          last_reconcile_at: string | null
           last_sync_at: string | null
           last_sync_note: string | null
           org_id: string
+          reconcile_days: number
           store_location: boolean
           updated_at: string
         }
@@ -3889,9 +3891,11 @@ export type Database = {
           full_day_hours?: number
           half_day_hours?: number
           is_enabled?: boolean
+          last_reconcile_at?: string | null
           last_sync_at?: string | null
           last_sync_note?: string | null
           org_id: string
+          reconcile_days?: number
           store_location?: boolean
           updated_at?: string
         }
@@ -3903,9 +3907,11 @@ export type Database = {
           full_day_hours?: number
           half_day_hours?: number
           is_enabled?: boolean
+          last_reconcile_at?: string | null
           last_sync_at?: string | null
           last_sync_note?: string | null
           org_id?: string
+          reconcile_days?: number
           store_location?: boolean
           updated_at?: string
         }
@@ -10483,6 +10489,7 @@ export type Database = {
           take_boxes: number
         }[]
       }
+      forget_staff_attendance: { Args: { p_staff: string }; Returns: number }
       fulfil_order: {
         Args: { p_extra?: Json; p_lines?: Json; p_order: string }
         Returns: string
@@ -10898,14 +10905,25 @@ export type Database = {
           api_url: string
           from_date: string
           is_backfill: boolean
+          is_reconcile: boolean
           org_id: string
           to_date: string
         }[]
       }
-      punchly_note: {
-        Args: { p_note: string; p_ok?: boolean; p_org: string }
-        Returns: undefined
-      }
+      punchly_note:
+        | {
+            Args: { p_note: string; p_ok?: boolean; p_org: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_note: string
+              p_ok?: boolean
+              p_org: string
+              p_reconciled?: boolean
+            }
+            Returns: undefined
+          }
       punchly_roster: {
         Args: Record<PropertyKey, never>
         Returns: {

@@ -129,9 +129,20 @@ begin
   select from_date, is_backfill into r from punchly_due();
   assert r.from_date = d1 - 2 and r.is_backfill, format('the marker moved, not reset %s', to_jsonb(r));
   assert punchly_advance(v_org, current_date) is null, 'history caught up clears the marker';
-  select from_date, to_date, is_backfill into r from punchly_due();
-  assert r.from_date = current_date - 1 and r.to_date = current_date and not r.is_backfill,
-         format('the ordinary round is today and yesterday %s', to_jsonb(r));
+
+  -- with no re-check on record yet, the first ordinary run is the weekly wider pull
+  select from_date, to_date, is_backfill, is_reconcile into r from punchly_due();
+  assert r.from_date = current_date - 14 and r.to_date = current_date and not r.is_backfill and r.is_reconcile,
+         format('the first run re-checks the fortnight %s', to_jsonb(r));
+  perform punchly_note(v_org, 're-checked', true, true);
+  select from_date, to_date, is_backfill, is_reconcile into r from punchly_due();
+  assert r.from_date = current_date - 1 and r.to_date = current_date and not r.is_backfill and not r.is_reconcile,
+         format('after that it is today and yesterday %s', to_jsonb(r));
+  -- and the wider pull comes back round when the interval has passed
+  update punchly_settings set last_reconcile_at = now() - interval '15 days' where org_id = v_org;
+  select from_date, is_reconcile into r from punchly_due();
+  assert r.from_date = current_date - 14 and r.is_reconcile, format('the re-check comes round again %s', to_jsonb(r));
+  perform punchly_note(v_org, 're-checked', true, true);
 
   -- ===== the wage sheet, and who may run it =====
   perform set_config('request.jwt.claim.sub', uid_acct::text, true); set local role authenticated;
@@ -176,8 +187,26 @@ begin
   assert j->'features' ? 'attendance', format('growth features %s', j->'features');
   assert jsonb_array_length(j->'catalogue') = 14, format('catalogue %s', jsonb_array_length(j->'catalogue'));
 
+  -- ===== somebody asks to be forgotten (DPDP) =====
+  perform set_config('request.jwt.claim.sub', uid_acct::text, true);
+  begin
+    perform forget_staff_attendance(v_ramesh);
+    assert false, 'only the owner may erase attendance';
+  exception when others then null; end;
+
+  perform set_config('request.jwt.claim.sub', uid_owner::text, true);
+  assert forget_staff_attendance(v_ramesh) = 2, 'both of his days go';
+  select count(*) into n from attendance where staff_id = v_ramesh; assert n = 0, 'nothing of his is left';
+  select punchly_user_id as uid, punchly_staff_id as code into r from staff where id = v_ramesh;
+  assert r.uid is null and r.code is null, 'the Punchly link goes too, or the next sync fetches him back';
+
+  reset role; perform set_config('request.jwt.claim.sub', '', true);
+  perform upsert_punchly_attendance(v_org, v_punches);
+  select count(*) into n from attendance where staff_id = v_ramesh;
+  assert n = 0, format('an unlinked person stays forgotten, found %s', n);
+
   reset role;
-  raise notice 'OK: attendance — the key stays server-side, the roster links itself on an exact name and by hand otherwise, punches fold into one row a day with hours, overtime and wages, a late check-out completes yesterday, hand-typed rows survive every sync, GPS only on request, the backfill marker resumes, the accountant runs the sheet without rights on staff, and Starter is capped';
+  raise notice 'OK: attendance — the key stays server-side, the roster links itself on an exact name and by hand otherwise, punches fold into one row a day with hours, overtime and wages, a late check-out completes yesterday, hand-typed rows survive every sync, GPS only on request, the backfill marker resumes and the weekly re-check comes round, the accountant runs the sheet without rights on staff, Starter is capped, and a person can be erased for good';
 end $$;
 
 rollback;

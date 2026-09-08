@@ -63,6 +63,9 @@ export interface PunchlySettings {
   half_day_hours: number;
   auto_wage: boolean;
   store_location: boolean;
+  /** How often Punchly is re-read wider, to catch a day an admin corrected afterwards. */
+  reconcile_days: number;
+  last_reconcile_at: string | null;
   backfill_from: string | null;
   last_sync_at: string | null;
   last_sync_note: string | null;
@@ -75,9 +78,9 @@ export async function getPunchlySettings(): Promise<PunchlySettings> {
   return data as unknown as PunchlySettings;
 }
 
-export type PunchlyPatch = Partial<Omit<PunchlySettings, 'has_api_key' | 'api_key_hint' | 'last_sync_at' | 'last_sync_note'>> & {
-  api_key?: string;
-};
+export type PunchlyPatch = Partial<
+  Omit<PunchlySettings, 'has_api_key' | 'api_key_hint' | 'last_sync_at' | 'last_sync_note' | 'last_reconcile_at'>
+> & { api_key?: string };
 
 export async function savePunchlySettings(p: PunchlyPatch): Promise<PunchlySettings> {
   const { data, error } = await supabase.rpc('save_punchly_settings', { p: { ...p } });
@@ -98,6 +101,16 @@ export async function linkPunchlyStaff(staffId: string, userId: string | null, s
     ...(staffCode ? { p_staff_code: staffCode } : {}),
   });
   if (error) throw error;
+}
+
+/**
+ * An employee asks to be forgotten. Their days go, and so does the Punchly link — without
+ * that the next sync would simply fetch them back. Owner only. Returns the days removed.
+ */
+export async function forgetStaffAttendance(staffId: string): Promise<number> {
+  const { data, error } = await supabase.rpc('forget_staff_attendance', { p_staff: staffId });
+  if (error) throw error;
+  return data ?? 0;
 }
 
 export interface SyncResult {

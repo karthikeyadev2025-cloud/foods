@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link2, Link2Off, RefreshCw, Save } from 'lucide-react';
+import { Link2, Link2Off, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Field } from '@/components/Field';
 import { Spinner } from '@/components/Spinner';
@@ -11,7 +11,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMe } from '@/features/auth/hooks';
 import {
-  getPunchlySettings, linkPunchlyStaff, punchlyRoster, savePunchlySettings, syncPunchlyNow,
+  forgetStaffAttendance, getPunchlySettings, linkPunchlyStaff, punchlyRoster, savePunchlySettings, syncPunchlyNow,
   type PunchlyPatch, type SyncResult,
 } from '@/features/attendance/api';
 import { toast, toastError } from '@/hooks/use-toast';
@@ -114,6 +114,16 @@ export function PunchlyPanel({ compact }: { compact?: boolean }) {
         <Field label="Flag anything under" htmlFor="pl-half" help="Hours. Shorter days are marked for someone to check.">
           <Input id="pl-half" type="number" step="0.5" min="0.5" value={String(value('half_day_hours') ?? 4)} onChange={(e) => set('half_day_hours', Number(e.target.value))} disabled={!canEdit} />
         </Field>
+        <Field
+          label="Re-check the last"
+          htmlFor="pl-recheck"
+          className="sm:col-span-2"
+          help={`Days. Once that long has passed, one run reads the whole window again instead of just yesterday — it is how a day someone corrected in Punchly afterwards gets noticed.${
+            s?.last_reconcile_at ? ` Last re-checked ${dateTimeDMY(s.last_reconcile_at)}.` : ''
+          }`}
+        >
+          <Input id="pl-recheck" type="number" step="1" min="2" max="366" value={String(value('reconcile_days') ?? 14)} onChange={(e) => set('reconcile_days', Number(e.target.value))} disabled={!canEdit} />
+        </Field>
 
         <label className="flex items-start gap-2 text-sm sm:col-span-2">
           <Checkbox checked={Boolean(value('is_enabled'))} onChange={(e) => set('is_enabled', e.target.checked)} disabled={!canEdit} />
@@ -159,7 +169,7 @@ export function PunchlyPanel({ compact }: { compact?: boolean }) {
         )}
       </form>
 
-      <Roster canEdit={canEdit} unmatched={lastSync?.staff?.unmatched ?? []} />
+      <Roster canEdit={canEdit} isOwner={me.data?.role === 'owner'} unmatched={lastSync?.staff?.unmatched ?? []} />
     </section>
   );
 }
@@ -169,7 +179,15 @@ export function PunchlyPanel({ compact }: { compact?: boolean }) {
  * are tied on its user_id, which cannot. An exact name match links itself on the first
  * read; everything else is matched here.
  */
-function Roster({ canEdit, unmatched }: { canEdit: boolean; unmatched: { user_id: string; staff_id: string; full_name: string }[] }) {
+function Roster({
+  canEdit,
+  isOwner,
+  unmatched,
+}: {
+  canEdit: boolean;
+  isOwner: boolean;
+  unmatched: { user_id: string; staff_id: string; full_name: string }[];
+}) {
   const qc = useQueryClient();
   const roster = useQuery({ queryKey: ROSTER_KEY, queryFn: punchlyRoster });
   const link = useMutation({
@@ -180,6 +198,15 @@ function Roster({ canEdit, unmatched }: { canEdit: boolean; unmatched: { user_id
       toast({ title: 'Staff linked' });
     },
     onError: (e) => toastError(e, 'Could not link'),
+  });
+  const forget = useMutation({
+    mutationFn: forgetStaffAttendance,
+    onSuccess: async (days) => {
+      await qc.invalidateQueries({ queryKey: ROSTER_KEY });
+      await qc.invalidateQueries({ queryKey: ['attendance'] });
+      toast({ title: `${days} day${days === 1 ? '' : 's'} erased`, description: 'The Punchly link went with them, so the next sync will not bring them back.' });
+    },
+    onError: (e) => toastError(e, 'Could not erase'),
   });
 
   if (roster.isLoading) return <Spinner />;
@@ -233,16 +260,34 @@ function Roster({ canEdit, unmatched }: { canEdit: boolean; unmatched: { user_id
                     )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{r.punchly_staff_id ?? '—'}</TableCell>
-                  <TableCell>
+                  <TableCell className="whitespace-nowrap">
                     {r.is_linked && canEdit && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label={`Unlink ${r.full_name}`}
+                        aria-label={`Unlink ${r.full_name} from Punchly`}
                         onClick={() => r.id && link.mutate({ staffId: r.id, userId: null })}
                         disabled={link.isPending}
                       >
                         <Link2Off />
+                      </Button>
+                    )}
+                    {isOwner && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Erase ${r.full_name}'s attendance`}
+                        title="Erase this person's attendance for good"
+                        onClick={() => {
+                          if (!r.id) return;
+                          const ok = window.confirm(
+                            `Erase every attendance day recorded for ${r.full_name}, and unlink them from Punchly?\n\nThis cannot be undone, and their punches will not come back on the next sync.`,
+                          );
+                          if (ok) forget.mutate(r.id);
+                        }}
+                        disabled={forget.isPending}
+                      >
+                        <Trash2 />
                       </Button>
                     )}
                   </TableCell>

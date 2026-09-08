@@ -26,7 +26,10 @@ begin
   insert into items (org_id, item_code, name, base_uom_id, pack_type_id, units_per_box, pieces_per_unit, unit_rate) values (v_org, '8', 'MYSOOR PAK', v_uom, v_pack, 32, 12, 42) returning id into v_item;
   perform set_invoice_status(save_invoice(jsonb_build_object('customer_id', v_cust, 'invoice_date', current_date - 20, 'location_id', v_loc), jsonb_build_array(jsonb_build_object('item_id', v_item, 'boxes', 2, 'rate', 42))), 'confirmed');
   perform set_invoice_status(save_invoice(jsonb_build_object('customer_id', v_cust2, 'invoice_date', current_date - 20, 'location_id', v_loc), jsonb_build_array(jsonb_build_object('item_id', v_item, 'boxes', 1, 'rate', 42))), 'confirmed');
-  j := save_messaging_settings(jsonb_build_object('api_key', 'nk_test', 'is_enabled', true, 'voice_enabled', false, 'caller_number', '918000000000', 'call_attempts', 2, 'call_retry_minutes', 30));
+  -- quiet_from = quiet_to means never quiet. This test is about the voice switch and the
+  -- retry ladder; without pinning it, every claim assertion below fails after 21:00 IST,
+  -- which is a broken test rather than a finding.
+  j := save_messaging_settings(jsonb_build_object('api_key', 'nk_test', 'is_enabled', true, 'voice_enabled', false, 'caller_number', '918000000000', 'call_attempts', 2, 'call_retry_minutes', 30, 'quiet_from', '00:00', 'quiet_to', '00:00'));
   assert (j->>'voice_enabled')::boolean = false and j->>'caller_number' = '918000000000' and (j->>'call_attempts')::int = 2, format('settings %s', j);
   v_secret := j->>'webhook_secret';   -- only the settings RPC hands the secret out; the table is closed to the browser
 

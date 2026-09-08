@@ -27,6 +27,7 @@ interface Due {
   from_date: string;
   to_date: string;
   is_backfill: boolean;
+  is_reconcile: boolean;
 }
 
 interface OrgResult {
@@ -84,10 +85,12 @@ async function syncOrg(admin: SupabaseClient, due: Due): Promise<OrgResult> {
       out.backfill_left = (next as string | null) ?? null;
     }
   }
+  const what = due.is_backfill ? 'history' : due.is_reconcile ? 'weekly re-check' : 'today and yesterday';
   await admin.rpc('punchly_note', {
     p_org: due.org_id,
-    p_note: `${out.days}: ${out.written} day${out.written === 1 ? '' : 's'} written, ${out.kept_manual} hand-typed kept`,
+    p_note: `${what}, ${out.days}: ${out.written} day${out.written === 1 ? '' : 's'} written, ${out.kept_manual} hand-typed kept`,
     p_ok: true,
+    p_reconciled: due.is_reconcile,
   });
   return out;
 }

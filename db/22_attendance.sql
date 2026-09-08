@@ -77,6 +77,10 @@ create table if not exists punchly_settings (
   last_sync_note  text,
   updated_at      timestamptz not null default now()
 );
+alter table punchly_settings
+  /** Punchly asks for one wider pull a week, to catch what an admin corrected after the fact. */
+  add column if not exists reconcile_days integer not null default 14 check (reconcile_days between 2 and 366),
+  add column if not exists last_reconcile_at timestamptz;
 alter table punchly_settings enable row level security;
 drop policy if exists org_scope on punchly_settings;
 
@@ -152,6 +156,7 @@ begin
     'api_key_hint', case when s.api_key is null then null else '••••' || right(s.api_key, 4) end,
     'full_day_hours', s.full_day_hours, 'half_day_hours', s.half_day_hours,
     'auto_wage', s.auto_wage, 'store_location', s.store_location,
+    'reconcile_days', s.reconcile_days, 'last_reconcile_at', s.last_reconcile_at,
     'backfill_from', s.backfill_from, 'last_sync_at', s.last_sync_at, 'last_sync_note', s.last_sync_note);
 end $$;
 
@@ -169,6 +174,7 @@ begin
     half_day_hours = coalesce(nullif(p->>'half_day_hours', '')::numeric, half_day_hours),
     auto_wage      = coalesce((p->>'auto_wage')::boolean, auto_wage),
     store_location = coalesce((p->>'store_location')::boolean, store_location),
+    reconcile_days = coalesce(nullif(p->>'reconcile_days', '')::integer, reconcile_days),
     backfill_from  = case when p ? 'backfill_from' then nullif(p->>'backfill_from', '')::date else backfill_from end,
     updated_at     = now()
   where org_id = my_org_id();
@@ -176,27 +182,39 @@ begin
 end $$;
 
 /**
- * What the sync should ask Punchly for next.
+ * What the sync should ask Punchly for next. Three shapes, in order of precedence:
  *
- * With backfill_from set it is history, from that date forward; the sync moves the marker
- * along as each chunk lands, so a run that dies half way resumes where it stopped rather
- * than starting again. With the marker cleared it is the ordinary round: today and
- * yesterday, because a phone that was out of signal at 08:42 delivers its punch hours
- * later, and yesterday is never finished until it has been read a second time.
+ *   backfill  — history from backfill_from. The sync moves the marker along as each chunk
+ *               lands, so a run that dies half way resumes where it stopped.
+ *   reconcile — once every reconcile_days, one wider pull. Punchly's own advice: a day
+ *               that has finished does not change on its own, but an admin can correct it
+ *               afterwards, and nothing else would ever notice.
+ *   ordinary  — yesterday and today. Yesterday because a phone out of signal at 08:42
+ *               delivers its punch at 19:00, so a day is never finished on its first read.
  *
  * This hands back the raw key, so only the service role may call it.
  */
+drop function if exists punchly_due(timestamptz);
 create or replace function punchly_due(p_now timestamptz default now())
-returns table (org_id uuid, api_url text, api_key text, from_date date, to_date date, is_backfill boolean)
+returns table (org_id uuid, api_url text, api_key text, from_date date, to_date date,
+               is_backfill boolean, is_reconcile boolean)
 language plpgsql stable security definer set search_path = public as $$
 declare v_today date := (p_now at time zone 'Asia/Kolkata')::date;
 begin
   if not is_service_call() then raise exception 'Only the sync may read Punchly keys'; end if;
   return query
-    select s.org_id, s.api_url, s.api_key,
-           coalesce(s.backfill_from, v_today - 1), v_today, (s.backfill_from is not null)
-      from punchly_settings s
-     where s.is_enabled and s.api_key is not null;
+    with due as (
+      select s.*, (s.backfill_from is not null) as backfill,
+             (s.backfill_from is null
+              and (s.last_reconcile_at is null or s.last_reconcile_at < p_now - make_interval(days => s.reconcile_days))) as reconcile
+        from punchly_settings s
+       where s.is_enabled and s.api_key is not null)
+    select d.org_id, d.api_url, d.api_key,
+           case when d.backfill then d.backfill_from
+                when d.reconcile then v_today - d.reconcile_days
+                else v_today - 1 end,
+           v_today, d.backfill, d.reconcile
+      from due d;
 end $$;
 
 /** A backfill chunk landed: move the marker past it, and clear it once history is caught up. */
@@ -424,13 +442,36 @@ begin
 end $$;
 
 /** The sync writing back what happened — including the runs that failed. */
-create or replace function punchly_note(p_org uuid, p_note text, p_ok boolean default true) returns void
+create or replace function punchly_note(p_org uuid, p_note text, p_ok boolean default true,
+                                        p_reconciled boolean default false) returns void
 language plpgsql security definer set search_path = public as $$
 begin
   if not is_service_call() then raise exception 'Only the sync may write here'; end if;
   update punchly_settings
-     set last_sync_note = p_note, last_sync_at = case when p_ok then now() else last_sync_at end, updated_at = now()
+     set last_sync_note = p_note,
+         last_sync_at = case when p_ok then now() else last_sync_at end,
+         last_reconcile_at = case when p_ok and p_reconciled then now() else last_reconcile_at end,
+         updated_at = now()
    where org_id = p_org;
+end $$;
+
+/**
+ * An employee asks to be forgotten (DPDP). Removing the rows is not enough on its own —
+ * the next sync would fetch them straight back — so the Punchly link goes with them, and
+ * the person has to be matched again deliberately if they ever return.
+ */
+create or replace function forget_staff_attendance(p_staff uuid) returns integer
+language plpgsql security definer set search_path = public as $$
+declare n integer;
+begin
+  if my_role() <> 'owner' then raise exception 'Only the owner can erase somebody''s attendance'; end if;
+  perform require_feature('attendance');
+  update staff set punchly_user_id = null, punchly_staff_id = null
+   where id = p_staff and org_id = my_org_id();
+  if not found then raise exception 'Staff member not found'; end if;
+  delete from attendance where staff_id = p_staff and org_id = my_org_id();
+  get diagnostics n = row_count;
+  return n;
 end $$;
 
 /** Type a day in by hand. Marks the row manual, so no later sync overwrites it. */

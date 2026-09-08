@@ -38,7 +38,8 @@ export interface PunchlyPunch {
 }
 
 const PAGE = 1000;
-const MAX_SPAN_DAYS = 366;
+/** Punchly rejects a span over 366 days. 365 leaves no room to argue about inclusivity. */
+const MAX_SPAN_DAYS = 365;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Punchly said no in a way worth repeating to the owner rather than swallowing. */
@@ -51,57 +52,84 @@ export class PunchlyError extends Error {
 export class PunchlyClient {
   constructor(private readonly baseUrl: string, private readonly apiKey: string) {}
 
-  private async get(path: string, params: Record<string, string>): Promise<Record<string, unknown>> {
+  private async get(path: string, params: Record<string, string> = {}): Promise<Record<string, unknown>> {
     const url = new URL(this.baseUrl.replace(/\/+$/, '') + path);
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
 
-    // Three tries: a rate limit is a wait, not a failure, and 503 is usually a moment.
+    // Two extra tries, and only for the two failures that can pass on their own.
     for (let attempt = 0; ; attempt++) {
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${this.apiKey}`, Accept: 'application/json' },
       });
       if (res.ok) return await res.json();
 
-      const body = await res.text();
+      // Punchly's errors are JSON carrying a human `error` and a stable `code`. Branch on
+      // the code, never on the message — the message is theirs to reword.
+      const raw = await res.text();
       let code: string | undefined;
+      let message = raw.slice(0, 300);
       try {
-        code = (JSON.parse(body) as { error?: string; code?: string }).code ?? (JSON.parse(body) as { error?: string }).error;
+        const body = JSON.parse(raw) as { error?: string; code?: string };
+        code = body.code;
+        if (body.error) message = body.error;
       } catch {
-        code = undefined;
+        /* not JSON — keep the raw text */
       }
-      const retryable = res.status === 429 || res.status === 503;
-      if (!retryable || attempt >= 2) {
-        const hint =
-          res.status === 401 ? 'Punchly rejected the key — check it under Setup → Attendance.'
-          : res.status === 403 ? 'The key is missing the attendance:read / staff:read scopes, or the Punchly account is inactive.'
-          : res.status === 429 ? 'Punchly is rate-limiting us; the next run will pick up where this one stopped.'
-          : `Punchly returned ${res.status}.`;
-        throw new PunchlyError(`${hint} ${body.slice(0, 300)}`.trim(), res.status, code);
-      }
+
       const after = Number(res.headers.get('Retry-After'));
-      await sleep(Number.isFinite(after) && after > 0 ? Math.min(after, 30) * 1000 : (attempt + 1) * 2000);
+      const waitSeconds = Number.isFinite(after) && after > 0 ? after : (attempt + 1) * 2;
+      // The rate-limit window is a wall-clock hour, so Retry-After can be most of an hour.
+      // Waiting that out inside one function call is not on: stop, and let the next
+      // scheduled run continue — the backfill marker means nothing is re-read for nothing.
+      const canWait = (res.status === 429 || res.status === 503) && waitSeconds <= 90 && attempt < 2;
+      if (!canWait) throw new PunchlyError(explain(res.status, code, waitSeconds, message), res.status, code);
+      await sleep(waitSeconds * 1000);
     }
   }
 
+  /** The whole roster. Punchly's /staff takes no parameters and returns everyone. */
   async staff(): Promise<PunchlyStaff[]> {
-    const out: PunchlyStaff[] = [];
-    for (let offset = 0; ; offset += PAGE) {
-      const page = await this.get('/staff', { limit: String(PAGE), offset: String(offset) });
-      const rows = (page.data ?? []) as PunchlyStaff[];
-      out.push(...rows);
-      if (rows.length < PAGE) return out;
-    }
+    const page = await this.get('/staff');
+    return (page.data ?? []) as PunchlyStaff[];
   }
 
-  /** Every punch between two dates, paged out. The caller keeps the span inside the cap. */
+  /**
+   * Every punch between two dates. Paged the way Punchly asks: keep raising the offset
+   * until a page comes back shorter than the limit. Rows are deduplicated on record_id,
+   * which is stable, in case an edit shifts the ordering underneath the paging.
+   */
   async punches(from: string, to: string): Promise<PunchlyPunch[]> {
-    const out: PunchlyPunch[] = [];
+    const seen = new Map<string, PunchlyPunch>();
     for (let offset = 0; ; offset += PAGE) {
       const page = await this.get('/attendance', { from, to, limit: String(PAGE), offset: String(offset) });
       const rows = (page.data ?? []) as PunchlyPunch[];
-      out.push(...rows);
-      if (rows.length < PAGE) return out;
+      for (const r of rows) seen.set(r.record_id, r);
+      // A short page is the last one. The guard is for a server that ignores the limit.
+      if (rows.length < PAGE) return [...seen.values()];
+      if (offset > 200_000) throw new PunchlyError('Punchly kept returning full pages; stopping rather than looping.', 500);
     }
+  }
+}
+
+/** What went wrong, in words the owner reads on the settings screen. */
+function explain(status: number, code: string | undefined, waitSeconds: number, message: string): string {
+  switch (code) {
+    case 'invalid_key':
+      return 'Punchly does not recognise this key — it is wrong, or it has been revoked. Enter a new one under Setup → Attendance.';
+    case 'expired':
+      return 'The Punchly key has passed its expiry date. Ask the Punchly admin for a fresh one.';
+    case 'missing_scope':
+      return 'The key is valid but lacks a scope. It needs attendance:read and staff:read — the Punchly admin can tick them.';
+    case 'tenant_inactive':
+      return 'The Punchly account is suspended, usually an unpaid subscription. Nothing here can fix that.';
+    case 'rate_limited':
+      return `Punchly's hourly limit is spent; it frees up in about ${Math.ceil(waitSeconds / 60)} minute(s). The next run carries on from where this one stopped.`;
+    case 'range_too_wide':
+      return 'Punchly refused the date range as too wide. This is a bug in the sync, not a setting — report it.';
+    default:
+      if (status === 401) return 'Punchly rejected the request without a key. Check that the key is saved under Setup → Attendance.';
+      if (status === 503) return 'Punchly was briefly unavailable. The next run will try again.';
+      return `Punchly returned ${status}. ${message}`.trim();
   }
 }
 

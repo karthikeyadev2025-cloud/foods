@@ -48,7 +48,7 @@ export function OrdersQueue() {
                 <TableRow key={o.id ?? ''} className="cursor-pointer" tabIndex={0} onClick={() => navigate(`/messaging/orders/${o.id}`)} onKeyDown={(ev) => ev.key === 'Enter' && navigate(`/messaging/orders/${o.id}`)}>
                   <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{dateTimeDMY(o.created_at)}</TableCell>
                   <TableCell>{o.customer_name ? <><span className="font-medium">{o.customer_name}</span><div className="text-xs text-muted-foreground">{o.customer_town}</div></> : <><span className="tabular-nums">{o.from_number}</span><div className="text-xs text-amber-700">unknown number</div></>}</TableCell>
-                  <TableCell><Badge variant="outline">{o.source}</Badge></TableCell>
+                  <TableCell><Badge variant="outline">{o.source}</Badge>{o.campaign_kind === 'order_call' && <div className="text-xs text-muted-foreground">order call</div>}</TableCell>
                   <TableCell className="max-w-md"><span className="line-clamp-2 text-xs">{o.raw_text ?? o.transcript ?? (o.audio_url ? 'Voice note' : '')}</span></TableCell>
                   <TableCell className="num">{int(o.line_count)}</TableCell>
                   <TableCell><Badge variant={orderTone[o.status ?? 'new']}>{o.status}</Badge>{o.invoice_no && <div className="text-xs text-muted-foreground">{o.invoice_no}</div>}</TableCell>

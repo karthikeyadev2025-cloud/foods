@@ -29,20 +29,26 @@ Deno.serve(async (req) => {
   }
   const secret = req.headers.get('x-nikki-secret') ?? String(body.secret ?? '');
   if (!secret) return json({ error: 'Missing webhook secret' }, 401);
-  if (!body.from) return json({ error: 'from is required' }, 400);
+  // An order captured on one of our calls carries our message id as client_ref; the
+  // number then comes from that call, so `from` may be absent.
+  const clientRef = body.client_ref ?? body.call_ref ?? null;
+  if (!body.from && !clientRef) return json({ error: 'from is required' }, 400);
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
   const { data, error } = await admin.rpc('receive_inbound_order', {
     p: {
       secret,
-      from: String(body.from),
+      from: body.from ? String(body.from) : null,
       text: body.text ?? null,
       transcript: body.transcript ?? null,
-      audio_url: body.audio_url ?? null,
-      parsed_items: Array.isArray(body.parsed_items) ? body.parsed_items : [],
-      source: body.source ?? 'whatsapp',
-      provider_ref: body.provider_ref ?? body.message_id ?? null,
+      audio_url: body.audio_url ?? body.recording_url ?? null,
+      parsed_items: Array.isArray(body.parsed_items) ? body.parsed_items : Array.isArray(body.items) ? body.items : [],
+      source: body.source ?? (clientRef ? 'call' : 'whatsapp'),
+      provider_ref: body.provider_ref ?? body.message_id ?? body.call_id ?? null,
       confidence: body.confidence ?? null,
+      client_ref: clientRef,
+      language: body.language ?? null,
+      duration: body.duration ?? null,
     },
   });
   if (error) return json({ error: error.message }, error.message === 'Unknown webhook secret' ? 401 : 400);

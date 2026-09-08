@@ -92,10 +92,23 @@ function LogLine({ m }: { m: MessageRow }) {
       <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{dateTimeDMY(m.created_at)}</TableCell>
       <TableCell className="font-medium">{m.customer_name ?? '—'}<div className="text-xs font-normal text-muted-foreground">{m.town}</div></TableCell>
       <TableCell className="tabular-nums">{m.to_number}</TableCell>
-      <TableCell><Badge variant="outline">{m.purpose?.replace('_', ' ')}</Badge>{m.rule_name && <div className="text-xs text-muted-foreground">{m.rule_name}</div>}{ref && <div className="text-xs"><Link to={ref} className="text-primary hover:underline">open document</Link></div>}</TableCell>
-      <TableCell className="max-w-md"><span className="line-clamp-2 text-xs">{m.body}</span>{m.media_url && <a href={m.media_url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">attachment</a>}</TableCell>
-      <TableCell><Badge variant={statusTone[m.status ?? 'queued']}>{m.status}</Badge>{m.error && <div className="max-w-40 text-xs text-destructive">{m.error}</div>}</TableCell>
-      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{m.read_at ? `read ${dateTimeDMY(m.read_at)}` : m.delivered_at ? `delivered ${dateTimeDMY(m.delivered_at)}` : m.sent_at ? `sent ${dateTimeDMY(m.sent_at)}` : `attempt ${m.attempts ?? 0}`}</TableCell>
+      <TableCell><Badge variant="outline">{m.channel === 'ivr_call' ? '📞 ' : ''}{m.purpose?.replace('_', ' ')}</Badge>{m.rule_name && <div className="text-xs text-muted-foreground">{m.rule_name}</div>}{ref && <div className="text-xs"><Link to={ref} className="text-primary hover:underline">open document</Link></div>}</TableCell>
+      <TableCell className="max-w-md">
+        <span className="line-clamp-2 text-xs">{m.body}</span>
+        {m.media_url && <a href={m.media_url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">attachment</a>}
+        {m.channel === 'ivr_call' && (m.call_note || m.transcript || m.recording_url) && (
+          <div className="mt-1 text-xs">
+            {m.call_note && <div className="text-emerald-700">{m.call_note}{m.promised_on ? ` (${dateTimeDMY(m.promised_on).slice(0, 10)})` : ''}</div>}
+            {m.transcript && <div className="line-clamp-2 text-muted-foreground">“{m.transcript}”</div>}
+            {m.recording_url && <a href={m.recording_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">recording</a>}
+          </div>
+        )}
+      </TableCell>
+      <TableCell><Badge variant={statusTone[m.status ?? 'queued']}>{m.channel === 'ivr_call' ? (m.call_status ?? m.status) : m.status}</Badge>{m.error && <div className="max-w-40 text-xs text-destructive">{m.error}</div>}</TableCell>
+      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+        {m.channel === 'ivr_call' && m.call_duration ? `${m.call_duration}s · ` : ''}
+        {m.read_at ? `${m.channel === 'ivr_call' ? 'answered' : 'read'} ${dateTimeDMY(m.read_at)}` : m.delivered_at ? `${m.channel === 'ivr_call' ? 'answered' : 'delivered'} ${dateTimeDMY(m.delivered_at)}` : m.sent_at ? `${m.channel === 'ivr_call' ? 'placed' : 'sent'} ${dateTimeDMY(m.sent_at)}` : m.not_before ? `retry ${dateTimeDMY(m.not_before)}` : `attempt ${m.attempts ?? 0}`}
+      </TableCell>
     </TableRow>
   );
 }

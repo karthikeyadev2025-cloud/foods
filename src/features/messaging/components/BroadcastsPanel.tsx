@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Send, X } from 'lucide-react';
+import { PhoneCall, Plus, Send, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Field } from '@/components/Field';
@@ -19,7 +19,7 @@ import { dateTimeDMY, int } from '@/lib/format';
 import { broadcastRecipients, cancelBroadcast, createBroadcast, listBroadcasts, queueBroadcast, templatesApi, type BroadcastRow } from '../api';
 import { broadcastSchema, type BroadcastInput } from '../schema';
 
-const KIND_LABEL: Record<string, string> = { new_stock: 'New stock', catalog: 'Catalog', custom: 'Message' };
+const KIND_LABEL: Record<string, string> = { new_stock: 'New stock', catalog: 'Catalog', custom: 'Message', order_call: 'Order calls' };
 
 function segmentText(seg: unknown): string {
   const s = (seg && typeof seg === 'object' ? seg : {}) as Record<string, unknown>;
@@ -34,7 +34,7 @@ function segmentText(seg: unknown): string {
  * Compose a broadcast to a segment, see who it reaches, then send or leave it pending.
  * Used for catalogs (Catalogs tab → Push) and free-text messages.
  */
-export function BroadcastDialog({ open, onClose, kind, catalogId, catalogName }: { open: boolean; onClose: () => void; kind: 'catalog' | 'custom'; catalogId?: string; catalogName?: string }) {
+export function BroadcastDialog({ open, onClose, kind, catalogId, catalogName }: { open: boolean; onClose: () => void; kind: 'catalog' | 'custom' | 'order_call'; catalogId?: string; catalogName?: string }) {
   const qc = useQueryClient();
   const templates = useQuery({ queryKey: ['setup', 'message_templates'], queryFn: templatesApi.list });
   const routes = useQuery({ queryKey: ['setup', 'routes'], queryFn: routesApi.list });
@@ -51,7 +51,7 @@ export function BroadcastDialog({ open, onClose, kind, catalogId, catalogName }:
         template_id: v.template_id || undefined,
         body: v.body || undefined,
         segment: { route_id: v.route_id || undefined, town: v.town || undefined, bought_within_days: v.bought_within_days || undefined },
-        note: kind === 'catalog' ? `Catalog ${catalogName ?? ''}` : v.body.slice(0, 60),
+        note: kind === 'catalog' ? `Catalog ${catalogName ?? ''}` : kind === 'order_call' ? `Order calls ${new Date().toLocaleDateString('en-IN')}` : v.body.slice(0, 60),
       });
     },
     onSuccess: (id) => setCreated(id),
@@ -60,7 +60,7 @@ export function BroadcastDialog({ open, onClose, kind, catalogId, catalogName }:
   const send = useMutation({
     mutationFn: () => queueBroadcast(created ?? ''),
     onSuccess: async (n) => {
-      toast({ title: `Queued for ${n} customer${n === 1 ? '' : 's'}`, description: 'Sent within minutes, outside quiet hours and within the daily cap.' });
+      toast({ title: kind === 'order_call' ? `Calls queued for ${n} customer${n === 1 ? '' : 's'}` : `Queued for ${n} customer${n === 1 ? '' : 's'}`, description: kind === 'order_call' ? 'Placed within minutes while calls are switched on, outside quiet hours. Orders the bot hears land in the Orders tab.' : 'Sent within minutes, outside quiet hours and within the daily cap.' });
       await qc.invalidateQueries({ queryKey: ['messaging'] });
       close();
     },
@@ -71,21 +71,21 @@ export function BroadcastDialog({ open, onClose, kind, catalogId, catalogName }:
     form.reset();
     onClose();
   };
-  const purposeTemplates = (templates.data ?? []).filter((t) => t.is_active && t.purpose === kind);
+  const purposeTemplates = (templates.data ?? []).filter((t) => t.is_active && (kind === 'order_call' ? t.purpose === 'custom' && t.channel === 'ivr_call' : t.purpose === kind && t.channel !== 'ivr_call'));
   const e = form.formState.errors;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && close()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{kind === 'catalog' ? `Push catalog ${catalogName ?? ''}` : 'Message a segment'}</DialogTitle>
-          <DialogDescription>Only customers with a mobile and WhatsApp opt-in are included. Every message is logged.</DialogDescription>
+          <DialogTitle>{kind === 'catalog' ? `Push catalog ${catalogName ?? ''}` : kind === 'order_call' ? 'Call customers for their orders' : 'Message a segment'}</DialogTitle>
+          <DialogDescription>{kind === 'order_call' ? 'Hey Nikki rings each customer, reads the order script in their language and takes the order in conversation. Whatever it hears waits in the Orders tab for you to confirm — nothing is billed by itself.' : 'Only customers with a mobile and WhatsApp opt-in are included. Every message is logged.'}</DialogDescription>
         </DialogHeader>
         {!created ? (
           <form onSubmit={form.handleSubmit((v) => create.mutate(v))} className="grid grid-cols-2 gap-3">
-            <Field label="Template" htmlFor="bc-tpl" className="col-span-2" error={e.template_id?.message}>
+            <Field label={kind === 'order_call' ? 'Call script' : 'Template'} htmlFor="bc-tpl" className="col-span-2" error={e.template_id?.message}>
               <NativeSelect id="bc-tpl" {...form.register('template_id')}>
-                <option value="">{kind === 'catalog' ? '— by customer language —' : '— none, type below —'}</option>
+                <option value="">{kind === 'custom' ? '— none, type below —' : '— by customer language —'}</option>
                 {purposeTemplates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </NativeSelect>
             </Field>
@@ -145,7 +145,7 @@ export function BroadcastsPanel() {
   const perms = usePermissions();
   const canEdit = perms.canEdit('messaging');
   const rows = useQuery({ queryKey: ['messaging', 'broadcasts'], queryFn: listBroadcasts });
-  const [composing, setComposing] = useState(false);
+  const [composing, setComposing] = useState<'custom' | 'order_call' | null>(null);
   const invalidate = () => qc.invalidateQueries({ queryKey: ['messaging'] });
   const send = useMutation({
     mutationFn: (id: string) => queueBroadcast(id),
@@ -164,7 +164,12 @@ export function BroadcastsPanel() {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm text-muted-foreground">New-stock broadcasts appear here when production or a purchase lifts an item above its threshold (New stock tab). Pending ones wait for you.</p>
-        {canEdit && <Button size="sm" className="ml-auto" onClick={() => setComposing(true)}><Plus /> Message a segment</Button>}
+        {canEdit && (
+          <span className="ml-auto flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setComposing('order_call')}><PhoneCall /> Call for orders</Button>
+            <Button size="sm" onClick={() => setComposing('custom')}><Plus /> Message a segment</Button>
+          </span>
+        )}
       </div>
       {pending.length > 0 && <Badge>{pending.length} pending</Badge>}
       {rows.isLoading ? <Spinner /> : rows.error ? (
@@ -181,7 +186,7 @@ export function BroadcastsPanel() {
           </Table>
         </div>
       )}
-      <BroadcastDialog open={composing} onClose={() => setComposing(false)} kind="custom" />
+      {composing && <BroadcastDialog open onClose={() => setComposing(null)} kind={composing} />}
     </div>
   );
 }
@@ -191,7 +196,7 @@ function BroadcastLine({ b, canEdit, onSend, onCancel, busy }: { b: BroadcastRow
     <TableRow className={b.status === 'pending' ? 'bg-amber-50/50' : undefined}>
       <TableCell className="text-xs text-muted-foreground">{dateTimeDMY(b.created_at)}</TableCell>
       <TableCell><Badge variant="outline">{KIND_LABEL[b.kind ?? ''] ?? b.kind}</Badge></TableCell>
-      <TableCell>{b.kind === 'new_stock' ? `${b.item_code} — ${b.item_name}` : b.kind === 'catalog' ? b.catalog_name : b.note}<div className="text-xs text-muted-foreground">{b.template_name ?? (b.body ? 'free text' : 'by language')}</div></TableCell>
+      <TableCell>{b.kind === 'new_stock' ? `${b.item_code} — ${b.item_name}` : b.kind === 'catalog' ? b.catalog_name : b.note}<div className="text-xs text-muted-foreground">{b.kind === 'order_call' ? `voice · ${b.template_name ?? 'script by language'}` : (b.template_name ?? (b.body ? 'free text' : 'by language'))}</div></TableCell>
       <TableCell className="text-xs text-muted-foreground">{segmentText(b.segment)}</TableCell>
       <TableCell className="num">{b.status === 'queued' ? int(b.recipients) : ''}</TableCell>
       <TableCell className="num">{b.status === 'queued' ? `${int(b.sent_count)} / ${int(b.failed_count)}` : ''}</TableCell>

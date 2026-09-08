@@ -918,6 +918,8 @@ export type Database = {
           name: string
           opening_balance: number
           org_id: string
+          payment_promise_note: string | null
+          payment_promise_on: string | null
           price_group: string | null
           price_list_id: string | null
           route_id: string | null
@@ -939,6 +941,8 @@ export type Database = {
           name: string
           opening_balance?: number
           org_id: string
+          payment_promise_note?: string | null
+          payment_promise_on?: string | null
           price_group?: string | null
           price_list_id?: string | null
           route_id?: string | null
@@ -960,6 +964,8 @@ export type Database = {
           name?: string
           opening_balance?: number
           org_id?: string
+          payment_promise_note?: string | null
+          payment_promise_on?: string | null
           price_group?: string | null
           price_list_id?: string | null
           route_id?: string | null
@@ -1346,6 +1352,7 @@ export type Database = {
       inbound_orders: {
         Row: {
           audio_url: string | null
+          call_duration: number | null
           confidence: number | null
           created_at: string
           customer_id: string | null
@@ -1354,6 +1361,8 @@ export type Database = {
           handled_by: string | null
           id: string
           invoice_id: string | null
+          language: string | null
+          message_id: string | null
           notes: string | null
           org_id: string
           parsed_items: Json | null
@@ -1366,6 +1375,7 @@ export type Database = {
         }
         Insert: {
           audio_url?: string | null
+          call_duration?: number | null
           confidence?: number | null
           created_at?: string
           customer_id?: string | null
@@ -1374,6 +1384,8 @@ export type Database = {
           handled_by?: string | null
           id?: string
           invoice_id?: string | null
+          language?: string | null
+          message_id?: string | null
           notes?: string | null
           org_id: string
           parsed_items?: Json | null
@@ -1386,6 +1398,7 @@ export type Database = {
         }
         Update: {
           audio_url?: string | null
+          call_duration?: number | null
           confidence?: number | null
           created_at?: string
           customer_id?: string | null
@@ -1394,6 +1407,8 @@ export type Database = {
           handled_by?: string | null
           id?: string
           invoice_id?: string | null
+          language?: string | null
+          message_id?: string | null
           notes?: string | null
           org_id?: string
           parsed_items?: Json | null
@@ -1451,6 +1466,18 @@ export type Database = {
             foreignKeyName: "inbound_orders_invoice_id_fkey"
             columns: ["invoice_id"]
             referencedRelation: "v_invoice_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_message_id_fkey"
+            columns: ["message_id"]
+            referencedRelation: "message_log"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_message_id_fkey"
+            columns: ["message_id"]
+            referencedRelation: "v_message_log"
             referencedColumns: ["id"]
           },
           {
@@ -2549,14 +2576,19 @@ export type Database = {
           attempts: number
           body: string | null
           broadcast_id: string | null
+          call_duration: number | null
+          call_result: Json | null
+          call_status: string | null
           channel: Database["public"]["Enums"]["channel_kind"]
           created_at: string
           customer_id: string | null
           delivered_at: string | null
           error: string | null
           id: string
+          not_before: string | null
           org_id: string
           payload: Json | null
+          promised_on: string | null
           provider_msg_id: string | null
           purpose: Database["public"]["Enums"]["msg_purpose"]
           read_at: string | null
@@ -2573,14 +2605,19 @@ export type Database = {
           attempts?: number
           body?: string | null
           broadcast_id?: string | null
+          call_duration?: number | null
+          call_result?: Json | null
+          call_status?: string | null
           channel?: Database["public"]["Enums"]["channel_kind"]
           created_at?: string
           customer_id?: string | null
           delivered_at?: string | null
           error?: string | null
           id?: string
+          not_before?: string | null
           org_id: string
           payload?: Json | null
+          promised_on?: string | null
           provider_msg_id?: string | null
           purpose: Database["public"]["Enums"]["msg_purpose"]
           read_at?: string | null
@@ -2597,14 +2634,19 @@ export type Database = {
           attempts?: number
           body?: string | null
           broadcast_id?: string | null
+          call_duration?: number | null
+          call_result?: Json | null
+          call_status?: string | null
           channel?: Database["public"]["Enums"]["channel_kind"]
           created_at?: string
           customer_id?: string | null
           delivered_at?: string | null
           error?: string | null
           id?: string
+          not_before?: string | null
           org_id?: string
           payload?: Json | null
+          promised_on?: string | null
           provider_msg_id?: string | null
           purpose?: Database["public"]["Enums"]["msg_purpose"]
           read_at?: string | null
@@ -2724,6 +2766,9 @@ export type Database = {
         Row: {
           api_key: string | null
           api_url: string
+          call_attempts: number
+          call_retry_minutes: number
+          caller_number: string | null
           daily_cap: number
           default_language: string
           is_enabled: boolean
@@ -2732,11 +2777,16 @@ export type Database = {
           quiet_to: string
           sender_number: string | null
           updated_at: string
+          voice_enabled: boolean
+          voice_name: string
           webhook_secret: string
         }
         Insert: {
           api_key?: string | null
           api_url?: string
+          call_attempts?: number
+          call_retry_minutes?: number
+          caller_number?: string | null
           daily_cap?: number
           default_language?: string
           is_enabled?: boolean
@@ -2745,11 +2795,16 @@ export type Database = {
           quiet_to?: string
           sender_number?: string | null
           updated_at?: string
+          voice_enabled?: boolean
+          voice_name?: string
           webhook_secret?: string
         }
         Update: {
           api_key?: string | null
           api_url?: string
+          call_attempts?: number
+          call_retry_minutes?: number
+          caller_number?: string | null
           daily_cap?: number
           default_language?: string
           is_enabled?: boolean
@@ -2758,6 +2813,8 @@ export type Database = {
           quiet_to?: string
           sender_number?: string | null
           updated_at?: string
+          voice_enabled?: boolean
+          voice_name?: string
           webhook_secret?: string
         }
         Relationships: [
@@ -6770,6 +6827,8 @@ export type Database = {
           opening_balance: number | null
           org_id: string | null
           outstanding: number | null
+          payment_promise_note: string | null
+          payment_promise_on: string | null
           price_group: string | null
           price_list_id: string | null
           route_id: string | null
@@ -6937,6 +6996,9 @@ export type Database = {
       v_inbound_orders: {
         Row: {
           audio_url: string | null
+          call_duration: number | null
+          campaign_kind: string | null
+          campaign_note: string | null
           confidence: number | null
           created_at: string | null
           customer_id: string | null
@@ -6949,7 +7011,9 @@ export type Database = {
           id: string | null
           invoice_id: string | null
           invoice_no: string | null
+          language: string | null
           line_count: number | null
+          message_id: string | null
           mobile1: string | null
           notes: string | null
           order_id: string | null
@@ -7009,6 +7073,18 @@ export type Database = {
             foreignKeyName: "inbound_orders_invoice_id_fkey"
             columns: ["invoice_id"]
             referencedRelation: "v_invoice_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_message_id_fkey"
+            columns: ["message_id"]
+            referencedRelation: "message_log"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_message_id_fkey"
+            columns: ["message_id"]
+            referencedRelation: "v_message_log"
             referencedColumns: ["id"]
           },
           {
@@ -7857,6 +7933,10 @@ export type Database = {
           attempts: number | null
           body: string | null
           broadcast_id: string | null
+          call_duration: number | null
+          call_note: string | null
+          call_result: Json | null
+          call_status: string | null
           channel: Database["public"]["Enums"]["channel_kind"] | null
           created_at: string | null
           customer_id: string | null
@@ -7865,10 +7945,13 @@ export type Database = {
           error: string | null
           id: string | null
           media_url: string | null
+          not_before: string | null
           org_id: string | null
+          promised_on: string | null
           provider_msg_id: string | null
           purpose: Database["public"]["Enums"]["msg_purpose"] | null
           read_at: string | null
+          recording_url: string | null
           ref_id: string | null
           ref_table: string | null
           rule_id: string | null
@@ -7879,6 +7962,7 @@ export type Database = {
           template_name: string | null
           to_number: string | null
           town: string | null
+          transcript: string | null
         }
         Relationships: [
           {
@@ -10046,14 +10130,19 @@ export type Database = {
           attempts: number
           body: string | null
           broadcast_id: string | null
+          call_duration: number | null
+          call_result: Json | null
+          call_status: string | null
           channel: Database["public"]["Enums"]["channel_kind"]
           created_at: string
           customer_id: string | null
           delivered_at: string | null
           error: string | null
           id: string
+          not_before: string | null
           org_id: string
           payload: Json | null
+          promised_on: string | null
           provider_msg_id: string | null
           purpose: Database["public"]["Enums"]["msg_purpose"]
           read_at: string | null
@@ -10384,6 +10473,15 @@ export type Database = {
         Args: { p_date?: string; p_item: string; p_location: string }
         Returns: number
       }
+      mark_call_result: {
+        Args: {
+          p_duration?: number
+          p_event: string
+          p_provider_msg_id: string
+          p_result?: Json
+        }
+        Returns: boolean
+      }
       mark_delivered: {
         Args: {
           p_invoice: string
@@ -10490,31 +10588,58 @@ export type Database = {
         Args: { "": string }
         Returns: Record<string, unknown>[]
       }
-      pick_template: {
-        Args: {
-          p_language: string
-          p_org: string
-          p_purpose: Database["public"]["Enums"]["msg_purpose"]
-        }
-        Returns: {
-          body: string
-          channel: Database["public"]["Enums"]["channel_kind"]
-          id: string
-          is_active: boolean
-          language: string | null
-          name: string
-          org_id: string
-          provider_template_name: string | null
-          purpose: Database["public"]["Enums"]["msg_purpose"]
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "message_templates"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      pick_template:
+        | {
+            Args: {
+              p_language: string
+              p_org: string
+              p_purpose: Database["public"]["Enums"]["msg_purpose"]
+            }
+            Returns: {
+              body: string
+              channel: Database["public"]["Enums"]["channel_kind"]
+              id: string
+              is_active: boolean
+              language: string | null
+              name: string
+              org_id: string
+              provider_template_name: string | null
+              purpose: Database["public"]["Enums"]["msg_purpose"]
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "message_templates"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_channel: Database["public"]["Enums"]["channel_kind"]
+              p_language: string
+              p_org: string
+              p_purpose: Database["public"]["Enums"]["msg_purpose"]
+            }
+            Returns: {
+              body: string
+              channel: Database["public"]["Enums"]["channel_kind"]
+              id: string
+              is_active: boolean
+              language: string | null
+              name: string
+              org_id: string
+              provider_template_name: string | null
+              purpose: Database["public"]["Enums"]["msg_purpose"]
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "message_templates"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       pieces_to_uom: {
         Args: { p_item: string; p_pieces: number; p_uom: string }
         Returns: number

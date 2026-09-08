@@ -125,8 +125,9 @@ export function listBroadcasts(): Promise<BroadcastRow[]> {
 }
 
 export type BroadcastSegment = { route_id?: string; town?: string; bought_within_days?: number; bought_item_id?: string };
+export type BroadcastKind = 'new_stock' | 'catalog' | 'custom' | 'order_call';
 export type CreateBroadcastInput = {
-  kind: 'new_stock' | 'catalog' | 'custom';
+  kind: BroadcastKind;
   item_id?: string;
   catalog_id?: string;
   template_id?: string;
@@ -208,6 +209,11 @@ export interface MessagingSettings {
   daily_cap: number;
   is_enabled: boolean;
   updated_at: string | null;
+  voice_enabled: boolean;
+  caller_number: string | null;
+  voice_name: string;
+  call_attempts: number;
+  call_retry_minutes: number;
 }
 
 function toSettings(j: Json | null): MessagingSettings {
@@ -224,6 +230,11 @@ function toSettings(j: Json | null): MessagingSettings {
     daily_cap: Number(o.daily_cap ?? 500),
     is_enabled: Boolean(o.is_enabled),
     updated_at: o.updated_at ? String(o.updated_at) : null,
+    voice_enabled: Boolean(o.voice_enabled),
+    caller_number: o.caller_number ? String(o.caller_number) : null,
+    voice_name: String(o.voice_name ?? 'te-IN-female'),
+    call_attempts: Number(o.call_attempts ?? 2),
+    call_retry_minutes: Number(o.call_retry_minutes ?? 120),
   };
 }
 
@@ -242,6 +253,11 @@ export type SettingsPatch = {
   quiet_to?: string;
   daily_cap?: number;
   is_enabled?: boolean;
+  voice_enabled?: boolean;
+  caller_number?: string;
+  voice_name?: string;
+  call_attempts?: number;
+  call_retry_minutes?: number;
 };
 
 export async function saveMessagingSettings(p: SettingsPatch): Promise<MessagingSettings> {

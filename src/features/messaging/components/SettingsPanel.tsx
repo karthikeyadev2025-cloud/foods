@@ -19,7 +19,11 @@ import { DOC_MESSAGE_TYPES, getMessagingSettings, listDocSettings, rotateWebhook
 import { LANGUAGES, settingsSchema, type SettingsInput } from '../schema';
 
 function toForm(s: MessagingSettings): SettingsInput {
-  return { is_enabled: s.is_enabled, api_url: s.api_url, api_key: '', sender_number: s.sender_number ?? '', default_language: s.default_language === 'en' ? 'en' : 'te', quiet_from: s.quiet_from, quiet_to: s.quiet_to, daily_cap: s.daily_cap };
+  return {
+    is_enabled: s.is_enabled, api_url: s.api_url, api_key: '', sender_number: s.sender_number ?? '', default_language: s.default_language === 'en' ? 'en' : 'te',
+    quiet_from: s.quiet_from, quiet_to: s.quiet_to, daily_cap: s.daily_cap,
+    voice_enabled: s.voice_enabled, caller_number: s.caller_number ?? '', voice_name: s.voice_name, call_attempts: s.call_attempts, call_retry_minutes: s.call_retry_minutes,
+  };
 }
 
 export function SettingsPanel() {
@@ -27,7 +31,7 @@ export function SettingsPanel() {
   const perms = usePermissions();
   const canEdit = perms.canEdit('messaging');
   const settings = useQuery({ queryKey: ['messaging', 'settings'], queryFn: getMessagingSettings });
-  const form = useForm<SettingsInput>({ resolver: zodResolver(settingsSchema), defaultValues: { is_enabled: false, api_url: 'https://heynikki.in', api_key: '', sender_number: '', default_language: 'te', quiet_from: '21:00', quiet_to: '08:00', daily_cap: 500 } });
+  const form = useForm<SettingsInput>({ resolver: zodResolver(settingsSchema), defaultValues: { is_enabled: false, api_url: 'https://heynikki.in', api_key: '', sender_number: '', default_language: 'te', quiet_from: '21:00', quiet_to: '08:00', daily_cap: 500, voice_enabled: false, caller_number: '', voice_name: 'te-IN-female', call_attempts: 2, call_retry_minutes: 120 } });
   useEffect(() => {
     if (settings.data) form.reset(toForm(settings.data));
   }, [settings.data, form]);
@@ -70,7 +74,14 @@ export function SettingsPanel() {
             </Field>
             <Field label="Quiet from" htmlFor="ms-qf" help="No messages go out between these times (IST)."><Input id="ms-qf" type="time" {...form.register('quiet_from')} disabled={!canEdit} /></Field>
             <Field label="Quiet to" htmlFor="ms-qt"><Input id="ms-qt" type="time" {...form.register('quiet_to')} disabled={!canEdit} /></Field>
-            <Field label="Daily cap (messages)" htmlFor="ms-cap" error={e.daily_cap?.message}><Input id="ms-cap" type="number" className="num" {...form.register('daily_cap')} disabled={!canEdit} /></Field>
+            <Field label="Daily cap (messages + calls)" htmlFor="ms-cap" error={e.daily_cap?.message}><Input id="ms-cap" type="number" className="num" {...form.register('daily_cap')} disabled={!canEdit} /></Field>
+
+            <div className="col-span-2 mt-2 text-sm font-medium">Voice calls</div>
+            <label className="col-span-2 flex items-center gap-2 text-sm"><Checkbox {...form.register('voice_enabled')} disabled={!canEdit} /> Calls switched on (reminder calls and order-taking calls stay queued while off)</label>
+            <Field label="Caller number" htmlFor="ms-caller" help="The number customers see; from Hey Nikki." error={e.caller_number?.message}><Input id="ms-caller" placeholder="91XXXXXXXXXX" {...form.register('caller_number')} disabled={!canEdit} /></Field>
+            <Field label="Voice" htmlFor="ms-voice" help="Hey Nikki voice id, e.g. te-IN-female." error={e.voice_name?.message}><Input id="ms-voice" {...form.register('voice_name')} disabled={!canEdit} /></Field>
+            <Field label="Attempts per call" htmlFor="ms-att" help="Unanswered or busy: try again this many times." error={e.call_attempts?.message}><Input id="ms-att" type="number" className="num" {...form.register('call_attempts')} disabled={!canEdit} /></Field>
+            <Field label="Retry after (minutes)" htmlFor="ms-retry" error={e.call_retry_minutes?.message}><Input id="ms-retry" type="number" className="num" {...form.register('call_retry_minutes')} disabled={!canEdit} /></Field>
             {canEdit && <div className="col-span-2 flex justify-end"><Button type="submit" disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save settings'}</Button></div>}
           </form>
         </CardContent>
@@ -80,7 +91,7 @@ export function SettingsPanel() {
         <Card>
           <CardHeader>
             <CardTitle>Webhooks for the Hey Nikki console</CardTitle>
-            <CardDescription>Hey Nikki posts inbound orders and delivery updates to these addresses with the secret in the <code>X-Nikki-Secret</code> header.</CardDescription>
+            <CardDescription>Hey Nikki posts inbound orders (WhatsApp texts and what the bot heard on an order call) and delivery / call events to these addresses with the secret in the <code>X-Nikki-Secret</code> header.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <Row label="Inbound orders" value={urls.inbound} onCopy={copy} />

@@ -31,17 +31,27 @@ export async function drainOrg(admin: SupabaseClient, orgId: string, limit = 50)
     return out;
   }
 
-  const nikki = new NikkiClient(settings.api_url, settings.api_key, settings.sender_number);
+  const nikki = new NikkiClient(settings.api_url, settings.api_key, settings.sender_number, settings.caller_number);
   for (const m of claimed) {
     const payload = (m.payload ?? {}) as Record<string, unknown>;
-    const r = await nikki.send({
-      to: m.to_number,
-      body: m.body ?? '',
-      template_name: (payload.template_name as string | undefined) ?? null,
-      language: (payload.language as string | undefined) ?? null,
-      media_url: (payload.media_url as string | undefined) ?? null,
-      client_ref: m.id,
-    });
+    const r =
+      m.channel === 'ivr_call'
+        ? await nikki.call({
+            to: m.to_number,
+            script: m.body ?? '',
+            language: (payload.language as string | undefined) ?? null,
+            voice: settings.voice_name ?? null,
+            mode: m.purpose === 'payment_reminder' ? 'reminder' : payload.kind === 'order_call' ? 'order_capture' : 'announce',
+            client_ref: m.id,
+          })
+        : await nikki.send({
+            to: m.to_number,
+            body: m.body ?? '',
+            template_name: (payload.template_name as string | undefined) ?? null,
+            language: (payload.language as string | undefined) ?? null,
+            media_url: (payload.media_url as string | undefined) ?? null,
+            client_ref: m.id,
+          });
     if (r.ok) {
       out.sent += 1;
       await admin.from('message_log').update({ status: 'sent', provider_msg_id: r.provider_msg_id ?? m.id, sent_at: new Date().toISOString(), error: null, updated_at: new Date().toISOString() }).eq('id', m.id);

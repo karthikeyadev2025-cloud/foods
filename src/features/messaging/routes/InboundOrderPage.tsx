@@ -144,7 +144,7 @@ export function InboundOrderPage() {
             {o.transcript && <div><div className="text-xs uppercase text-muted-foreground">Transcript</div><p className="whitespace-pre-wrap rounded-md bg-muted/50 p-3">{o.transcript}</p></div>}
             {o.audio_url && <audio controls src={o.audio_url} className="w-full" />}
             {!o.raw_text && !o.transcript && !o.audio_url && <p className="text-muted-foreground">No text came with this order.</p>}
-            <div className="text-xs text-muted-foreground">From {o.from_number ?? o.mobile1}{o.confidence !== null && o.confidence !== undefined ? ` · parser confidence ${qty(toNumber(o.confidence) * 100, 0)}%` : ''}</div>
+            <div className="text-xs text-muted-foreground">From {o.from_number ?? o.mobile1}{o.confidence !== null && o.confidence !== undefined ? ` · parser confidence ${qty(toNumber(o.confidence) * 100, 0)}%` : ''}{o.campaign_kind === 'order_call' ? ` · taken on an order call${o.call_duration ? ` (${o.call_duration}s)` : ''}${o.campaign_note ? ` · ${o.campaign_note}` : ''}` : ''}</div>
             {o.reject_reason && <p className="text-destructive">Rejected: {o.reject_reason}</p>}
             <Field label="Customer" htmlFor="io-cust">
               <Combobox<CustomerRow> id="io-cust" value={customer} onChange={setCustomer} search={searchCustomers} queryKey="customers-pick" getKey={(c) => c.id ?? ''} getLabel={(c) => `${c.name}${c.town ? ` — ${c.town}` : ''}`} renderOption={(c) => <span><span className="font-medium">{c.name}</span> <span className="text-muted-foreground">{c.town} · {c.mobile1}</span></span>} placeholder={o.customer_id ? '' : 'Unknown number — pick the customer'} disabled={!open || !canEdit} eager />

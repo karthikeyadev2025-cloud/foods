@@ -23,6 +23,7 @@ export const TEMPLATE_VARS: { key: string; meaning: string; used: string }[] = [
   { key: 'item_code', meaning: 'Item code', used: 'new stock' },
   { key: 'catalog', meaning: 'Catalog name', used: 'catalog' },
   { key: 'valid_to', meaning: 'Catalog valid till', used: 'catalog' },
+  { key: 'last_items', meaning: 'Items and boxes on the customer\'s last bill', used: 'order calls' },
 ];
 
 /** Same rule as the DB: replace known {{keys}}, leave unknown ones visible. */

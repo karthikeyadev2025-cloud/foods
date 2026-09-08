@@ -18,7 +18,7 @@ export const LANGUAGES = [
 export const CHANNELS = [
   { value: 'whatsapp', label: 'WhatsApp' },
   { value: 'sms', label: 'SMS' },
-  { value: 'ivr_call', label: 'Voice call (Phase 3)' },
+  { value: 'ivr_call', label: 'Voice call (script read out)' },
 ] as const;
 
 export const templateSchema = z.object({
@@ -71,6 +71,11 @@ export const settingsSchema = z.object({
   quiet_from: z.string(),
   quiet_to: z.string(),
   daily_cap: z.coerce.number().int().min(1),
+  voice_enabled: z.boolean(),
+  caller_number: z.string().trim().max(20),
+  voice_name: z.string().trim().max(60),
+  call_attempts: z.coerce.number().int().min(1).max(5),
+  call_retry_minutes: z.coerce.number().int().min(5).max(1440),
 });
 export type SettingsInput = z.infer<typeof settingsSchema>;
 

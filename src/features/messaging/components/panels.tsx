@@ -42,6 +42,11 @@ const STANDARD_TEMPLATES: TemplateInput[] = [
   { name: 'New stock (en)', purpose: 'new_stock', language: 'en', channel: 'whatsapp', provider_template_name: '', body: '{{name}}, {{item}} is back in stock at {{org}}. Order today!', is_active: true },
   { name: 'Catalog (te)', purpose: 'catalog', language: 'te', channel: 'whatsapp', provider_template_name: '', body: '{{org}} కొత్త కేటలాగ్ {{catalog}} జతచేయబడింది ({{valid_to}} వరకు). ఆర్డర్ కోసం రిప్లై చేయండి.', is_active: true },
   { name: 'Catalog (en)', purpose: 'catalog', language: 'en', channel: 'whatsapp', provider_template_name: '', body: 'New catalog {{catalog}} from {{org}} attached (valid till {{valid_to}}). Reply to order.', is_active: true },
+  // Spoken scripts for the voice pipeline. A reminder call gathers one key: 1 = will pay this week, 2 = already paid, 3 = call me back.
+  { name: 'Reminder call (te)', purpose: 'payment_reminder', language: 'te', channel: 'ivr_call', provider_template_name: '', body: 'నమస్కారం {{name}} గారు. {{org}} నుండి మాట్లాడుతున్నాము. మీ బకాయి {{outstanding}} రూపాయలు, {{oldest_days}} రోజులుగా ఉంది. ఈ వారంలో చెల్లిస్తే 1 నొక్కండి. ఇప్పటికే చెల్లించి ఉంటే 2 నొక్కండి. ఆఫీసు నుండి కాల్ కావాలంటే 3 నొక్కండి. ధన్యవాదాలు.', is_active: true },
+  { name: 'Reminder call (en)', purpose: 'payment_reminder', language: 'en', channel: 'ivr_call', provider_template_name: '', body: 'Namaste {{name}}. This is {{org}}. Your outstanding is {{outstanding}} rupees, pending for {{oldest_days}} days. Press 1 if you will pay this week, 2 if already paid, 3 for a call back from the office. Thank you.', is_active: true },
+  { name: 'Order call (te)', purpose: 'custom', language: 'te', channel: 'ivr_call', provider_template_name: '', body: 'నమస్కారం {{name}} గారు. {{org}} నుండి. గత సారి మీరు {{last_items}} తీసుకున్నారు. ఈ వారం ఏ వస్తువులు, ఎన్ని బాక్సులు కావాలో చెప్పండి. మీ ఆర్డర్ ఆఫీసు నుండి కన్ఫర్మ్ చేస్తారు.', is_active: true },
+  { name: 'Order call (en)', purpose: 'custom', language: 'en', channel: 'ivr_call', provider_template_name: '', body: 'Namaste {{name}}. This is {{org}}. Last time you took {{last_items}}. Please tell me which items and how many boxes you need this week. The office will confirm your order.', is_active: true },
 ];
 
 export function TemplatesPanel() {
@@ -53,8 +58,8 @@ export function TemplatesPanel() {
     exportName: 'message-templates',
     description: (
       <>
-        One template per purpose and language; the customer's language picks which one goes out. Placeholders:{' '}
-        <code>{'{{name}} {{org}} {{outstanding}} {{oldest_days}} {{invoice_no}} {{amount}} {{items}} {{boxes}} {{receipt_no}} {{item}} {{catalog}} {{valid_to}} {{date}}'}</code>.
+        One template per purpose, language and channel; the customer's language picks which one goes out, and a voice call only ever reads a "Voice call" script. Placeholders:{' '}
+        <code>{'{{name}} {{org}} {{outstanding}} {{oldest_days}} {{invoice_no}} {{amount}} {{items}} {{boxes}} {{receipt_no}} {{item}} {{catalog}} {{valid_to}} {{last_items}} {{date}}'}</code>.
         A WhatsApp-approved template name goes in "Provider template" when Hey Nikki needs one.
       </>
     ),

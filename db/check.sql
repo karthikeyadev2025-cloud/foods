@@ -32,7 +32,8 @@ with expected(ord, file, kind, obj, detail) as (
     (19, '19_phase3.sql',       'table',    'incentive_schemes',           'route profit, incentives, driver phone'),
     (20, '20_voice.sql',        'column',   'messaging_settings.voice_enabled', 'voice calls'),
     (21, '21_plans.sql',        'function', 'plan_features',               'the three licence plans'),
-    (22, '22_attendance.sql',   'table',    'punchly_settings',            'attendance and Punchly')
+    (22, '22_attendance.sql',   'table',    'punchly_settings',            'attendance and Punchly'),
+    (23, '23_extension_fix.sql','fixed',    'issue_license',               'the pgcrypto fix — only needed on a database built before it')
 )
 select
   e.ord                                          as "#",
@@ -52,6 +53,19 @@ cross join lateral (
        where c.table_schema = 'public'
          and c.table_name  = split_part(e.obj, '.', 1)
          and c.column_name = split_part(e.obj, '.', 2))
+    -- 23 restates existing functions rather than creating new ones, so look at what
+    -- they are made of. Two traps here, both hit while writing this:
+    --   • Test for the fix being PRESENT, not the old call being absent. The fixed
+    --     functions carry a comment naming gen_random_bytes to explain the bug, so
+    --     searching for its absence matches that comment and calls a fixed database
+    --     broken.
+    --   • Read prosrc, not pg_get_functiondef(). The planner is free to evaluate that
+    --     call before the schema filter, and it throws on the aggregates in
+    --     pg_catalog: "array_agg is an aggregate function". prosrc is a plain column.
+    when 'fixed'    then exists (
+      select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and p.proname = e.obj and p.prokind = 'f'
+         and p.prosrc like '%gen_random_uuid%')
   end as found
 ) f
 order by e.ord;

@@ -19,9 +19,26 @@ What that runs:
 | Shell | `tsc -p tsconfig.electron.json` | `dist-electron/main.js`, `dist-electron/preload.cjs` |
 | Installer | `electron-builder --win` | NSIS installer, per-user, desktop + start-menu shortcuts |
 
-`.env` is baked into the renderer at build time (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`),
-so build from a machine with the production `.env`. Put an icon at `build/icon.ico` (256×256)
-before building; without it electron-builder uses the Electron icon and warns.
+Put an icon at `build/icon.ico` (256×256) before building; without it electron-builder
+uses the Electron icon and warns.
+
+**The installer does not need to carry your project.** If `.env` is present at build time
+its values are baked in and the app goes straight to the sign-in screen. If it is not, the
+app asks once on first run for the Project URL and the anon public key (Supabase →
+Settings → API) and keeps them on that machine. That means **one installer works on every
+PC and for any project** — hand the same `.exe` around and type the two lines once per
+computer. "Connect to a different database" under the sign-in button clears them again.
+
+The anon key is safe to type there: every table is behind row-level security, so the key
+alone opens nothing. The service role key must never be entered — the app rejects it.
+
+### Building without Wine (Linux / macOS)
+
+`electron-builder` needs Wine on a non-Windows machine to stamp the icon and version onto
+the `.exe`. Without it the build still leaves a complete, runnable app in
+`release/win-unpacked/` — zip that folder and it works as a portable copy, just with the
+default Electron icon. Install Wine (`apt-get install -y wine wine64`) to get the real
+NSIS installer.
 
 Development: run `npm run dev` in one terminal and `npm run desktop:dev` in another.
 The shell then loads `http://localhost:5173` with DevTools open.

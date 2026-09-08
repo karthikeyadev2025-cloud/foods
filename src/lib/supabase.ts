@@ -1,4 +1,5 @@
 import { createClient, type PostgrestError } from '@supabase/supabase-js';
+import { getConnection } from '@/lib/config';
 import { enqueueOutbox, isNetworkError, isOnline, OfflineQueuedError, outboxItems, removeOutboxItem, updateOutboxItem } from '@/lib/offline';
 import type { Database } from '@/types/supabase';
 
@@ -99,19 +100,21 @@ function rawRpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: 
   return (supabase.rpc as unknown as (f: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown; error: PostgrestError | null }>)(fn, args);
 }
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const connection = getConnection();
 
-/** True when both env values are present. The shell renders a config warning otherwise. */
-export const isSupabaseConfigured = Boolean(url && anonKey);
+/** True once this copy knows its project — from the build, or from the first-run screen. */
+export const isSupabaseConfigured = connection !== null;
 
 /**
  * The single Supabase client. Only `features/<x>/api.ts` files may import this —
  * no `supabase.from()` inside a component, ever (DOMAIN_RULES.md rule 2).
+ *
+ * Built once at module load: when the connection changes, the app reloads rather than
+ * swapping the client under a live cache.
  */
 export const supabase = createClient<Database>(
-  url || 'http://localhost:54321',
-  anonKey || 'missing-anon-key',
+  connection?.url ?? 'http://localhost:54321',
+  connection?.anonKey ?? 'missing-anon-key',
   {
     auth: {
       persistSession: true,

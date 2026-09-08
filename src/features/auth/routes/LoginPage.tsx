@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Field } from '@/components/Field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/Spinner';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { clearConnection, isBuiltIn } from '@/lib/config';
 import { signIn } from '../api';
 import { useSession } from '../hooks';
 import { loginSchema, type LoginInput } from '../schema';
@@ -44,11 +44,6 @@ export function LoginPage() {
           <CardDescription>Sign in to the ERP</CardDescription>
         </CardHeader>
         <CardContent>
-          {!isSupabaseConfigured && (
-            <p role="alert" className="mb-3 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
-              Supabase is not configured. Fill in <code>.env</code> before signing in.
-            </p>
-          )}
           <form onSubmit={form.handleSubmit((v) => login.mutate(v))} className="space-y-3" noValidate>
             <Field label="Email" htmlFor="email" error={form.formState.errors.email?.message}>
               <Input id="email" type="email" autoComplete="username" autoFocus {...form.register('email')} />
@@ -61,10 +56,22 @@ export function LoginPage() {
                 {form.formState.errors.root.message}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={login.isPending || !isSupabaseConfigured}>
+            <Button type="submit" className="w-full" disabled={login.isPending}>
               {login.isPending ? 'Signing in…' : 'Sign in'}
             </Button>
           </form>
+          {!isBuiltIn() && (
+            <button
+              type="button"
+              className="mt-3 text-xs text-muted-foreground hover:text-foreground hover:underline"
+              onClick={() => {
+                clearConnection();
+                window.location.reload();
+              }}
+            >
+              Connect to a different database
+            </button>
+          )}
         </CardContent>
       </Card>
     </div>

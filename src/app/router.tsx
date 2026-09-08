@@ -8,6 +8,11 @@ import { LoginPage } from '@/features/auth/routes/LoginPage';
 import { WelcomePage } from '@/features/auth/routes/WelcomePage';
 import { CustomersPage } from '@/features/customers/routes/CustomersPage';
 import { DashboardPage } from '@/features/dashboard/routes/DashboardPage';
+import { ChallanEditPage, ChallansPage } from '@/features/documents/routes/ChallansPage';
+import { OrderEditPage, OrdersPage } from '@/features/documents/routes/OrdersPage';
+import { PriceListsPage } from '@/features/documents/routes/PriceListsPage';
+import { PurchaseReturnsPage } from '@/features/documents/routes/PurchaseReturnsPage';
+import { QuotationEditPage, QuotationPrintPage, QuotationsPage } from '@/features/documents/routes/QuotationsPage';
 import { InvoiceEditPage } from '@/features/invoices/routes/InvoiceEditPage';
 import { InvoicePrintPage } from '@/features/invoices/routes/InvoicePrintPage';
 import { InvoicesPage } from '@/features/invoices/routes/InvoicesPage';
@@ -48,7 +53,10 @@ export const router = createBrowserRouter([
     children: [
       { path: '/welcome', element: <WelcomePage /> },
       // Print sheets render without the app chrome.
-      guarded('invoices', [{ path: '/invoices/:id/print', element: <InvoicePrintPage /> }]),
+      guarded('invoices', [
+        { path: '/invoices/:id/print', element: <InvoicePrintPage /> },
+        { path: '/quotations/:id/print', element: <QuotationPrintPage /> },
+      ]),
       guarded('vehicles', [{ path: '/vehicles/trips/:id/print', element: <TripPrintPage /> }]),
       {
         path: '/',
@@ -65,10 +73,25 @@ export const router = createBrowserRouter([
             { path: 'invoices', element: <InvoicesPage /> },
             { path: 'invoices/new', element: <InvoiceEditPage /> },
             { path: 'invoices/:id', element: <InvoiceEditPage /> },
+            { path: 'quotations', element: <QuotationsPage /> },
+            { path: 'quotations/new', element: <QuotationEditPage /> },
+            { path: 'quotations/:id', element: <QuotationEditPage /> },
+            { path: 'orders', element: <OrdersPage /> },
+            { path: 'orders/purchase', element: <OrdersPage kind="purchase" /> },
+            { path: 'orders/new', element: <OrderEditPage /> },
+            { path: 'orders/:id', element: <OrderEditPage /> },
+            { path: 'challans', element: <ChallansPage /> },
+            { path: 'challans/new', element: <ChallanEditPage /> },
+            { path: 'challans/:id', element: <ChallanEditPage /> },
+          ]),
+          guarded('items', [
+            { path: 'pricing', element: <PriceListsPage /> },
+            { path: 'pricing/:tab', element: <PriceListsPage /> },
           ]),
           guarded('purchases', [
             { path: 'purchases', element: <PurchasesPage /> },
             { path: 'purchases/suppliers', element: <PurchasesPage tab="suppliers" /> },
+            { path: 'purchases/returns', element: <PurchaseReturnsPage /> },
             { path: 'purchases/new', element: <PurchaseNewPage /> },
             { path: 'purchases/:id', element: <PurchaseViewPage /> },
           ]),

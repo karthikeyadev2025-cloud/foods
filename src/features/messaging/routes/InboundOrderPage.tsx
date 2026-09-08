@@ -21,6 +21,7 @@ import { toast, toastError } from '@/hooks/use-toast';
 import { amount, dateTimeDMY, money, qty, round, toISODate, toNumber } from '@/lib/format';
 import { invoiceLine } from '@/lib/units';
 import { cn } from '@/lib/utils';
+import { convertInboundToOrder } from '@/features/documents/api';
 import { convertInboundOrder, getInboundOrder, inboundOrderLines, orderTone, rejectInboundOrder, type InboundLine } from '../api';
 
 interface EditLine {
@@ -99,6 +100,22 @@ export function InboundOrderPage() {
     },
     onError: (e) => toastError(e, 'Could not convert'),
   });
+  const toOrder = useMutation({
+    mutationFn: () => {
+      if (!customer?.id) throw new Error('Pick the customer first');
+      if (!ready.length) throw new Error('Every line needs an item and boxes');
+      const unresolved = lines.filter((l) => !l.item || l.boxes <= 0);
+      if (unresolved.length) throw new Error(`${unresolved.length} line${unresolved.length === 1 ? '' : 's'} still unmatched — fix or remove them`);
+      return convertInboundToOrder(id, { customer_id: customer.id, notes: notes || null }, ready.map((l) => ({ item_id: l.item?.id ?? '', boxes: l.boxes, rate: l.rate })));
+    },
+    onSuccess: async (orderId) => {
+      toast({ title: 'Sale order created', description: 'Deliver it in parts from the order screen; each part becomes an invoice.' });
+      await qc.invalidateQueries({ queryKey: ['messaging'] });
+      await qc.invalidateQueries({ queryKey: ['orders'] });
+      navigate(`/orders/${orderId}`);
+    },
+    onError: (e) => toastError(e, 'Could not create the order'),
+  });
   const reject = useMutation({
     mutationFn: (reason: string) => rejectInboundOrder(id, reason),
     onSuccess: async () => { toast({ title: 'Order rejected' }); await qc.invalidateQueries({ queryKey: ['messaging'] }); navigate('/messaging'); },
@@ -115,7 +132,7 @@ export function InboundOrderPage() {
     <div className="space-y-3">
       <PageHeader
         title={`Order from ${o.customer_name ?? o.from_number ?? 'unknown'}`}
-        description={<span className="flex flex-wrap items-center gap-2">{dateTimeDMY(o.created_at)} · via {o.source} <Badge variant={orderTone[o.status ?? 'new']}>{o.status}</Badge>{o.invoice_no && <Link to={`/invoices/${o.invoice_id}`} className="text-primary hover:underline">{o.invoice_no}</Link>}{o.handled_by_name && <span className="text-xs">handled by {o.handled_by_name} {dateTimeDMY(o.handled_at)}</span>}</span>}
+        description={<span className="flex flex-wrap items-center gap-2">{dateTimeDMY(o.created_at)} · via {o.source} <Badge variant={orderTone[o.status ?? 'new']}>{o.status}</Badge>{o.invoice_no && <Link to={`/invoices/${o.invoice_id}`} className="text-primary hover:underline">{o.invoice_no}</Link>}{o.order_no && <Link to={`/orders/${o.order_id}`} className="text-primary hover:underline">order {o.order_no}</Link>}{o.handled_by_name && <span className="text-xs">handled by {o.handled_by_name} {dateTimeDMY(o.handled_at)}</span>}</span>}
         actions={<Button asChild variant="outline" size="sm"><Link to="/messaging"><ArrowLeft /> Queue</Link></Button>}
       />
 
@@ -199,7 +216,8 @@ export function InboundOrderPage() {
                     <Button variant="ghost" onClick={() => setRejecting(null)}>Keep</Button>
                   </>
                 )}
-                <Button className="ml-auto" onClick={() => convert.mutate()} disabled={convert.isPending || !customer || !ready.length}><Check /> Convert to invoice</Button>
+                <Button className="ml-auto" variant="secondary" onClick={() => toOrder.mutate()} disabled={toOrder.isPending || !customer || !ready.length} title="Keep it as a promise to deliver in parts">Convert to sale order</Button>
+                <Button onClick={() => convert.mutate()} disabled={convert.isPending || !customer || !ready.length}><Check /> Convert to invoice</Button>
               </div>
             )}
             {!canEdit && open && <p className="mt-3 text-xs text-muted-foreground">Converting needs Messaging and Invoice edit rights.</p>}

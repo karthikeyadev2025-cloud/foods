@@ -2,6 +2,11 @@ import type { LucideIcon } from 'lucide-react';
 import {
   BarChart3,
   Boxes,
+  ClipboardList,
+  FileSignature,
+  PackageOpen,
+  Tag,
+  Undo2,
   Factory,
   FileText,
   Landmark,
@@ -44,13 +49,18 @@ export const NAV: NavGroup[] = [
     items: [
       { to: '/items', label: 'Items', icon: Package, module: 'items' },
       { to: '/customers', label: 'Customers', icon: Users, module: 'customers' },
+      { to: '/pricing', label: 'Pricing', icon: Tag, module: 'items' },
     ],
   },
   {
     label: 'Transactions',
     items: [
+      { to: '/quotations', label: 'Quotations', icon: FileSignature, module: 'invoices' },
+      { to: '/orders', label: 'Orders', icon: ClipboardList, module: 'invoices' },
+      { to: '/challans', label: 'Challans', icon: PackageOpen, module: 'invoices' },
       { to: '/invoices', label: 'Sales Invoices', icon: FileText, module: 'invoices' },
       { to: '/purchases', label: 'Purchases', icon: ShoppingCart, module: 'purchases' },
+      { to: '/purchases/returns', label: 'Purchase Returns', icon: Undo2, module: 'purchases' },
       { to: '/returns', label: 'Returns', icon: RotateCcw, module: 'returns' },
       { to: '/receipts', label: 'Receipts', icon: Receipt, module: 'receipts' },
       { to: '/payments', label: 'Payments', icon: Wallet, module: 'payments' },

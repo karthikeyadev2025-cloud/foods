@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
+import { listPriceLists } from '@/features/documents/api';
 import { routesApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { createCustomer, findByMobile, updateCustomer, type CustomerRow } from '../api';
@@ -24,6 +25,7 @@ function toForm(c: CustomerRow): CustomerInput {
     address: c.address ?? '',
     route_id: c.route_id ?? '',
     price_group: c.price_group ?? 'default',
+    price_list_id: c.price_list_id ?? '',
     credit_limit: Number(c.credit_limit ?? 0),
     opening_balance: Number(c.opening_balance ?? 0),
     whatsapp_opt_in: c.whatsapp_opt_in ?? true,
@@ -37,6 +39,7 @@ const orNull = (s: string) => (s.trim() === '' ? null : s.trim());
 export function CustomerDialog({ customer, onClose }: { customer?: CustomerRow; onClose: () => void }) {
   const queryClient = useQueryClient();
   const routes = useQuery({ queryKey: ['setup', 'routes'], queryFn: routesApi.list });
+  const priceLists = useQuery({ queryKey: ['pricing', 'lists'], queryFn: listPriceLists });
   const form = useForm<CustomerInput>({
     resolver: zodResolver(customerSchema),
     defaultValues: customer ? toForm(customer) : CUSTOMER_DEFAULTS,
@@ -58,6 +61,7 @@ export function CustomerDialog({ customer, onClose }: { customer?: CustomerRow; 
         address: orNull(v.address),
         route_id: v.route_id || null,
         price_group: v.price_group || 'default',
+        price_list_id: v.price_list_id || null,
         credit_limit: v.credit_limit,
         opening_balance: v.opening_balance,
         whatsapp_opt_in: v.whatsapp_opt_in,
@@ -106,6 +110,14 @@ export function CustomerDialog({ customer, onClose }: { customer?: CustomerRow; 
                 <option key={r.id} value={r.id}>
                   {r.name}
                 </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Field label="Price list" htmlFor="cu-pl" help="Blank = the default list, then the item master.">
+            <NativeSelect id="cu-pl" {...form.register('price_list_id')}>
+              <option value="">— default —</option>
+              {(priceLists.data ?? []).filter((p) => p.is_active).map((p) => (
+                <option key={p.id ?? ''} value={p.id ?? ''}>{p.name}{p.is_default ? ' (default)' : ''}</option>
               ))}
             </NativeSelect>
           </Field>

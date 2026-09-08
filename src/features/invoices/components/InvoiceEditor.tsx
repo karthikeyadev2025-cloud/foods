@@ -15,6 +15,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/features/auth/hooks';
 import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
+import { applyDiscountSchemes } from '@/features/documents/api';
 import { effectiveUnitRate, searchItems, type ItemRow } from '@/features/items/api';
 import { stockLocationsApi } from '@/features/setup/api';
 import { listVehicles } from '@/features/vehicles/api';
@@ -222,6 +223,15 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
       toast({ title: 'Vehicle assigned' });
     },
     onError: (err) => toastError(err, 'Could not assign the vehicle'),
+  });
+
+  const schemes = useMutation({
+    mutationFn: () => applyDiscountSchemes(invoice?.id ?? ''),
+    onSuccess: async (r) => {
+      await invalidate();
+      toast({ title: r.discount > 0 || r.free_lines.length ? `Schemes applied: discount ${amount(r.discount)}${r.free_lines.length ? `, ${r.free_lines.length} free line${r.free_lines.length === 1 ? '' : 's'}` : ''}` : 'No scheme matches these lines' });
+    },
+    onError: (err) => toastError(err, 'Could not apply schemes'),
   });
 
   const statusLabel = INVOICE_STATUSES.find((s) => s.value === invoice?.status)?.label;
@@ -557,6 +567,11 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
             <Button type="button" variant="outline" onClick={() => navigate('/invoices')}>
               Back
             </Button>
+            {invoice?.status === 'draft' && (
+              <Button type="button" variant="outline" disabled={schemes.isPending} onClick={() => schemes.mutate()} title="Quantity discounts and free boxes from Pricing → Discount schemes. Save the draft first.">
+                Apply schemes
+              </Button>
+            )}
             <Button
               type="button"
               variant="secondary"

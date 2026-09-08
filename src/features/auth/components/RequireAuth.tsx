@@ -23,5 +23,7 @@ export function RequireAuth() {
   if (me.error) return <Navigate to="/login" replace />;
   if (me.data === null && location.pathname !== '/welcome') return <Navigate to="/welcome" replace />;
   if (me.data && location.pathname === '/welcome') return <Navigate to="/" replace />;
+  // Drivers live on the phone screens; the desktop shell has nothing for them.
+  if (me.data?.role === 'driver' && !location.pathname.startsWith('/m')) return <Navigate to="/m" replace />;
   return <Outlet />;
 }

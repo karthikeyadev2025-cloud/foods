@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import { AuditPanel } from './components/AuditPanel';
 import { BackupPanel } from './components/BackupPanel';
 import { ImportPanel } from './components/ImportPanel';
+import { IncentivesPanel } from './components/IncentivesPanel';
 import { LicencePanel } from './components/LicencePanel';
 import { PrintDesigner } from './components/PrintDesigner';
 import { OrgProfileForm } from './components/OrgProfileForm';
@@ -114,6 +115,12 @@ export const SETUP_STEPS: SetupStep[] = [
     label: 'Audit trail',
     why: 'Who changed what, and when. Nothing here can be edited or deleted.',
     Component: AuditPanel,
+  },
+  {
+    slug: 'incentives',
+    label: 'Incentives',
+    why: 'What a salesman or driver earns on sales, collection, boxes or new shops, and which route is whose.',
+    Component: IncentivesPanel,
   },
   {
     slug: 'licence',

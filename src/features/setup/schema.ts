@@ -138,6 +138,20 @@ export const resetPasswordSchema = z
   .refine((v) => v.password === v.confirm, { message: 'Passwords do not match', path: ['confirm'] });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
+const isoDateOrBlank = z.string().trim().refine((v) => v === '' || /^\d{4}-\d{2}-\d{2}$/.test(v), 'Use YYYY-MM-DD');
+export const incentiveSchemeSchema = z.object({
+  name,
+  basis: z.enum(['sales_pct', 'collection_pct', 'per_box', 'per_new_customer', 'slab']),
+  rate: z.coerce.number().min(0),
+  slabs_text: z.string().trim().max(2000),
+  for_sales_exec: z.boolean(),
+  for_driver: z.boolean(),
+  valid_from: isoDateOrBlank,
+  valid_till: isoDateOrBlank,
+  is_active: z.boolean(),
+});
+export type IncentiveSchemeInput = z.infer<typeof incentiveSchemeSchema>;
+
 export const STAFF_ROLES = [
   'owner',
   'admin',

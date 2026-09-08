@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Download, Printer } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Link, NavLink, useSearchParams } from 'react-router-dom';
 import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
@@ -13,12 +13,12 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMe } from '@/features/auth/hooks';
 import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
-import { receiptModesApi, routesApi } from '@/features/setup/api';
+import { listStaff, receiptModesApi, routesApi } from '@/features/setup/api';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, int, qty, toISODate, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
-  collectionByMode, customerLedger, outstandingAgeing, receiptsRegister, routeCollection, salesSummary,
+  collectionByMode, customerLedger, incentiveStatement, outstandingAgeing, receiptsRegister, routeCollection, routeProfitability, salesSummary,
   type LedgerRow, type RegisterRow, type SalesGroup,
 } from '../api';
 
@@ -29,6 +29,8 @@ const TABS = [
   { key: 'modes', label: 'Collection by mode' },
   { key: 'routes', label: 'Route-wise' },
   { key: 'sales', label: 'Sales' },
+  { key: 'profit', label: 'Route profit' },
+  { key: 'incentives', label: 'Incentives' },
 ] as const;
 export type ReportTab = (typeof TABS)[number]['key'];
 
@@ -55,6 +57,8 @@ export function ReportsPage({ tab = 'register' }: { tab?: ReportTab }) {
       {tab === 'modes' && <ModesReport />}
       {tab === 'routes' && <RoutesReport />}
       {tab === 'sales' && <SalesReport />}
+      {tab === 'profit' && <RouteProfitReport />}
+      {tab === 'incentives' && <IncentivesReport />}
     </div>
   );
 }
@@ -497,6 +501,150 @@ function SalesReport() {
         </Table>
       </Status>
       {lineLevel && <p className="text-xs text-muted-foreground">Line-level amounts before invoice-level rounding or discount; the total can differ from the invoice total by those adjustments.</p>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- 7. route profit
+/**
+ * What each route earns after the goods, the trip and the driver are paid for. A
+ * sale belongs to the van's route when sold on a trip, else to the customer's route.
+ */
+function RouteProfitReport() {
+  const me = useMe();
+  const orgId = me.data?.org_id ?? '';
+  const [from, setFrom] = useState(monthStart());
+  const [to, setTo] = useState(toISODate());
+  const report = useQuery({ queryKey: ['reports', 'profit', orgId, from, to], queryFn: () => routeProfitability(orgId, from, to), enabled: Boolean(orgId && from && to) });
+  const rows = report.data ?? [];
+  const onExport = () => exportToExcel(`route-profit-${from}-to-${to}`, rows.map((r) => ({ Route: r.route_name, Customers: toNumber(r.customers), Trips: toNumber(r.trips), Km: toNumber(r.km), Invoices: toNumber(r.invoices), Boxes: toNumber(r.boxes), Sales: toNumber(r.sales), Returns: toNumber(r.returns), 'Cost of goods': toNumber(r.cogs), 'Gross margin': toNumber(r.gross_margin), 'Trip expenses': toNumber(r.trip_expenses), 'Driver wages': toNumber(r.driver_wages), 'Net profit': toNumber(r.net_profit), 'Margin %': toNumber(r.margin_pct), Collection: toNumber(r.collection), 'Sales per km': toNumber(r.sales_per_km) })), 'Route profit');
+  const net = sumBy(rows, (r) => r.net_profit);
+  return (
+    <div className="space-y-3">
+      <div className="no-print flex flex-wrap items-end gap-2">
+        <DateRange from={from} to={to} setFrom={setFrom} setTo={setTo} prefix="rp" />
+        <Actions onExport={onExport} disabled={!rows.length}>
+          {rows.length > 0 && <Badge variant={net < 0 ? 'destructive' : 'secondary'}>Net {amount(net)}</Badge>}
+        </Actions>
+      </div>
+      <PrintTitle title="Route profitability" range={`${dateDMY(from)} to ${dateDMY(to)}`} />
+      <Status isLoading={report.isLoading} error={report.error} empty={!rows.length} emptyText="No sales or trips in this period.">
+        <Table>
+          <TableHeader><TableRow><TableHead>Route</TableHead><TableHead className="text-right">Trips</TableHead><TableHead className="text-right">Km</TableHead><TableHead className="text-right">Bills</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">Sales</TableHead><TableHead className="text-right">Returns</TableHead><TableHead className="text-right">Cost of goods</TableHead><TableHead className="text-right">Gross</TableHead><TableHead className="text-right">Trip exp.</TableHead><TableHead className="text-right">Wages</TableHead><TableHead className="text-right">Net</TableHead><TableHead className="text-right">Margin</TableHead><TableHead className="text-right">Collected</TableHead><TableHead className="text-right">₹ / km</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow key={r.route_id ?? 'none'}>
+                <TableCell className="font-medium">{r.route_name}<div className="text-xs text-muted-foreground">{int(r.customers)} customers</div></TableCell>
+                <TableCell className="num">{int(r.trips)}</TableCell>
+                <TableCell className="num">{toNumber(r.km) ? qty(r.km, 1) : ''}</TableCell>
+                <TableCell className="num">{int(r.invoices)}</TableCell>
+                <TableCell className="num">{qty(r.boxes)}</TableCell>
+                <TableCell className="num">{amount(r.sales)}</TableCell>
+                <TableCell className="num">{toNumber(r.returns) ? amount(r.returns) : ''}</TableCell>
+                <TableCell className="num text-muted-foreground">{amount(r.cogs)}</TableCell>
+                <TableCell className="num">{amount(r.gross_margin)}</TableCell>
+                <TableCell className="num">{toNumber(r.trip_expenses) ? amount(r.trip_expenses) : ''}</TableCell>
+                <TableCell className="num">{toNumber(r.driver_wages) ? amount(r.driver_wages) : ''}</TableCell>
+                <TableCell className={cn('num font-medium', toNumber(r.net_profit) < 0 && 'text-destructive')}>{amount(r.net_profit)}</TableCell>
+                <TableCell className="num text-muted-foreground">{r.margin_pct === null ? '' : `${qty(r.margin_pct, 1)}%`}</TableCell>
+                <TableCell className="num">{amount(r.collection)}</TableCell>
+                <TableCell className="num text-muted-foreground">{r.sales_per_km === null ? '' : amount(r.sales_per_km)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell className="text-right">Total</TableCell>
+              <TableCell className="num">{int(sumBy(rows, (r) => r.trips))}</TableCell>
+              <TableCell className="num">{qty(sumBy(rows, (r) => r.km), 1)}</TableCell>
+              <TableCell className="num">{int(sumBy(rows, (r) => r.invoices))}</TableCell>
+              <TableCell className="num">{qty(sumBy(rows, (r) => r.boxes))}</TableCell>
+              <TableCell className="num">{amount(sumBy(rows, (r) => r.sales))}</TableCell>
+              <TableCell className="num">{amount(sumBy(rows, (r) => r.returns))}</TableCell>
+              <TableCell className="num">{amount(sumBy(rows, (r) => r.cogs))}</TableCell>
+              <TableCell className="num">{amount(sumBy(rows, (r) => r.gross_margin))}</TableCell>
+              <TableCell className="num">{amount(sumBy(rows, (r) => r.trip_expenses))}</TableCell>
+              <TableCell className="num">{amount(sumBy(rows, (r) => r.driver_wages))}</TableCell>
+              <TableCell className={cn('num', net < 0 && 'text-destructive')}>{amount(net)}</TableCell>
+              <TableCell />
+              <TableCell className="num">{amount(sumBy(rows, (r) => r.collection))}</TableCell>
+              <TableCell />
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </Status>
+      <p className="text-xs text-muted-foreground">Cost of goods uses the latest closed batch cost per unit (else the purchase rate), as on the Item profit report. Trip expenses and km come from settled trips; wages are the driver's daily wage per trip.</p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- 8. incentives
+const BASIS_LABEL: Record<string, string> = { sales_pct: '% of net sales', collection_pct: '% of collection', per_box: '₹ per box', per_new_customer: '₹ per new shop', slab: 'slab on net sales' };
+
+function IncentivesReport() {
+  const me = useMe();
+  const orgId = me.data?.org_id ?? '';
+  const [month, setMonth] = useState(toISODate().slice(0, 7));
+  const [staffId, setStaffId] = useState('');
+  const staff = useQuery({ queryKey: ['setup', 'staff'], queryFn: listStaff });
+  const report = useQuery({ queryKey: ['reports', 'incentives', orgId, month, staffId], queryFn: () => incentiveStatement(orgId, `${month}-01`, staffId || undefined), enabled: Boolean(orgId && month) });
+  const rows = useMemo(() => report.data ?? [], [report.data]);
+  const byStaff = useMemo(() => {
+    const m = new Map<string, { name: string; role: string; total: number; rows: typeof rows }>();
+    for (const r of rows) {
+      const k = r.staff_id ?? '';
+      const e = m.get(k) ?? { name: r.staff_name ?? '', role: String(r.role ?? ''), total: 0, rows: [] };
+      e.total += toNumber(r.earned);
+      e.rows.push(r);
+      m.set(k, e);
+    }
+    return Array.from(m.entries());
+  }, [rows]);
+  const onExport = () => exportToExcel(`incentives-${month}`, rows.map((r) => ({ Salesman: r.staff_name, Scheme: r.scheme_name, Basis: BASIS_LABEL[r.basis ?? ''] ?? r.basis, Rate: toNumber(r.rate), Sales: toNumber(r.sales), Returns: toNumber(r.returns), 'Net sales': toNumber(r.net_sales), Collection: toNumber(r.collection), Boxes: toNumber(r.boxes), 'New shops': toNumber(r.new_customers), Base: toNumber(r.base_value), Earned: toNumber(r.earned) })), 'Incentives');
+  return (
+    <div className="space-y-3">
+      <div className="no-print flex flex-wrap items-end gap-2">
+        <Field label="Month" htmlFor="in-month"><Input id="in-month" type="month" className="h-8 w-40" value={month} onChange={(e) => setMonth(e.target.value)} /></Field>
+        <Field label="Salesman" htmlFor="in-staff">
+          <NativeSelect id="in-staff" className="h-8 w-48" value={staffId} onChange={(e) => setStaffId(e.target.value)}>
+            <option value="">Everyone</option>
+            {(staff.data ?? []).filter((s) => s.is_active && (s.role === 'sales_exec' || s.role === 'driver')).map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+          </NativeSelect>
+        </Field>
+        <Actions onExport={onExport} disabled={!rows.length}>
+          {rows.length > 0 && <Badge variant="secondary">Total {amount(sumBy(rows, (r) => r.earned))}</Badge>}
+        </Actions>
+      </div>
+      <PrintTitle title="Incentive statement" range={month} />
+      <Status isLoading={report.isLoading} error={report.error} empty={!rows.length} emptyText="No active schemes, or no sales executives / drivers. Schemes are set under Setup → Incentives.">
+        <Table>
+          <TableHeader><TableRow><TableHead>Salesman</TableHead><TableHead>Scheme</TableHead><TableHead>Basis</TableHead><TableHead className="text-right">Net sales</TableHead><TableHead className="text-right">Collection</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">New shops</TableHead><TableHead className="text-right">Base</TableHead><TableHead className="text-right">Earned</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {byStaff.map(([id, s]) => (
+              <Fragment key={id}>
+                {s.rows.map((r, i) => (
+                  <TableRow key={`${id}-${r.scheme_id ?? i}`}>
+                    <TableCell className="font-medium">{i === 0 ? <>{s.name}<div className="text-xs text-muted-foreground">{s.role === 'driver' ? 'Driver' : 'Sales executive'}</div></> : ''}</TableCell>
+                    <TableCell>{r.scheme_name}</TableCell>
+                    <TableCell className="text-muted-foreground">{BASIS_LABEL[r.basis ?? ''] ?? r.basis}{r.basis !== 'slab' && ` · ${qty(r.rate, 2)}`}</TableCell>
+                    <TableCell className="num">{i === 0 ? amount(r.net_sales) : ''}</TableCell>
+                    <TableCell className="num">{i === 0 ? amount(r.collection) : ''}</TableCell>
+                    <TableCell className="num">{i === 0 ? qty(r.boxes) : ''}</TableCell>
+                    <TableCell className="num">{i === 0 ? int(r.new_customers) : ''}</TableCell>
+                    <TableCell className="num text-muted-foreground">{r.basis === 'per_box' ? qty(r.base_value) : r.basis === 'per_new_customer' ? int(r.base_value) : amount(r.base_value)}</TableCell>
+                    <TableCell className="num font-medium">{amount(r.earned)}</TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-muted/40">
+                  <TableCell colSpan={8} className="text-right text-sm">{s.name} total</TableCell>
+                  <TableCell className="num font-semibold">{amount(s.total)}</TableCell>
+                </TableRow>
+              </Fragment>
+            ))}
+          </TableBody>
+        </Table>
+      </Status>
+      <p className="text-xs text-muted-foreground">Sales are the invoices stamped with the salesman (the customer's salesman, else whoever made the bill), less returns against them. Collection is what they collected; a bounced cheque comes back as a negative. Pay the amount through Payments → staff as usual.</p>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { listPriceLists } from '@/features/documents/api';
-import { routesApi } from '@/features/setup/api';
+import { listStaff, routesApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { createCustomer, findByMobile, updateCustomer, type CustomerRow } from '../api';
 import { CUSTOMER_DEFAULTS, customerSchema, digits, type CustomerInput } from '../schema';
@@ -24,6 +24,7 @@ function toForm(c: CustomerRow): CustomerInput {
     town: c.town ?? '',
     address: c.address ?? '',
     route_id: c.route_id ?? '',
+    sales_exec_id: c.sales_exec_id ?? '',
     price_group: c.price_group ?? 'default',
     price_list_id: c.price_list_id ?? '',
     credit_limit: Number(c.credit_limit ?? 0),
@@ -40,6 +41,7 @@ export function CustomerDialog({ customer, onClose }: { customer?: CustomerRow; 
   const queryClient = useQueryClient();
   const routes = useQuery({ queryKey: ['setup', 'routes'], queryFn: routesApi.list });
   const priceLists = useQuery({ queryKey: ['pricing', 'lists'], queryFn: listPriceLists });
+  const staff = useQuery({ queryKey: ['setup', 'staff'], queryFn: listStaff });
   const form = useForm<CustomerInput>({
     resolver: zodResolver(customerSchema),
     defaultValues: customer ? toForm(customer) : CUSTOMER_DEFAULTS,
@@ -60,6 +62,7 @@ export function CustomerDialog({ customer, onClose }: { customer?: CustomerRow; 
         town: orNull(v.town),
         address: orNull(v.address),
         route_id: v.route_id || null,
+        sales_exec_id: v.sales_exec_id || null,
         price_group: v.price_group || 'default',
         price_list_id: v.price_list_id || null,
         credit_limit: v.credit_limit,
@@ -109,6 +112,16 @@ export function CustomerDialog({ customer, onClose }: { customer?: CustomerRow; 
               {(routes.data ?? []).filter((r) => r.is_active).map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Field label="Salesman" htmlFor="cu-se" help="Bills and collections count for their incentives. Assign a whole route under Setup → Incentives.">
+            <NativeSelect id="cu-se" {...form.register('sales_exec_id')}>
+              <option value="">— none —</option>
+              {(staff.data ?? []).filter((s) => s.is_active && (s.role === 'sales_exec' || s.role === 'driver')).map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.full_name}
                 </option>
               ))}
             </NativeSelect>

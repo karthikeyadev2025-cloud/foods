@@ -33,6 +33,17 @@ create policy catalogs_write on storage.objects for all to authenticated
   using (bucket_id = 'catalogs' and (storage.foldername(name))[1] = public.my_org_id()::text and public.can_edit('messaging'))
   with check (bucket_id = 'catalogs' and (storage.foldername(name))[1] = public.my_org_id()::text and public.can_edit('messaging'));
 
+-- Delivery proof photos from the driver's phone: private, read by anyone in the org.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('proofs', 'proofs', false, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+drop policy if exists proofs_read on storage.objects;
+create policy proofs_read on storage.objects for select to authenticated
+  using (bucket_id = 'proofs' and (storage.foldername(name))[1] = public.my_org_id()::text);
+drop policy if exists proofs_write on storage.objects;
+create policy proofs_write on storage.objects for insert to authenticated
+  with check (bucket_id = 'proofs' and (storage.foldername(name))[1] = public.my_org_id()::text and public.can_view('invoices'));
+
 -- Backups are written by the backup-org edge function (service role, bypasses these); the owner may only read.
 drop policy if exists backups_owner_read on storage.objects;
 create policy backups_owner_read on storage.objects for select to authenticated

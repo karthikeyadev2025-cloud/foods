@@ -336,6 +336,65 @@ export function auditTableLabel(key: string | null): string {
 }
 
 // ------------------------------------------------------------------
+// Incentives (db/19_phase3.sql)
+// ------------------------------------------------------------------
+export type IncentiveScheme = Tables['incentive_schemes']['Row'];
+export type IncentiveBasis = 'sales_pct' | 'collection_pct' | 'per_box' | 'per_new_customer' | 'slab';
+export const INCENTIVE_BASES: { value: IncentiveBasis; label: string }[] = [
+  { value: 'sales_pct', label: '% of net sales (sales − returns)' },
+  { value: 'collection_pct', label: '% of collection' },
+  { value: 'per_box', label: '₹ per box sold' },
+  { value: 'per_new_customer', label: '₹ per new shop (first bill that month)' },
+  { value: 'slab', label: 'Slab: % by monthly net sales' },
+];
+
+export interface Slab {
+  from: number;
+  to?: number;
+  pct: number;
+}
+/** "0-100000:0.5" one per line, "100000+:2" for the open-ended last slab. */
+export function parseSlabs(text: string): Slab[] {
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const m = /^([\d.]+)\s*(?:-\s*([\d.]+)|\+)\s*:\s*([\d.]+)$/.exec(l);
+      if (!m) throw new Error(`Slab "${l}" should look like 0-100000:0.5 or 100000+:2`);
+      const from = Number(m[1]);
+      const pct = Number(m[3]);
+      return m[2] !== undefined ? { from, to: Number(m[2]), pct } : { from, pct };
+    })
+    .sort((a, b) => a.from - b.from);
+}
+export function slabsText(v: unknown): string {
+  if (!Array.isArray(v)) return '';
+  return v
+    .map((s) => {
+      const o = (s ?? {}) as Partial<Slab>;
+      return o.to === undefined || o.to === null ? `${o.from ?? 0}+:${o.pct ?? 0}` : `${o.from ?? 0}-${o.to}:${o.pct ?? 0}`;
+    })
+    .join('\n');
+}
+
+export const incentiveSchemesApi = {
+  list: (): Promise<IncentiveScheme[]> => expectRows(supabase.from('incentive_schemes').select('*').order('name')),
+  create: async (v: Omit<Tables['incentive_schemes']['Insert'], 'org_id'>): Promise<IncentiveScheme> =>
+    expectOne(supabase.from('incentive_schemes').insert({ ...v, org_id: await currentOrgId() }).select('*').single()),
+  update: (id: string, v: Tables['incentive_schemes']['Update']): Promise<IncentiveScheme> =>
+    expectOne(supabase.from('incentive_schemes').update(v).eq('id', id).select('*').single()),
+  remove: (id: string): Promise<void> => expectOk(supabase.from('incentive_schemes').delete().eq('id', id)),
+};
+
+/** Give a salesman every customer on a route. Returns how many customers moved. */
+export async function assignSalesExec(staffId: string | null, routeId: string): Promise<number> {
+  const { data, error } = await supabase.rpc('assign_sales_exec', { p_staff: staffId as unknown as string, p_route: routeId });
+  if (error) throw error;
+  return Number(data ?? 0);
+}
+
+// ------------------------------------------------------------------
 // Data import (db/07_import.sql)
 // ------------------------------------------------------------------
 export interface ImportErrorRow {

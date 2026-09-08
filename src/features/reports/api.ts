@@ -9,6 +9,22 @@ export type ModeRow = Fns['collection_by_mode']['Returns'][number];
 export type RouteRow = Fns['route_collection']['Returns'][number];
 export type SalesRow = Fns['sales_summary']['Returns'][number];
 export type SalesGroup = 'day' | 'month' | 'customer' | 'town' | 'route' | 'item' | 'section';
+export type RouteProfitRow = Fns['route_profitability']['Returns'][number];
+export type IncentiveRow = Fns['incentive_statement']['Returns'][number];
+
+/** Per route: sales, returns, cost of goods, trip expenses and driver wages → net profit (db/19_phase3.sql). */
+export async function routeProfitability(orgId: string, from: string, to: string): Promise<RouteProfitRow[]> {
+  const { data, error } = await supabase.rpc('route_profitability', { p_org: orgId, p_from: from, p_to: to });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** One row per salesman per scheme for a month (`month` is any date in it). */
+export async function incentiveStatement(orgId: string, month: string, staffId?: string): Promise<IncentiveRow[]> {
+  const { data, error } = await supabase.rpc('incentive_statement', { p_org: orgId, p_month: month, ...(staffId ? { p_staff: staffId } : {}) });
+  if (error) throw error;
+  return data ?? [];
+}
 
 /** Receipts & payments register — one row per customer with activity or a balance in the period. */
 export async function receiptsRegister(orgId: string, from: string, to: string, routeId?: string): Promise<RegisterRow[]> {

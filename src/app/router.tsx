@@ -1,5 +1,7 @@
 import { createBrowserRouter, createHashRouter, type RouteObject } from 'react-router-dom';
 import { AppShell } from '@/app/layout/AppShell';
+import { MobileShell } from '@/app/layout/MobileShell';
+import { MBillPage, MCollectPage, MStockPage, MStopPage, MStopsPage, MTripPage } from '@/features/mobile/routes/pages';
 import { AccountsPage } from '@/features/accounts/routes/AccountsPage';
 import { NotFound } from '@/app/routes/NotFound';
 import { OutboxPage } from '@/app/routes/OutboxPage';
@@ -70,6 +72,20 @@ export const router = createRouter([
         { path: '/stock/transfers/:id/print', element: <TransferPrintPage /> },
         { path: '/stock/labels', element: <LabelsPrintPage /> },
       ]),
+      // The phone: the driver's trip, stops, van sales, receipts and delivery proof.
+      {
+        path: '/m',
+        element: <MobileShell />,
+        children: [
+          { index: true, element: <MTripPage /> },
+          { path: 'stops', element: <MStopsPage /> },
+          { path: 'stops/:customerId', element: <MStopPage /> },
+          { path: 'stops/:customerId/bill', element: <MBillPage /> },
+          { path: 'stops/:customerId/collect', element: <MCollectPage /> },
+          { path: 'stock', element: <MStockPage /> },
+          { path: 'outbox', element: <OutboxPage /> },
+        ],
+      },
       {
         path: '/',
         element: <AppShell />,
@@ -155,6 +171,8 @@ export const router = createRouter([
             { path: 'reports/modes', element: <ReportsPage tab="modes" /> },
             { path: 'reports/routes', element: <ReportsPage tab="routes" /> },
             { path: 'reports/sales', element: <ReportsPage tab="sales" /> },
+            { path: 'reports/profit', element: <ReportsPage tab="profit" /> },
+            { path: 'reports/incentives', element: <ReportsPage tab="incentives" /> },
           ]),
           guarded('setup', [
             { path: 'setup', element: <SetupPage /> },

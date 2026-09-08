@@ -921,6 +921,7 @@ export type Database = {
           price_group: string | null
           price_list_id: string | null
           route_id: string | null
+          sales_exec_id: string | null
           town: string | null
           whatsapp_opt_in: boolean
         }
@@ -941,6 +942,7 @@ export type Database = {
           price_group?: string | null
           price_list_id?: string | null
           route_id?: string | null
+          sales_exec_id?: string | null
           town?: string | null
           whatsapp_opt_in?: boolean
         }
@@ -961,6 +963,7 @@ export type Database = {
           price_group?: string | null
           price_list_id?: string | null
           route_id?: string | null
+          sales_exec_id?: string | null
           town?: string | null
           whatsapp_opt_in?: boolean
         }
@@ -994,6 +997,18 @@ export type Database = {
             columns: ["route_id"]
             referencedRelation: "routes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_sales_exec_id_fkey"
+            columns: ["sales_exec_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_sales_exec_id_fkey"
+            columns: ["sales_exec_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
           },
         ]
       }
@@ -1452,6 +1467,61 @@ export type Database = {
           },
         ]
       }
+      incentive_schemes: {
+        Row: {
+          basis: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          org_id: string
+          rate: number
+          roles: Database["public"]["Enums"]["staff_role"][]
+          slabs: NonNullable<Json>
+          valid_from: string | null
+          valid_till: string | null
+        }
+        Insert: {
+          basis: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          org_id: string
+          rate?: number
+          roles?: Database["public"]["Enums"]["staff_role"][]
+          slabs?: NonNullable<Json>
+          valid_from?: string | null
+          valid_till?: string | null
+        }
+        Update: {
+          basis?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          org_id?: string
+          rate?: number
+          roles?: Database["public"]["Enums"]["staff_role"][]
+          slabs?: NonNullable<Json>
+          valid_from?: string | null
+          valid_till?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incentive_schemes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incentive_schemes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           amount: number
@@ -1545,6 +1615,10 @@ export type Database = {
           created_at: string
           created_by: string | null
           customer_id: string
+          delivered_at: string | null
+          delivered_by: string | null
+          delivery_note: string | null
+          delivery_photo: string | null
           discount: number
           freight: number
           id: string
@@ -1555,7 +1629,9 @@ export type Database = {
           lr_no: string | null
           notes: string | null
           org_id: string
+          receiver_name: string | null
           round_off: number
+          sales_exec_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
           total: number
@@ -1567,6 +1643,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id: string
+          delivered_at?: string | null
+          delivered_by?: string | null
+          delivery_note?: string | null
+          delivery_photo?: string | null
           discount?: number
           freight?: number
           id?: string
@@ -1577,7 +1657,9 @@ export type Database = {
           lr_no?: string | null
           notes?: string | null
           org_id: string
+          receiver_name?: string | null
           round_off?: number
+          sales_exec_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           total?: number
@@ -1589,6 +1671,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id?: string
+          delivered_at?: string | null
+          delivered_by?: string | null
+          delivery_note?: string | null
+          delivery_photo?: string | null
           discount?: number
           freight?: number
           id?: string
@@ -1599,7 +1685,9 @@ export type Database = {
           lr_no?: string | null
           notes?: string | null
           org_id?: string
+          receiver_name?: string | null
           round_off?: number
+          sales_exec_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           total?: number
@@ -1639,6 +1727,18 @@ export type Database = {
             referencedColumns: ["customer_id"]
           },
           {
+            foreignKeyName: "invoices_delivered_by_fkey"
+            columns: ["delivered_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_delivered_by_fkey"
+            columns: ["delivered_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
             foreignKeyName: "invoices_location_id_fkey"
             columns: ["location_id"]
             referencedRelation: "stock_locations"
@@ -1655,6 +1755,18 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "invoices_sales_exec_id_fkey"
+            columns: ["sales_exec_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_sales_exec_id_fkey"
+            columns: ["sales_exec_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
           },
           {
             foreignKeyName: "invoices_trip_id_fkey"
@@ -4375,6 +4487,7 @@ export type Database = {
       receipts: {
         Row: {
           account_id: string | null
+          collected_by: string | null
           created_at: string
           created_by: string | null
           customer_id: string
@@ -4390,6 +4503,7 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          collected_by?: string | null
           created_at?: string
           created_by?: string | null
           customer_id: string
@@ -4405,6 +4519,7 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          collected_by?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string
@@ -4436,6 +4551,18 @@ export type Database = {
             columns: ["account_id"]
             referencedRelation: "v_cash_bank_accounts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_collected_by_fkey"
+            columns: ["collected_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_collected_by_fkey"
+            columns: ["collected_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
           },
           {
             foreignKeyName: "receipts_created_by_fkey"
@@ -6647,6 +6774,8 @@ export type Database = {
           price_list_id: string | null
           route_id: string | null
           route_name: string | null
+          sales_exec_id: string | null
+          sales_exec_name: string | null
           town: string | null
           whatsapp_opt_in: boolean | null
         }
@@ -6680,6 +6809,18 @@ export type Database = {
             columns: ["route_id"]
             referencedRelation: "routes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_sales_exec_id_fkey"
+            columns: ["sales_exec_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_sales_exec_id_fkey"
+            columns: ["sales_exec_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
           },
         ]
       }
@@ -9775,6 +9916,10 @@ export type Database = {
         Args: { p_list: string; p_route?: string; p_town?: string }
         Returns: number
       }
+      assign_sales_exec: {
+        Args: { p_customers?: string[]; p_route?: string; p_staff: string }
+        Returns: number
+      }
       audit_search: {
         Args: {
           p_action?: string
@@ -10153,6 +10298,26 @@ export type Database = {
           uom: string
         }[]
       }
+      incentive_statement: {
+        Args: { p_month: string; p_org: string; p_staff?: string }
+        Returns: {
+          base_value: number
+          basis: string
+          boxes: number
+          collection: number
+          earned: number
+          net_sales: number
+          new_customers: number
+          rate: number
+          returns: number
+          role: Database["public"]["Enums"]["staff_role"]
+          sales: number
+          scheme_id: string
+          scheme_name: string
+          staff_id: string
+          staff_name: string
+        }[]
+      }
       invoice_message_vars: { Args: { p_invoice: string }; Returns: Json }
       is_service_call: { Args: Record<PropertyKey, never>; Returns: boolean }
       issue_license: {
@@ -10219,6 +10384,15 @@ export type Database = {
         Args: { p_date?: string; p_item: string; p_location: string }
         Returns: number
       }
+      mark_delivered: {
+        Args: {
+          p_invoice: string
+          p_note?: string
+          p_photo?: string
+          p_receiver?: string
+        }
+        Returns: undefined
+      }
       mark_message_status: {
         Args: {
           p_at?: string
@@ -10238,6 +10412,38 @@ export type Database = {
         Returns: string
       }
       money_code: { Args: { p_account: string }; Returns: string }
+      my_open_trip: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          closing_km: number | null
+          collected: number | null
+          created_at: string | null
+          driver_id: string | null
+          driver_name: string | null
+          expenses: number | null
+          id: string | null
+          invoice_count: number | null
+          loaded_boxes: number | null
+          notes: string | null
+          opening_km: number | null
+          org_id: string | null
+          route_id: string | null
+          route_name: string | null
+          sold_value: number | null
+          status: Database["public"]["Enums"]["trip_status"] | null
+          trip_date: string | null
+          van_location_id: string | null
+          van_location_name: string | null
+          vehicle_id: string | null
+          vehicle_number: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "v_trip_list"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       my_org_id: { Args: Record<PropertyKey, never>; Returns: string }
       my_role: {
         Args: Record<PropertyKey, never>
@@ -10486,6 +10692,28 @@ export type Database = {
           sales: number
         }[]
       }
+      route_profitability: {
+        Args: { p_from: string; p_org: string; p_to: string }
+        Returns: {
+          boxes: number
+          cogs: number
+          collection: number
+          customers: number
+          driver_wages: number
+          gross_margin: number
+          invoices: number
+          km: number
+          margin_pct: number
+          net_profit: number
+          returns: number
+          route_id: string
+          route_name: string
+          sales: number
+          sales_per_km: number
+          trip_expenses: number
+          trips: number
+        }[]
+      }
       run_reminder_rule: {
         Args: { p_dry_run?: boolean; p_rule: string }
         Returns: Json
@@ -10651,6 +10879,24 @@ export type Database = {
           sale_value: number
           sold: number
           units_per_box: number
+        }[]
+      }
+      trip_stops: {
+        Args: { p_trip: string }
+        Returns: {
+          address: string
+          billed: number
+          bills: number
+          collected: number
+          customer_id: string
+          delivered: number
+          last_invoice_id: string
+          mobile1: string
+          name: string
+          on_route: boolean
+          outstanding: number
+          pending_delivery: string[]
+          town: string
         }[]
       }
       update_batch_actuals: {

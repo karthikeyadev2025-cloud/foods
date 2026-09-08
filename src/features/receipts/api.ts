@@ -47,6 +47,8 @@ export interface ReceiptHeaderInput {
   receipt_date: string;
   narration: string | null;
   vehicle_id?: string | null;
+  /** Collected on the road: ties the receipt to the trip for settlement and route reports. */
+  trip_id?: string | null;
 }
 export interface ReceiptLineInput {
   mode_id: string;

@@ -1,0 +1,16 @@
+{
+  "name": "Jyothi Foods ERP",
+  "short_name": "Jyothi ERP",
+  "description": "Van sales, collections and delivery proof on the road; the full ERP on the desk.",
+  "start_url": "/m",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbf8f4",
+  "theme_color": "#7c2d12",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

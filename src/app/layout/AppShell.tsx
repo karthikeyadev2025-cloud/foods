@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, CloudOff, LogOut, Send } from 'lucide-react';
+import { AlertTriangle, CloudOff, LogOut, Send, Smartphone } from 'lucide-react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { NAV } from '@/app/nav';
 import { Badge } from '@/components/ui/badge';
@@ -72,7 +72,12 @@ export function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="no-print flex h-12 shrink-0 items-center justify-between border-b bg-card px-4">
-          <div className="text-sm text-muted-foreground">ERP</div>
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            ERP
+            <Link to="/m" className="flex items-center gap-1 text-xs hover:text-foreground" title="The driver / salesman screens, sized for a phone">
+              <Smartphone className="h-3.5 w-3.5" aria-hidden /> Phone view
+            </Link>
+          </div>
           <div className="flex items-center gap-3 text-sm">
             {me.data && (
               <>
@@ -116,7 +121,7 @@ const barClass = (tone: 'amber' | 'red' | 'blue') =>
   );
 
 /** Offline notice, and the outbox count while documents wait to be sent. */
-function ConnectionBar() {
+export function ConnectionBar({ outboxTo = '/outbox' }: { outboxTo?: string }) {
   const online = useOnline();
   const outbox = useOutbox();
   const qc = useQueryClient();
@@ -133,7 +138,7 @@ function ConnectionBar() {
       <div role="status" className={barClass('amber')}>
         <CloudOff className="h-4 w-4 shrink-0" aria-hidden />
         Offline — showing saved data. New documents wait in the{' '}
-        <Link to="/outbox" className="underline">
+        <Link to={outboxTo} className="underline">
           outbox
         </Link>
         {outbox.length > 0 && ` (${outbox.length})`}.
@@ -147,7 +152,7 @@ function ConnectionBar() {
       <Button size="sm" variant="outline" className="h-6" onClick={() => send.mutate()} disabled={send.isPending}>
         {send.isPending ? 'Sending…' : 'Send now'}
       </Button>
-      <Link to="/outbox" className="underline">
+      <Link to={outboxTo} className="underline">
         View outbox
       </Link>
     </div>
@@ -155,7 +160,7 @@ function ConnectionBar() {
 }
 
 /** Trial and licence warnings; red once the app is read-only. */
-function LicenceBar({ canOpenSetup }: { canOpenSetup: boolean }) {
+export function LicenceBar({ canOpenSetup }: { canOpenSetup: boolean }) {
   const license = useLicense();
   const s = license.data;
   if (!s) return null;

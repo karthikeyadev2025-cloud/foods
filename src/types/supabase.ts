@@ -3292,6 +3292,7 @@ export type Database = {
           logo_url: string | null
           name: string
           phone: string | null
+          plan_full_until: string | null
           signature_url: string | null
           tagline: string | null
           trial_days: number
@@ -3318,6 +3319,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           phone?: string | null
+          plan_full_until?: string | null
           signature_url?: string | null
           tagline?: string | null
           trial_days?: number
@@ -3344,6 +3346,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           phone?: string | null
+          plan_full_until?: string | null
           signature_url?: string | null
           tagline?: string | null
           trial_days?: number
@@ -10418,7 +10421,6 @@ export type Database = {
           party: string
         }[]
       }
-      dearmor: { Args: { "": string }; Returns: string }
       deposit_cheque: {
         Args: { p_account: string; p_cheque: string; p_date?: string }
         Returns: undefined
@@ -10494,8 +10496,6 @@ export type Database = {
         Args: { p_extra?: Json; p_lines?: Json; p_order: string }
         Returns: string
       }
-      gen_random_uuid: { Args: Record<PropertyKey, never>; Returns: string }
-      gen_salt: { Args: { "": string }; Returns: string }
       generate_barcodes: { Args: { p_item?: string }; Returns: number }
       get_backup_settings: {
         Args: Record<PropertyKey, never>
@@ -10756,62 +10756,32 @@ export type Database = {
           town: string
         }[]
       }
-      pgp_armor_headers: {
-        Args: { "": string }
-        Returns: Record<string, unknown>[]
+      pick_template: {
+        Args: {
+          p_channel: Database["public"]["Enums"]["channel_kind"]
+          p_language: string
+          p_org: string
+          p_purpose: Database["public"]["Enums"]["msg_purpose"]
+        }
+        Returns: {
+          body: string
+          channel: Database["public"]["Enums"]["channel_kind"]
+          id: string
+          is_active: boolean
+          language: string | null
+          name: string
+          org_id: string
+          provider_template_name: string | null
+          purpose: Database["public"]["Enums"]["msg_purpose"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "message_templates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      pick_template:
-        | {
-            Args: {
-              p_language: string
-              p_org: string
-              p_purpose: Database["public"]["Enums"]["msg_purpose"]
-            }
-            Returns: {
-              body: string
-              channel: Database["public"]["Enums"]["channel_kind"]
-              id: string
-              is_active: boolean
-              language: string | null
-              name: string
-              org_id: string
-              provider_template_name: string | null
-              purpose: Database["public"]["Enums"]["msg_purpose"]
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "message_templates"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              p_channel: Database["public"]["Enums"]["channel_kind"]
-              p_language: string
-              p_org: string
-              p_purpose: Database["public"]["Enums"]["msg_purpose"]
-            }
-            Returns: {
-              body: string
-              channel: Database["public"]["Enums"]["channel_kind"]
-              id: string
-              is_active: boolean
-              language: string | null
-              name: string
-              org_id: string
-              provider_template_name: string | null
-              purpose: Database["public"]["Enums"]["msg_purpose"]
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "message_templates"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
       pieces_to_uom: {
         Args: { p_item: string; p_pieces: number; p_uom: string }
         Returns: number
@@ -10910,20 +10880,15 @@ export type Database = {
           to_date: string
         }[]
       }
-      punchly_note:
-        | {
-            Args: { p_note: string; p_ok?: boolean; p_org: string }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_note: string
-              p_ok?: boolean
-              p_org: string
-              p_reconciled?: boolean
-            }
-            Returns: undefined
-          }
+      punchly_note: {
+        Args: {
+          p_note: string
+          p_ok?: boolean
+          p_org: string
+          p_reconciled?: boolean
+        }
+        Returns: undefined
+      }
       punchly_roster: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -11156,9 +11121,11 @@ export type Database = {
         }
         Returns: undefined
       }
-      show_limit: { Args: Record<PropertyKey, never>; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       snapshot_tables: { Args: Record<PropertyKey, never>; Returns: string[] }
+      start_plan_trial: {
+        Args: { p_days?: number; p_org: string }
+        Returns: string
+      }
       stock_movements: {
         Args: {
           p_from?: string

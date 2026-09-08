@@ -17,9 +17,16 @@ export interface LicenseStatus {
   max_devices: number;
   this_device_known: boolean;
   checked_at: string;
-  /** Which of the three keys is active, and what it unlocks. */
+  /** The plan in force right now — 'full' while a plan trial is running. */
   plan: PlanKey;
   plan_name: string;
+  /** What the key bought, and what the plan drops back to (db/24_plan_trial.sql). */
+  paid_plan: PlanKey;
+  paid_plan_name: string;
+  /** Last day of the plan trial, null when none is running. */
+  plan_full_until: string | null;
+  /** Days left including today, null when none is running. */
+  plan_trial_days_left: number | null;
   features: FeatureKey[];
   catalogue: { feature: FeatureKey; label: string; plan: PlanKey; detail: string }[];
 }

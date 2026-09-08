@@ -12,7 +12,12 @@ revoke execute on function set_license_plan(uuid, text) from authenticated;
 do $$
 declare
   v_org uuid; v_ramesh uuid; v_laxmi uuid; v_suresh1 uuid; v_suresh2 uuid;
-  d1 date := current_date - 2; d2 date := current_date - 1;
+  -- punchly_due() works in IST, because Punchly's attendance_date is an IST working
+  -- day. The server clock is UTC, so past 00:00 IST the two dates differ and every
+  -- assertion below that compares them has to use this, not current_date.
+  v_today date := (now() at time zone 'Asia/Kolkata')::date;
+  d1 date := (now() at time zone 'Asia/Kolkata')::date - 2;
+  d2 date := (now() at time zone 'Asia/Kolkata')::date - 1;
   j jsonb; r record; n int; v_punches jsonb;
   uid_owner uuid := gen_random_uuid();
   uid_acct uuid := gen_random_uuid();
@@ -132,36 +137,36 @@ begin
 
   -- ===== what the sync asks for: history first, then today and yesterday =====
   select org_id, from_date, to_date, is_backfill, api_key into r from punchly_due();
-  assert r.org_id = v_org and r.from_date = d1 - 5 and r.to_date = current_date and r.is_backfill
+  assert r.org_id = v_org and r.from_date = d1 - 5 and r.to_date = v_today and r.is_backfill
      and r.api_key = 'pk_live_abcdefghijklmnop1234', format('backfill due %s', to_jsonb(r));
   perform punchly_advance(v_org, d1 - 3);
   select from_date, is_backfill into r from punchly_due();
   assert r.from_date = d1 - 2 and r.is_backfill, format('the marker moved, not reset %s', to_jsonb(r));
-  assert punchly_advance(v_org, current_date) is null, 'history caught up clears the marker';
+  assert punchly_advance(v_org, v_today) is null, 'history caught up clears the marker';
 
   -- with no re-check on record yet, the first ordinary run is the weekly wider pull
   select from_date, to_date, is_backfill, is_reconcile into r from punchly_due();
-  assert r.from_date = current_date - 14 and r.to_date = current_date and not r.is_backfill and r.is_reconcile,
+  assert r.from_date = v_today - 14 and r.to_date = v_today and not r.is_backfill and r.is_reconcile,
          format('the first run re-checks the fortnight %s', to_jsonb(r));
   perform punchly_note(v_org, 're-checked', true, true);
   select from_date, to_date, is_backfill, is_reconcile into r from punchly_due();
-  assert r.from_date = current_date - 1 and r.to_date = current_date and not r.is_backfill and not r.is_reconcile,
+  assert r.from_date = v_today - 1 and r.to_date = v_today and not r.is_backfill and not r.is_reconcile,
          format('after that it is today and yesterday %s', to_jsonb(r));
   -- and the wider pull comes back round when the interval has passed
   update punchly_settings set last_reconcile_at = now() - interval '15 days' where org_id = v_org;
   select from_date, is_reconcile into r from punchly_due();
-  assert r.from_date = current_date - 14 and r.is_reconcile, format('the re-check comes round again %s', to_jsonb(r));
+  assert r.from_date = v_today - 14 and r.is_reconcile, format('the re-check comes round again %s', to_jsonb(r));
   perform punchly_note(v_org, 're-checked', true, true);
 
   -- ===== the wage sheet, and who may run it =====
   perform set_config('request.jwt.claim.sub', uid_acct::text, true); set local role authenticated;
   select present, half_days, leave_days, worked_hours, ot_hours, wage, needs_review as review
-    into r from attendance_summary(d1, current_date) where staff_id = v_ramesh;
+    into r from attendance_summary(d1, v_today) where staff_id = v_ramesh;
   assert r.present = 2 and r.half_days = 0 and r.worked_hours = 18 and r.ot_hours = 2 and r.wage = 1200 and r.review = 1,
          format('ramesh sheet %s', to_jsonb(r));
-  select present, leave_days, wage into r from attendance_summary(d1, current_date) where staff_id = v_laxmi;
+  select present, leave_days, wage into r from attendance_summary(d1, v_today) where staff_id = v_laxmi;
   assert r.present = 0 and r.leave_days = 1 and r.wage = 0, format('laxmi sheet %s', to_jsonb(r));
-  select count(*) into n from attendance_register(d1, current_date);
+  select count(*) into n from attendance_register(d1, v_today);
   assert n = 3, format('the accountant sees the register without rights on the staff table, found %s', n);
   -- but the roster is the owner's, because linking rewrites a staff row
   begin
@@ -175,7 +180,7 @@ begin
   perform set_license_plan(v_org, 'starter');
   perform set_config('request.jwt.claim.sub', uid_owner::text, true); set local role authenticated;
   begin
-    perform attendance_summary(d1, current_date);
+    perform attendance_summary(d1, v_today);
     assert false, 'Starter must not reach the wage sheet';
   exception when others then null; end;
   begin
@@ -191,7 +196,7 @@ begin
   perform set_license_plan(v_org, 'growth');
   perform set_config('request.jwt.claim.sub', uid_owner::text, true); set local role authenticated;
   select count(*) into n from attendance; assert n = 3, format('Growth gives every row back, found %s', n);
-  select count(*) into n from attendance_summary(d1, current_date); assert n = 6, format('Growth opens it again, %s staff', n);
+  select count(*) into n from attendance_summary(d1, v_today); assert n = 6, format('Growth opens it again, %s staff', n);
   j := license_status();
   assert j->'features' ? 'attendance', format('growth features %s', j->'features');
   assert jsonb_array_length(j->'catalogue') = 14, format('catalogue %s', jsonb_array_length(j->'catalogue'));

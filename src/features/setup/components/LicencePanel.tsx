@@ -23,6 +23,11 @@ const DEVICES_KEY = ['license', 'devices'] as const;
  */
 function PlanLadder() {
   const perms = usePermissions();
+  const license = useLicense();
+  // During a plan trial the plan in force is Full while the key says Starter. Marking only
+  // the one in force would let a client believe they had bought it.
+  const paid = license.data?.paid_plan;
+  const onTrial = license.data?.plan_trial_days_left != null;
   return (
     <section>
       <h3 className="mb-1 text-sm font-medium">What each key opens</h3>
@@ -33,11 +38,13 @@ function PlanLadder() {
       <div className="grid gap-3 lg:grid-cols-3">
         {PLANS.map((p) => {
           const mine = p.key === perms.plan;
+          const bought = onTrial && p.key === paid;
           return (
-            <div key={p.key} className={cn('rounded-md border p-3', mine && 'border-primary bg-primary/5')}>
+            <div key={p.key} className={cn('rounded-md border p-3', mine && 'border-primary bg-primary/5', bought && 'border-primary')}>
               <div className="flex items-center gap-2">
                 <span className="font-semibold">{p.label}</span>
-                {mine && <Badge>current</Badge>}
+                {mine && <Badge>{onTrial ? 'open now' : 'current'}</Badge>}
+                {bought && <Badge variant="secondary">your key</Badge>}
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{p.blurb}</p>
               <ul className="mt-2 space-y-1 text-sm">
@@ -127,7 +134,15 @@ export function LicencePanel({ compact }: { compact?: boolean }) {
             </div>
             <div>
               Plan <Badge variant="secondary">{s.plan_name}</Badge>
+              {s.plan_trial_days_left != null && <Badge className="ml-1">trial</Badge>}
             </div>
+            {s.plan_trial_days_left != null && (
+              <div className="text-amber-700 dark:text-amber-500">
+                Everything is open for {s.plan_trial_days_left} more day{s.plan_trial_days_left === 1 ? '' : 's'}
+                {s.plan_full_until && `, until ${dateDMY(s.plan_full_until)}`}. After that this becomes{' '}
+                <span className="font-medium">{s.paid_plan_name}</span> — nothing entered is lost, the extra screens simply close.
+              </div>
+            )}
             {s.licensed_to && <div>Licensed to <span className="font-medium">{s.licensed_to}</span></div>}
             <div>
               {s.status === 'trial' && `Trial ends ${s.valid_till ? dateDMY(s.valid_till) : ''} (${s.days_left} day${s.days_left === 1 ? '' : 's'} left).`}

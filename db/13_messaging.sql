@@ -210,7 +210,12 @@ begin
     return;
   end if;
   select count(*) into v_sent_today from message_log
-   where org_id = p_org and sent_at >= (now() at time zone 'Asia/Kolkata')::date;
+   -- The day the cap counts is an IST calendar day, so the boundary has to be IST
+   -- midnight turned back into an instant. Comparing a timestamptz against a bare
+   -- IST date casts that date to midnight UTC — 05:30 IST — which silently moves the
+   -- window five and a half hours and lets anything sent after midnight escape the cap.
+   where org_id = p_org
+     and sent_at >= (((now() at time zone 'Asia/Kolkata')::date)::timestamp at time zone 'Asia/Kolkata');
   if v_sent_today >= s.daily_cap then return; end if;
   return query
     update message_log set attempts = attempts + 1, updated_at = now()

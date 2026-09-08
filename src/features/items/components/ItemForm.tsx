@@ -20,16 +20,17 @@ import { ITEM_DEFAULTS, ITEM_TYPES, itemSchema, type ItemInput } from '../schema
 const norm = (s: string) => s.toUpperCase().replace(/[\s.]+/g, '');
 
 /**
- * The product photo. Uploaded straight away rather than on save, because the file
- * has to reach storage before the item can hold its URL — and on a new product
- * there is no id to file it under yet, so the picker waits until the item exists.
+ * The product photo. The file goes to storage as soon as it is picked, because the
+ * item can only hold a URL once one exists; the form then carries that URL and the
+ * save writes it. A brand-new product has no id yet, so the file is named with a
+ * random one instead — the id in the filename is for humans, nothing reads it.
  */
 function PhotoField({ itemId, value, onChange }: { itemId: string | null; value: string; onChange: (url: string) => void }) {
   const pick = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
 
   async function take(file: File | undefined) {
-    if (!file || !itemId) return;
+    if (!file) return;
     setBusy(true);
     try {
       onChange(await uploadItemImage(itemId, file));
@@ -56,7 +57,7 @@ function PhotoField({ itemId, value, onChange }: { itemId: string | null; value:
         <div className="space-y-1">
           <input ref={pick} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(ev) => take(ev.target.files?.[0])} />
           <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={!itemId || busy} onClick={() => pick.current?.click()}>
+            <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => pick.current?.click()}>
               {busy ? 'Uploading…' : value ? 'Replace' : 'Add photo'}
             </Button>
             {value && (
@@ -66,9 +67,8 @@ function PhotoField({ itemId, value, onChange }: { itemId: string | null; value:
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            {itemId
-              ? 'Shown on the rate card. JPG, PNG or WebP, up to 5 MB.'
-              : 'Save the product first, then a photo can be added.'}
+            Shown on the rate card. JPG, PNG or WebP, up to 5 MB.
+            {!itemId && ' It is kept when you save the product.'}
           </p>
         </div>
       </div>
@@ -175,6 +175,9 @@ export function ItemForm({ item }: { item?: ItemRow }) {
         reorder_level: v.reorder_level,
         shelf_life_days: v.shelf_life_days || null,
         is_active: v.is_active,
+        // Easy to forget, and it fails silently: the upload succeeds, the preview shows,
+        // and the URL is dropped on save. Anything added to the form belongs here too.
+        image_url: v.image_url || null,
       };
       if (item?.id) {
         // Never send the packing of a locked item; the DB would refuse anyway.

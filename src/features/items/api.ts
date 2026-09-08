@@ -96,11 +96,12 @@ export function updateItem(id: string, values: ItemUpdate): Promise<Item> {
  * Public on purpose: it goes on a rate card that is handed to customers.
  * Returns the URL to store on the item.
  */
-export async function uploadItemImage(itemId: string, file: File): Promise<string> {
+export async function uploadItemImage(itemId: string | null, file: File): Promise<string> {
   const org = await currentOrgId();
   const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase();
-  // Timestamped, so replacing a photo never serves a stale cached copy.
-  const path = `${org}/${itemId}-${Date.now()}.${ext}`;
+  // Timestamped, so replacing a photo never serves a stale cached copy. A product
+  // being created has no id yet; the name is only for a human reading the bucket.
+  const path = `${org}/${itemId ?? crypto.randomUUID()}-${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from('products').upload(path, file, {
     contentType: file.type || 'image/jpeg',
     upsert: false,

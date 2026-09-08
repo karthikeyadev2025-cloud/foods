@@ -27,6 +27,7 @@ function toForm(c: CustomerRow): CustomerInput {
     credit_limit: Number(c.credit_limit ?? 0),
     opening_balance: Number(c.opening_balance ?? 0),
     whatsapp_opt_in: c.whatsapp_opt_in ?? true,
+    language: c.language === 'en' ? 'en' : 'te',
     is_active: c.is_active ?? true,
   };
 }
@@ -60,6 +61,7 @@ export function CustomerDialog({ customer, onClose }: { customer?: CustomerRow; 
         credit_limit: v.credit_limit,
         opening_balance: v.opening_balance,
         whatsapp_opt_in: v.whatsapp_opt_in,
+        language: v.language,
         is_active: v.is_active,
       };
       return customer?.id ? updateCustomer(customer.id, values) : createCustomer(values);
@@ -109,6 +111,12 @@ export function CustomerDialog({ customer, onClose }: { customer?: CustomerRow; 
           </Field>
           <Field label="Price group" htmlFor="cu-pg" error={e.price_group?.message} help="For rate overrides.">
             <Input id="cu-pg" {...form.register('price_group')} />
+          </Field>
+          <Field label="Message language" htmlFor="cu-lang" help="WhatsApp messages go out in this language.">
+            <NativeSelect id="cu-lang" {...form.register('language')}>
+              <option value="te">Telugu</option>
+              <option value="en">English</option>
+            </NativeSelect>
           </Field>
           <Field label="Address" htmlFor="cu-address" error={e.address?.message} className="col-span-3">
             <Textarea id="cu-address" rows={2} {...form.register('address')} />

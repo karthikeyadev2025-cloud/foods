@@ -451,6 +451,118 @@ export type Database = {
           },
         ]
       }
+      broadcasts: {
+        Row: {
+          body: string | null
+          catalog_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          item_id: string | null
+          kind: string
+          note: string | null
+          org_id: string
+          queued_at: string | null
+          recipients: number
+          segment: NonNullable<Json>
+          status: string
+          template_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          catalog_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string | null
+          kind: string
+          note?: string | null
+          org_id: string
+          queued_at?: string | null
+          recipients?: number
+          segment?: NonNullable<Json>
+          status?: string
+          template_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          catalog_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string | null
+          kind?: string
+          note?: string | null
+          org_id?: string
+          queued_at?: string | null
+          recipients?: number
+          segment?: NonNullable<Json>
+          status?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcasts_catalog_id_fkey"
+            columns: ["catalog_id"]
+            referencedRelation: "catalogs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcasts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcasts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "broadcasts_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcasts_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcasts_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "broadcasts_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "broadcasts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcasts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "broadcasts_template_id_fkey"
+            columns: ["template_id"]
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cash_bank_accounts: {
         Row: {
           account_last4: string | null
@@ -506,34 +618,40 @@ export type Database = {
       catalogs: {
         Row: {
           created_at: string
+          file_path: string | null
           id: string
           is_active: boolean
           item_ids: string[] | null
           name: string
           org_id: string
           pdf_url: string | null
+          updated_at: string
           valid_from: string | null
           valid_to: string | null
         }
         Insert: {
           created_at?: string
+          file_path?: string | null
           id?: string
           is_active?: boolean
           item_ids?: string[] | null
           name: string
           org_id: string
           pdf_url?: string | null
+          updated_at?: string
           valid_from?: string | null
           valid_to?: string | null
         }
         Update: {
           created_at?: string
+          file_path?: string | null
           id?: string
           is_active?: boolean
           item_ids?: string[] | null
           name?: string
           org_id?: string
           pdf_url?: string | null
+          updated_at?: string
           valid_from?: string | null
           valid_to?: string | null
         }
@@ -742,6 +860,7 @@ export type Database = {
           credit_limit: number | null
           id: string
           is_active: boolean
+          language: string
           mobile1: string | null
           mobile2: string | null
           mobile3: string | null
@@ -761,6 +880,7 @@ export type Database = {
           credit_limit?: number | null
           id?: string
           is_active?: boolean
+          language?: string
           mobile1?: string | null
           mobile2?: string | null
           mobile3?: string | null
@@ -780,6 +900,7 @@ export type Database = {
           credit_limit?: number | null
           id?: string
           is_active?: boolean
+          language?: string
           mobile1?: string | null
           mobile2?: string | null
           mobile3?: string | null
@@ -1150,39 +1271,63 @@ export type Database = {
       inbound_orders: {
         Row: {
           audio_url: string | null
+          confidence: number | null
           created_at: string
           customer_id: string | null
+          from_number: string | null
+          handled_at: string | null
+          handled_by: string | null
           id: string
           invoice_id: string | null
+          notes: string | null
           org_id: string
           parsed_items: Json | null
+          provider_ref: string | null
           raw_text: string | null
+          reject_reason: string | null
           source: Database["public"]["Enums"]["order_source"]
           status: Database["public"]["Enums"]["order_status"]
+          transcript: string | null
         }
         Insert: {
           audio_url?: string | null
+          confidence?: number | null
           created_at?: string
           customer_id?: string | null
+          from_number?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
           id?: string
           invoice_id?: string | null
+          notes?: string | null
           org_id: string
           parsed_items?: Json | null
+          provider_ref?: string | null
           raw_text?: string | null
+          reject_reason?: string | null
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
+          transcript?: string | null
         }
         Update: {
           audio_url?: string | null
+          confidence?: number | null
           created_at?: string
           customer_id?: string | null
+          from_number?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
           id?: string
           invoice_id?: string | null
+          notes?: string | null
           org_id?: string
           parsed_items?: Json | null
+          provider_ref?: string | null
           raw_text?: string | null
+          reject_reason?: string | null
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
+          transcript?: string | null
         }
         Relationships: [
           {
@@ -1202,6 +1347,18 @@ export type Database = {
             columns: ["customer_id"]
             referencedRelation: "v_customer_outstanding"
             referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_handled_by_fkey"
+            columns: ["handled_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_handled_by_fkey"
+            columns: ["handled_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
           },
           {
             foreignKeyName: "inbound_orders_invoice_id_fkey"
@@ -2081,49 +2238,76 @@ export type Database = {
       }
       message_log: {
         Row: {
+          attempts: number
+          body: string | null
+          broadcast_id: string | null
           channel: Database["public"]["Enums"]["channel_kind"]
           created_at: string
           customer_id: string | null
+          delivered_at: string | null
           error: string | null
           id: string
           org_id: string
           payload: Json | null
           provider_msg_id: string | null
           purpose: Database["public"]["Enums"]["msg_purpose"]
+          read_at: string | null
+          ref_id: string | null
+          ref_table: string | null
+          rule_id: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["msg_status"]
           template_id: string | null
           to_number: string
+          updated_at: string
         }
         Insert: {
+          attempts?: number
+          body?: string | null
+          broadcast_id?: string | null
           channel?: Database["public"]["Enums"]["channel_kind"]
           created_at?: string
           customer_id?: string | null
+          delivered_at?: string | null
           error?: string | null
           id?: string
           org_id: string
           payload?: Json | null
           provider_msg_id?: string | null
           purpose: Database["public"]["Enums"]["msg_purpose"]
+          read_at?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          rule_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["msg_status"]
           template_id?: string | null
           to_number: string
+          updated_at?: string
         }
         Update: {
+          attempts?: number
+          body?: string | null
+          broadcast_id?: string | null
           channel?: Database["public"]["Enums"]["channel_kind"]
           created_at?: string
           customer_id?: string | null
+          delivered_at?: string | null
           error?: string | null
           id?: string
           org_id?: string
           payload?: Json | null
           provider_msg_id?: string | null
           purpose?: Database["public"]["Enums"]["msg_purpose"]
+          read_at?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          rule_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["msg_status"]
           template_id?: string | null
           to_number?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -2157,6 +2341,18 @@ export type Database = {
             referencedColumns: ["org_id"]
           },
           {
+            foreignKeyName: "message_log_rule_id_fkey"
+            columns: ["rule_id"]
+            referencedRelation: "reminder_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_rule_id_fkey"
+            columns: ["rule_id"]
+            referencedRelation: "v_reminder_rules"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "message_log_template_id_fkey"
             columns: ["template_id"]
             referencedRelation: "message_templates"
@@ -2175,6 +2371,7 @@ export type Database = {
           org_id: string
           provider_template_name: string | null
           purpose: Database["public"]["Enums"]["msg_purpose"]
+          updated_at: string
         }
         Insert: {
           body: string
@@ -2186,6 +2383,7 @@ export type Database = {
           org_id: string
           provider_template_name?: string | null
           purpose: Database["public"]["Enums"]["msg_purpose"]
+          updated_at?: string
         }
         Update: {
           body?: string
@@ -2197,6 +2395,7 @@ export type Database = {
           org_id?: string
           provider_template_name?: string | null
           purpose?: Database["public"]["Enums"]["msg_purpose"]
+          updated_at?: string
         }
         Relationships: [
           {
@@ -2210,6 +2409,140 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      messaging_settings: {
+        Row: {
+          api_key: string | null
+          api_url: string
+          daily_cap: number
+          default_language: string
+          is_enabled: boolean
+          org_id: string
+          quiet_from: string
+          quiet_to: string
+          sender_number: string | null
+          updated_at: string
+          webhook_secret: string
+        }
+        Insert: {
+          api_key?: string | null
+          api_url?: string
+          daily_cap?: number
+          default_language?: string
+          is_enabled?: boolean
+          org_id: string
+          quiet_from?: string
+          quiet_to?: string
+          sender_number?: string | null
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Update: {
+          api_key?: string | null
+          api_url?: string
+          daily_cap?: number
+          default_language?: string
+          is_enabled?: boolean
+          org_id?: string
+          quiet_from?: string
+          quiet_to?: string
+          sender_number?: string | null
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_settings_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_settings_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      new_stock_rules: {
+        Row: {
+          auto_send: boolean
+          id: string
+          is_active: boolean
+          item_id: string
+          lookback_days: number
+          org_id: string
+          template_id: string | null
+          threshold_boxes: number
+          updated_at: string
+        }
+        Insert: {
+          auto_send?: boolean
+          id?: string
+          is_active?: boolean
+          item_id: string
+          lookback_days?: number
+          org_id: string
+          template_id?: string | null
+          threshold_boxes: number
+          updated_at?: string
+        }
+        Update: {
+          auto_send?: boolean
+          id?: string
+          is_active?: boolean
+          item_id?: string
+          lookback_days?: number
+          org_id?: string
+          template_id?: string | null
+          threshold_boxes?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "new_stock_rules_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_template_id_fkey"
+            columns: ["template_id"]
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3925,37 +4258,52 @@ export type Database = {
       }
       reminder_rules: {
         Row: {
+          channel: Database["public"]["Enums"]["channel_kind"]
           id: string
           is_active: boolean
+          last_run_at: string | null
           min_outstanding: number | null
           name: string
           org_id: string
           overdue_days: number | null
           purpose: Database["public"]["Enums"]["msg_purpose"]
+          repeat_every_days: number
+          route_id: string | null
           run_cron: string | null
           template_id: string | null
+          updated_at: string
         }
         Insert: {
+          channel?: Database["public"]["Enums"]["channel_kind"]
           id?: string
           is_active?: boolean
+          last_run_at?: string | null
           min_outstanding?: number | null
           name: string
           org_id: string
           overdue_days?: number | null
           purpose?: Database["public"]["Enums"]["msg_purpose"]
+          repeat_every_days?: number
+          route_id?: string | null
           run_cron?: string | null
           template_id?: string | null
+          updated_at?: string
         }
         Update: {
+          channel?: Database["public"]["Enums"]["channel_kind"]
           id?: string
           is_active?: boolean
+          last_run_at?: string | null
           min_outstanding?: number | null
           name?: string
           org_id?: string
           overdue_days?: number | null
           purpose?: Database["public"]["Enums"]["msg_purpose"]
+          repeat_every_days?: number
+          route_id?: string | null
           run_cron?: string | null
           template_id?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -3969,6 +4317,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "reminder_rules_route_id_fkey"
+            columns: ["route_id"]
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "reminder_rules_template_id_fkey"
@@ -5004,6 +5358,93 @@ export type Database = {
           },
         ]
       }
+      v_broadcasts: {
+        Row: {
+          body: string | null
+          catalog_id: string | null
+          catalog_name: string | null
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
+          failed_count: number | null
+          id: string | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          kind: string | null
+          note: string | null
+          org_id: string | null
+          queued_at: string | null
+          recipients: number | null
+          segment: Json | null
+          sent_count: number | null
+          status: string | null
+          template_id: string | null
+          template_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcasts_catalog_id_fkey"
+            columns: ["catalog_id"]
+            referencedRelation: "catalogs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcasts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcasts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "broadcasts_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcasts_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcasts_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "broadcasts_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "broadcasts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcasts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "broadcasts_template_id_fkey"
+            columns: ["template_id"]
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_customer_list: {
         Row: {
           address: string | null
@@ -5012,6 +5453,7 @@ export type Database = {
           credit_limit: number | null
           id: string | null
           is_active: boolean | null
+          language: string | null
           mobile1: string | null
           mobile2: string | null
           mobile3: string | null
@@ -5103,18 +5545,28 @@ export type Database = {
       v_inbound_orders: {
         Row: {
           audio_url: string | null
+          confidence: number | null
           created_at: string | null
           customer_id: string | null
           customer_name: string | null
           customer_town: string | null
+          from_number: string | null
+          handled_at: string | null
+          handled_by: string | null
+          handled_by_name: string | null
           id: string | null
           invoice_id: string | null
+          invoice_no: string | null
+          line_count: number | null
           mobile1: string | null
+          notes: string | null
           org_id: string | null
           parsed_items: Json | null
           raw_text: string | null
+          reject_reason: string | null
           source: Database["public"]["Enums"]["order_source"] | null
           status: Database["public"]["Enums"]["order_status"] | null
+          transcript: string | null
         }
         Relationships: [
           {
@@ -5134,6 +5586,18 @@ export type Database = {
             columns: ["customer_id"]
             referencedRelation: "v_customer_outstanding"
             referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_handled_by_fkey"
+            columns: ["handled_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_orders_handled_by_fkey"
+            columns: ["handled_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
           },
           {
             foreignKeyName: "inbound_orders_invoice_id_fkey"
@@ -5563,6 +6027,148 @@ export type Database = {
           staff_id: string | null
         }
         Relationships: []
+      }
+      v_message_log: {
+        Row: {
+          attempts: number | null
+          body: string | null
+          broadcast_id: string | null
+          channel: Database["public"]["Enums"]["channel_kind"] | null
+          created_at: string | null
+          customer_id: string | null
+          customer_name: string | null
+          delivered_at: string | null
+          error: string | null
+          id: string | null
+          media_url: string | null
+          org_id: string | null
+          provider_msg_id: string | null
+          purpose: Database["public"]["Enums"]["msg_purpose"] | null
+          read_at: string | null
+          ref_id: string | null
+          ref_table: string | null
+          rule_id: string | null
+          rule_name: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["msg_status"] | null
+          template_id: string | null
+          template_name: string | null
+          to_number: string | null
+          town: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_log_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_customer_id_fkey"
+            columns: ["customer_id"]
+            referencedRelation: "v_customer_outstanding"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "message_log_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "message_log_rule_id_fkey"
+            columns: ["rule_id"]
+            referencedRelation: "reminder_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_rule_id_fkey"
+            columns: ["rule_id"]
+            referencedRelation: "v_reminder_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_log_template_id_fkey"
+            columns: ["template_id"]
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_new_stock_rules: {
+        Row: {
+          auto_send: boolean | null
+          broadcasts: number | null
+          id: string | null
+          is_active: boolean | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          lookback_days: number | null
+          org_id: string | null
+          stock_boxes: number | null
+          template_id: string | null
+          template_name: string | null
+          threshold_boxes: number | null
+          units_per_box: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "new_stock_rules_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "new_stock_rules_template_id_fkey"
+            columns: ["template_id"]
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_open_trips: {
         Row: {
@@ -6177,6 +6783,55 @@ export type Database = {
           },
         ]
       }
+      v_reminder_rules: {
+        Row: {
+          channel: Database["public"]["Enums"]["channel_kind"] | null
+          id: string | null
+          is_active: boolean | null
+          last_run_at: string | null
+          last_sent_at: string | null
+          min_outstanding: number | null
+          name: string | null
+          org_id: string | null
+          overdue_days: number | null
+          purpose: Database["public"]["Enums"]["msg_purpose"] | null
+          repeat_every_days: number | null
+          route_id: string | null
+          route_name: string | null
+          run_cron: string | null
+          sent_total: number | null
+          template_id: string | null
+          template_language: string | null
+          template_name: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_rules_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_rules_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "reminder_rules_route_id_fkey"
+            columns: ["route_id"]
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_rules_template_id_fkey"
+            columns: ["template_id"]
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_return_lines: {
         Row: {
           amount: number | null
@@ -6600,10 +7255,54 @@ export type Database = {
         Args: { p_org: string; p_value: number }
         Returns: number
       }
+      broadcast_recipients: {
+        Args: { p_broadcast: string }
+        Returns: {
+          customer_id: string
+          last_bought: string
+          mobile1: string
+          name: string
+          route_name: string
+          town: string
+        }[]
+      }
       can_delete: { Args: { p_module: string }; Returns: boolean }
       can_edit: { Args: { p_module: string }; Returns: boolean }
       can_view: { Args: { p_module: string }; Returns: boolean }
       cancel_production_batch: { Args: { p_batch: string }; Returns: undefined }
+      claim_queued_messages: {
+        Args: { p_limit?: number; p_org: string }
+        Returns: {
+          attempts: number
+          body: string | null
+          broadcast_id: string | null
+          channel: Database["public"]["Enums"]["channel_kind"]
+          created_at: string
+          customer_id: string | null
+          delivered_at: string | null
+          error: string | null
+          id: string
+          org_id: string
+          payload: Json | null
+          provider_msg_id: string | null
+          purpose: Database["public"]["Enums"]["msg_purpose"]
+          read_at: string | null
+          ref_id: string | null
+          ref_table: string | null
+          rule_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["msg_status"]
+          template_id: string | null
+          to_number: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "message_log"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       close_production_batch: { Args: { p_batch: string }; Returns: undefined }
       closing_stock_report: {
         Args: {
@@ -6642,6 +7341,12 @@ export type Database = {
           receipts: number
         }[]
       }
+      convert_inbound_order: {
+        Args: { p_header: Json; p_lines: Json; p_order: string }
+        Returns: string
+      }
+      create_broadcast: { Args: { p: Json }; Returns: string }
+      create_inbound_order: { Args: { p: Json }; Returns: string }
       create_trip: { Args: { p: Json }; Returns: string }
       customer_ledger: {
         Args: { p_customer: string; p_from?: string; p_to?: string }
@@ -6680,6 +7385,10 @@ export type Database = {
       ensure_system_accounts: { Args: { p_org: string }; Returns: undefined }
       gen_random_uuid: { Args: Record<PropertyKey, never>; Returns: string }
       gen_salt: { Args: { "": string }; Returns: string }
+      get_messaging_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       has_role: {
         Args: { p_roles: Database["public"]["Enums"]["staff_role"][] }
         Returns: boolean
@@ -6693,6 +7402,37 @@ export type Database = {
         }
         Returns: Json
       }
+      inbound_order_lines: {
+        Args: { p_order: string }
+        Returns: {
+          base_uom: string
+          boxes: number
+          confidence: number
+          idx: number
+          item_code: string
+          item_id: string
+          item_name: string
+          low_confidence: boolean
+          match: string
+          qty: number
+          rate: number
+          raw_code: string
+          raw_name: string
+          units_per_box: number
+          uom: string
+        }[]
+      }
+      invoice_message_vars: { Args: { p_invoice: string }; Returns: Json }
+      is_service_call: { Args: Record<PropertyKey, never>; Returns: boolean }
+      mark_message_status: {
+        Args: {
+          p_at?: string
+          p_error?: string
+          p_provider_msg_id: string
+          p_status: Database["public"]["Enums"]["msg_status"]
+        }
+        Returns: boolean
+      }
       my_org_id: { Args: Record<PropertyKey, never>; Returns: string }
       my_role: {
         Args: Record<PropertyKey, never>
@@ -6705,6 +7445,7 @@ export type Database = {
       }
       normalize_code: { Args: { p: string }; Returns: string }
       normalize_item_code: { Args: { p: string }; Returns: string }
+      normalize_mobile: { Args: { p: string }; Returns: string }
       open_production_batch: { Args: { p: Json }; Returns: string }
       outstanding_ageing: {
         Args: { p_as_on?: string; p_org: string; p_route?: string }
@@ -6727,6 +7468,31 @@ export type Database = {
       pgp_armor_headers: {
         Args: { "": string }
         Returns: Record<string, unknown>[]
+      }
+      pick_template: {
+        Args: {
+          p_language: string
+          p_org: string
+          p_purpose: Database["public"]["Enums"]["msg_purpose"]
+        }
+        Returns: {
+          body: string
+          channel: Database["public"]["Enums"]["channel_kind"]
+          id: string
+          is_active: boolean
+          language: string | null
+          name: string
+          org_id: string
+          provider_template_name: string | null
+          purpose: Database["public"]["Enums"]["msg_purpose"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "message_templates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       pieces_to_uom: {
         Args: { p_item: string; p_pieces: number; p_uom: string }
@@ -6769,6 +7535,18 @@ export type Database = {
         Args: { p_item: string; p_qty: number; p_uom: string }
         Returns: number
       }
+      queue_broadcast: { Args: { p_broadcast: string }; Returns: Json }
+      queue_document_message: {
+        Args: {
+          p_customer: string
+          p_doc_type: string
+          p_ref_id: string
+          p_ref_table: string
+          p_vars: Json
+        }
+        Returns: string
+      }
+      queue_message: { Args: { p: Json }; Returns: string }
       receipts_register: {
         Args: { p_from: string; p_org: string; p_route?: string; p_to: string }
         Returns: {
@@ -6785,9 +7563,32 @@ export type Database = {
           town: string
         }[]
       }
+      receive_inbound_order: { Args: { p: Json }; Returns: Json }
       recompute_invoice_totals: {
         Args: { p_invoice: string }
         Returns: undefined
+      }
+      reject_inbound_order: {
+        Args: { p_order: string; p_reason?: string }
+        Returns: undefined
+      }
+      reminder_recipients: {
+        Args: { p_rule: string }
+        Returns: {
+          customer_id: string
+          due: boolean
+          last_reminder_at: string
+          mobile1: string
+          name: string
+          outstanding: number
+          overdue_days: number
+          skip_reason: string
+          town: string
+        }[]
+      }
+      render_template: {
+        Args: { p_body: string; p_vars: Json }
+        Returns: string
       }
       reorder_sections: { Args: { p_ids: string[] }; Returns: undefined }
       reverse_journal: {
@@ -6799,6 +7600,10 @@ export type Database = {
           p_ref_table: string
         }
         Returns: number
+      }
+      rotate_webhook_secret: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       route_collection: {
         Args: { p_from: string; p_org: string; p_to: string }
@@ -6813,6 +7618,11 @@ export type Database = {
           sales: number
         }[]
       }
+      run_reminder_rule: {
+        Args: { p_dry_run?: boolean; p_rule: string }
+        Returns: Json
+      }
+      run_reminders: { Args: { p_org?: string }; Returns: Json }
       sales_summary: {
         Args: { p_from: string; p_group?: string; p_org: string; p_to: string }
         Returns: {
@@ -6825,6 +7635,7 @@ export type Database = {
         }[]
       }
       save_invoice: { Args: { p_header: Json; p_lines: Json }; Returns: string }
+      save_messaging_settings: { Args: { p: Json }; Returns: Json }
       save_payment: { Args: { p: Json }; Returns: string }
       save_purchase: {
         Args: { p_header: Json; p_lines: Json }
@@ -6843,6 +7654,10 @@ export type Database = {
         Returns: string
       }
       seed_role_permissions: { Args: { p_org: string }; Returns: undefined }
+      send_custom_message: {
+        Args: { p_body: string; p_customer: string; p_media_url?: string }
+        Returns: string
+      }
       set_invoice_status: {
         Args: {
           p_invoice: string

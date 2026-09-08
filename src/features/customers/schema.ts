@@ -19,6 +19,7 @@ export const customerSchema = z.object({
   credit_limit: z.coerce.number().min(0),
   opening_balance: z.coerce.number(),
   whatsapp_opt_in: z.boolean(),
+  language: z.enum(['te', 'en']),
   is_active: z.boolean(),
 });
 
@@ -37,6 +38,7 @@ export const CUSTOMER_DEFAULTS: CustomerInput = {
   credit_limit: 0,
   opening_balance: 0,
   whatsapp_opt_in: true,
+  language: 'te',
   is_active: true,
 };
 

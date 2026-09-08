@@ -103,7 +103,7 @@ export function DashboardPage() {
             ) : orders.isLoading ? <Spinner /> : orders.error ? (
               <p role="alert" className="text-sm text-destructive">{orders.error.message}</p>
             ) : !orders.data?.length ? (
-              <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">No new orders. WhatsApp and voice orders land here once Messaging is set up.</p>
+              <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">No new orders. WhatsApp and call orders land here; <Link to="/messaging" className="text-primary hover:underline">Messaging</Link> has the full queue.</p>
             ) : (
               <ul className="divide-y">
                 {orders.data.map((o) => (
@@ -113,7 +113,7 @@ export function DashboardPage() {
                       <div className="truncate text-xs text-muted-foreground">{o.raw_text ?? (o.audio_url ? 'Voice note' : '')}</div>
                       <div className="text-xs text-muted-foreground">{dateTimeDMY(o.created_at)} · {o.source}</div>
                     </div>
-                    <Button asChild size="sm" variant="outline"><Link to="/messaging">Open <ArrowRight /></Link></Button>
+                    <Button asChild size="sm" variant="outline"><Link to={`/messaging/orders/${o.id}`}>Open <ArrowRight /></Link></Button>
                   </li>
                 ))}
               </ul>

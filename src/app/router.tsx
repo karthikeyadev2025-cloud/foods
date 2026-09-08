@@ -1,7 +1,6 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 import { AppShell } from '@/app/layout/AppShell';
 import { NotFound } from '@/app/routes/NotFound';
-import { Placeholder } from '@/app/routes/Placeholder';
 import { RequireAuth } from '@/features/auth/components/RequireAuth';
 import { RequireModule } from '@/features/auth/components/RequireModule';
 import { LoginPage } from '@/features/auth/routes/LoginPage';
@@ -13,6 +12,8 @@ import { InvoicePrintPage } from '@/features/invoices/routes/InvoicePrintPage';
 import { InvoicesPage } from '@/features/invoices/routes/InvoicesPage';
 import { ItemEditPage } from '@/features/items/routes/ItemEditPage';
 import { ItemsPage } from '@/features/items/routes/ItemsPage';
+import { InboundOrderPage } from '@/features/messaging/routes/InboundOrderPage';
+import { MessagingPage } from '@/features/messaging/routes/MessagingPage';
 import { PaymentsPage } from '@/features/payments/routes/PaymentsPage';
 import { BatchPage } from '@/features/production/routes/BatchPage';
 import { ProductionPage } from '@/features/production/routes/ProductionPage';
@@ -97,7 +98,11 @@ export const router = createBrowserRouter([
             { path: 'vehicles/trips', element: <TripsPage /> },
             { path: 'vehicles/trips/:id', element: <TripDetailPage /> },
           ]),
-          guarded('messaging', [{ path: 'messaging', element: <Placeholder title="Messaging" task="T6.1" /> }]),
+          guarded('messaging', [
+            { path: 'messaging', element: <MessagingPage /> },
+            { path: 'messaging/orders/:id', element: <InboundOrderPage /> },
+            { path: 'messaging/:tab', element: <MessagingPage /> },
+          ]),
           guarded('reports', [
             { path: 'reports', element: <ReportsPage /> },
             { path: 'reports/ledger', element: <ReportsPage tab="ledger" /> },

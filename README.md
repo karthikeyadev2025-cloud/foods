@@ -82,6 +82,8 @@ src/
 
 | T5 Dashboard & reports | ✅ `db/12_reports.sql`. **Dashboard**: sales today / month, collection, live outstanding, low and negative stock, vehicles out, open batches — each a SUM over the live tables, each a link into its screen; the day's activity feed across every document type; the pending order queue (fed by T6). **Accounts**: the receipts & payments register in the client's exact columns (S.No · Name · Town · Total Outstanding · one column per active receipt mode · Fresh Return · Rate Difference · Return · Remaining Outstanding), with Remaining tied to the live outstanding; customer ledger with opening and running balance; ageing 0–15 / 16–30 / 31–60 / 60+ after FIFO; collection by mode; route-wise sales, collection and outstanding. **Sales**: daily, monthly, customer-, town-, route-, item- and section-wise. Every report has a route/date filter, Excel and a print view. `db/tests/09_reports.sql`. |
 
+| T6 Hey Nikki messaging | ✅ `db/13_messaging.sql` + four edge functions. **Outbound**: templates in Telugu and English (customer language picks one), every message queued in `message_log` and sent by `nikki-send` (switch, quiet hours, daily cap, three attempts), delivery state from the `nikki-status` webhook; automatic invoice copy on dispatch, delivery confirmation, receipt thanks and order acknowledgement, each switchable per document. **Reminders**: rules are the ladder (gentle 7 d → firm 30 d → final 60 d), recipients resolved live from outstanding after credit days, one reminder per customer per repeat window, preview / dry run / run now, `run-reminders` on pg_cron at 10:00. **New stock**: a stock-ledger trigger creates a broadcast for recent buyers when production or a purchase crosses the item's threshold; auto-send or wait for the operator. **Catalogs**: PDF to the `catalogs` bucket, pushed to a route / town / recent buyers with a recipient preview. **Inbound**: `nikki-inbound` matches the customer by mobile, STOP / START flips opt-in, the operator sees the text beside matched lines (code match, name match or not found, low confidence flagged), edits, and presses **Convert to invoice** — never automatic. Opt-out honoured everywhere. `db/tests/10_messaging.sql`. |
+
 **Still needed from the client to finish T0.6:** units per box (and pack type) for the 64 codes in
 `seed/unmatched_items.csv` with a blank `units_per_box`, the four duplicated stock-sheet rows resolved,
 and the rate list. Each is a re-run of the importer, not a developer task.
@@ -90,6 +92,16 @@ Deploy the `create-user` edge function before adding users from Setup:
 
 ```bash
 supabase functions deploy create-user
+```
+
+For Hey Nikki messaging (T6): deploy the four functions, create a public storage bucket named
+`catalogs`, then run `db/cron/schedule.sql` in the SQL Editor (it needs the service-role key in
+Vault; the file says how). Paste the two webhook addresses and the secret from Messaging →
+Settings into the Hey Nikki console, and the API key from Hey Nikki into the same screen.
+
+```bash
+supabase functions deploy nikki-send run-reminders
+supabase functions deploy nikki-inbound nikki-status --no-verify-jwt
 ```
 
 Then disable public sign-ups in the Supabase dashboard (Authentication → Providers → Email). The owner

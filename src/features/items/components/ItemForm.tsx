@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Lock } from 'lucide-react';
-import { useEffect } from 'react';
+import { ImagePlus, Lock, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Field } from '@/components/Field';
@@ -14,10 +14,67 @@ import { packTypesApi, sectionsApi, uomsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { int, money } from '@/lib/format';
 import { boxRate, normalizeItemCode, parsePackingFromName, piecesPerBox } from '@/lib/units';
-import { createItem, itemCodeExists, updateItem, type ItemRow, type ItemUpdate } from '../api';
+import { createItem, itemCodeExists, updateItem, uploadItemImage, type ItemRow, type ItemUpdate } from '../api';
 import { ITEM_DEFAULTS, ITEM_TYPES, itemSchema, type ItemInput } from '../schema';
 
 const norm = (s: string) => s.toUpperCase().replace(/[\s.]+/g, '');
+
+/**
+ * The product photo. Uploaded straight away rather than on save, because the file
+ * has to reach storage before the item can hold its URL — and on a new product
+ * there is no id to file it under yet, so the picker waits until the item exists.
+ */
+function PhotoField({ itemId, value, onChange }: { itemId: string | null; value: string; onChange: (url: string) => void }) {
+  const pick = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function take(file: File | undefined) {
+    if (!file || !itemId) return;
+    setBusy(true);
+    try {
+      onChange(await uploadItemImage(itemId, file));
+      toast({ title: 'Photo added', description: 'Save the product to keep it.' });
+    } catch (err) {
+      toastError(err, 'Could not upload the photo');
+    } finally {
+      setBusy(false);
+      if (pick.current) pick.current.value = '';
+    }
+  }
+
+  return (
+    <div className="col-span-2 space-y-1">
+      <span className="text-sm font-medium">Photo</span>
+      <div className="flex items-start gap-3">
+        {value ? (
+          <img src={value} alt="" className="h-20 w-20 rounded-md border object-cover" />
+        ) : (
+          <div className="grid h-20 w-20 place-items-center rounded-md border border-dashed text-muted-foreground">
+            <ImagePlus className="h-5 w-5" aria-hidden />
+          </div>
+        )}
+        <div className="space-y-1">
+          <input ref={pick} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(ev) => take(ev.target.files?.[0])} />
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" disabled={!itemId || busy} onClick={() => pick.current?.click()}>
+              {busy ? 'Uploading…' : value ? 'Replace' : 'Add photo'}
+            </Button>
+            {value && (
+              <Button type="button" variant="ghost" size="icon" aria-label="Remove the photo" onClick={() => onChange('')}>
+                <Trash2 />
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {itemId
+              ? 'Shown on the rate card. JPG, PNG or WebP, up to 5 MB.'
+              : 'Save the product first, then a photo can be added.'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function toForm(item: ItemRow): ItemInput {
   return {
@@ -36,6 +93,7 @@ function toForm(item: ItemRow): ItemInput {
     reorder_level: Number(item.reorder_level ?? 0),
     shelf_life_days: item.shelf_life_days ?? 0,
     is_active: item.is_active ?? true,
+    image_url: item.image_url ?? '',
   };
 }
 
@@ -202,6 +260,11 @@ export function ItemForm({ item }: { item?: ItemRow }) {
             <Checkbox id="it-active" {...register('is_active')} />
             Active
           </label>
+          <PhotoField
+            itemId={item?.id ?? null}
+            value={watch('image_url')}
+            onChange={(url) => setValue('image_url', url, { shouldDirty: true })}
+          />
         </CardContent>
       </Card>
 

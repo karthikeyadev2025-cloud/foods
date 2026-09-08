@@ -2150,6 +2150,7 @@ export type Database = {
           category_id: string | null
           created_at: string
           id: string
+          image_url: string | null
           is_active: boolean
           item_code: string
           mrp: number | null
@@ -2173,6 +2174,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           item_code: string
           mrp?: number | null
@@ -2196,6 +2198,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           item_code?: string
           mrp?: number | null
@@ -7611,6 +7614,7 @@ export type Database = {
           created_at: string | null
           has_stock_movement: boolean | null
           id: string | null
+          image_url: string | null
           is_active: boolean | null
           item_code: string | null
           mrp_per_piece: number | null
@@ -10278,6 +10282,24 @@ export type Database = {
           inflow: number
           outflow: number
           sort: number
+        }[]
+      }
+      catalogue_items: {
+        Args: {
+          p_items?: string[]
+          p_section?: string
+          p_with_image_only?: boolean
+        }
+        Returns: {
+          box_rate: number
+          id: string
+          image_url: string
+          item_code: string
+          name: string
+          pack: string
+          section_name: string
+          unit_rate: number
+          units_per_box: number
         }[]
       }
       claim_queued_messages: {

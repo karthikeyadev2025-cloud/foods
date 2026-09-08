@@ -88,3 +88,40 @@ export async function createItem(values: ItemInsert): Promise<Item> {
 export function updateItem(id: string, values: ItemUpdate): Promise<Item> {
   return expectOne(supabase.from('items').update(values).eq('id', id).select('*').single());
 }
+
+// ---------------- product photo ----------------
+
+/**
+ * One photo per item, into the public `products` bucket under the org's folder.
+ * Public on purpose: it goes on a rate card that is handed to customers.
+ * Returns the URL to store on the item.
+ */
+export async function uploadItemImage(itemId: string, file: File): Promise<string> {
+  const org = await currentOrgId();
+  const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase();
+  // Timestamped, so replacing a photo never serves a stale cached copy.
+  const path = `${org}/${itemId}-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('products').upload(path, file, {
+    contentType: file.type || 'image/jpeg',
+    upsert: false,
+  });
+  if (error) throw error;
+  return supabase.storage.from('products').getPublicUrl(path).data.publicUrl;
+}
+
+export type CatalogueRow = Database['public']['Functions']['catalogue_items']['Returns'][number];
+
+/** The items for a printed rate card: a section, a picked list, or everything active. */
+export async function catalogueItems(opts: {
+  sectionId?: string | null;
+  itemIds?: string[] | null;
+  withImageOnly?: boolean;
+} = {}): Promise<CatalogueRow[]> {
+  const { data, error } = await supabase.rpc('catalogue_items', {
+    ...(opts.sectionId ? { p_section: opts.sectionId } : {}),
+    ...(opts.itemIds?.length ? { p_items: opts.itemIds } : {}),
+    ...(opts.withImageOnly ? { p_with_image_only: true } : {}),
+  });
+  if (error) throw error;
+  return data ?? [];
+}

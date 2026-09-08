@@ -48,3 +48,21 @@ create policy proofs_write on storage.objects for insert to authenticated
 drop policy if exists backups_owner_read on storage.objects;
 create policy backups_owner_read on storage.objects for select to authenticated
   using (bucket_id = 'backups' and (storage.foldername(name))[1] = public.my_org_id()::text and public.my_role() = 'owner');
+
+
+-- Product photos, for the item master and the printed rate card. Public, because a
+-- rate card is meant to be handed to customers; writing needs Items edit rights.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('products', 'products', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = true, file_size_limit = excluded.file_size_limit,
+                               allowed_mime_types = excluded.allowed_mime_types;
+
+-- Anyone may look — the point of a rate card is that customers can see it. Only
+-- somebody who may edit items can put one there, and only inside their own org's folder.
+drop policy if exists products_read on storage.objects;
+create policy products_read on storage.objects for select using (bucket_id = 'products');
+drop policy if exists products_write on storage.objects;
+create policy products_write on storage.objects for all to authenticated
+  using (bucket_id = 'products' and (storage.foldername(name))[1] = public.my_org_id()::text and public.can_edit('items'))
+  with check (bucket_id = 'products' and (storage.foldername(name))[1] = public.my_org_id()::text and public.can_edit('items'));
+

@@ -27,6 +27,8 @@ export const itemSchema = z
     reorder_level: z.coerce.number().min(0),
     shelf_life_days: z.coerce.number().int().min(0),
     is_active: z.boolean(),
+    /** Public URL of the product photo, '' when none. Set by the upload, never typed. */
+    image_url: z.string(),
   })
   .superRefine((v, ctx) => {
     if (v.type === 'finished_good' && !v.pack_type_id) {
@@ -52,4 +54,5 @@ export const ITEM_DEFAULTS: ItemInput = {
   reorder_level: 0,
   shelf_life_days: 0,
   is_active: true,
+  image_url: '',
 };

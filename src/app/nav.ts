@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   BarChart3,
+  BookImage,
   Boxes,
   CalendarCheck,
   ClipboardList,
@@ -53,6 +54,7 @@ export const NAV: NavGroup[] = [
       { to: '/items', label: 'Items', icon: Package, module: 'items' },
       { to: '/customers', label: 'Customers', icon: Users, module: 'customers' },
       { to: '/pricing', label: 'Pricing', icon: Tag, module: 'items', feature: 'documents' },
+      { to: '/catalogue', label: 'Rate card', icon: BookImage, module: 'items' },
     ],
   },
   {

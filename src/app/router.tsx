@@ -21,6 +21,7 @@ import { InvoiceEditPage } from '@/features/invoices/routes/InvoiceEditPage';
 import { InvoicePrintPage } from '@/features/invoices/routes/InvoicePrintPage';
 import { InvoicesPage } from '@/features/invoices/routes/InvoicesPage';
 import { ItemEditPage } from '@/features/items/routes/ItemEditPage';
+import { CataloguePage } from '@/features/items/routes/CataloguePage';
 import { ItemsPage } from '@/features/items/routes/ItemsPage';
 import { InboundOrderPage } from '@/features/messaging/routes/InboundOrderPage';
 import { MessagingPage } from '@/features/messaging/routes/MessagingPage';
@@ -106,6 +107,7 @@ export const router = createRouter([
             { path: 'items', element: <ItemsPage /> },
             { path: 'items/new', element: <ItemEditPage /> },
             { path: 'items/:id', element: <ItemEditPage /> },
+            { path: 'catalogue', element: <CataloguePage /> },
           ]),
           guarded('customers', [{ path: 'customers', element: <CustomersPage /> }]),
           guarded('invoices', [

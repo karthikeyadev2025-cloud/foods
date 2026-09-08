@@ -388,14 +388,47 @@ footer.doc {
 footer.doc b { color: var(--ink); font-weight: 600; }
 
 /* ---------- print ---------- */
+@page { margin: 16mm 15mm 18mm; }
+
 @media print {
-  .rail, .print-btn { display: none; }
-  .shell { display: block; padding: 0; }
+  .print-btn, .filter { display: none; }
+  body { background: #fff; color: #000; font-size: 10.5pt; line-height: 1.55; }
+
+  .masthead { border-bottom: 0; background: none; }
+  .masthead-in { display: block; max-width: none; padding: 0 0 20px; }
+  .masthead h1 { font-size: 34pt; }
+  .masthead p.lede, .masthead .te-line { max-width: none; }
+
+  .shell { display: block; max-width: none; padding: 0; }
   main { max-width: none; padding-top: 0; }
-  body { background: #fff; color: #000; font-size: 11.5pt; }
-  section.ch { break-inside: auto; }
-  section.ch > h3, .part-head { break-after: avoid; }
-  .term, .note, .warn, ol.steps > li { break-inside: avoid; }
+
+  /* The contents becomes the first page instead of vanishing. A handbook
+     nobody can navigate on paper is a handbook nobody opens twice. */
+  .rail {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    break-after: page;
+  }
+  /* display:block matters — the screen rail is a flex column, and a flex
+     container silently ignores `columns`, spilling the contents over two pages. */
+  .rail ol { display: block; columns: 2; column-gap: 30px; }
+  .rail a { display: block; padding: 2px 0 2px 26px; text-indent: -26px; }
+  .rail a span.n { display: inline-block; width: 20px; text-indent: 0; }
+  .rail li.part { break-after: avoid; break-inside: avoid; }
+  .rail a { color: #000; }
+
+  /* Each part starts a fresh page, so the eight parts read as eight sections. */
+  .part-head { break-before: page; padding-top: 0; margin-top: 0; }
+  .part-head:first-of-type { break-before: auto; }
+
+  section.ch > h3, h4 { break-after: avoid; }
+  .term, .note, .warn, ol.steps > li, tr { break-inside: avoid; }
+  thead { display: table-header-group; }
+  .tw { overflow-x: visible; }
+  footer.doc { break-before: avoid; }
 }
 
 @media (prefers-reduced-motion: reduce) {

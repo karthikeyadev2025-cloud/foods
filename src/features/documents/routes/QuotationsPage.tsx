@@ -19,11 +19,12 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMe, usePermissions } from '@/features/auth/hooks';
 import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
-import { stockLocationsApi } from '@/features/setup/api';
+import { getPrintTemplate, stockLocationsApi } from '@/features/setup/api';
+import { SalesDocPrint } from '@/components/print/SalesDocPrint';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
-import { amount, dateDMY, int, qty, round, toISODate, toNumber } from '@/lib/format';
+import { amount, dateDMY, qty, round, toISODate, toNumber } from '@/lib/format';
 import { amountInWords } from '@/lib/money';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { invoiceLine } from '@/lib/units';
@@ -220,55 +221,30 @@ export function QuotationPrintPage() {
   const quote = useQuery({ queryKey: ['quotations', 'one', id], queryFn: () => getQuotation(id ?? ''), enabled: Boolean(id) });
   const lines = useQuery({ queryKey: ['quotations', 'lines', id], queryFn: () => getQuotationLines(id ?? ''), enabled: Boolean(id) });
   const customer = useQuery({ queryKey: ['customers', 'one', quote.data?.customer_id], queryFn: () => getCustomer(quote.data?.customer_id ?? ''), enabled: Boolean(quote.data?.customer_id) });
+  const template = useQuery({ queryKey: ['setup', 'print_templates', 'quotation'], queryFn: () => getPrintTemplate('quotation') });
   useEffect(() => { document.title = quote.data ? `Quotation ${quote.data.quote_no}` : 'Quotation'; }, [quote.data]);
-  if (quote.isLoading || lines.isLoading || me.isLoading) return <Spinner label="Preparing print…" full />;
+  if (quote.isLoading || lines.isLoading || me.isLoading || template.isLoading) return <Spinner label="Preparing print…" full />;
   if (!quote.data || !lines.data) return <p className="p-6 text-sm text-destructive">Quotation not found.</p>;
   const q = quote.data;
-  const org = me.data;
-  const totalBoxes = lines.data.reduce((s, l) => s + toNumber(l.boxes), 0);
-  const totalQty = lines.data.reduce((s, l) => s + toNumber(l.qty), 0);
   const phones = [customer.data?.mobile1, customer.data?.mobile2, customer.data?.mobile3].filter(Boolean).join(',');
   return (
-    <div className="min-h-screen bg-neutral-200 print:bg-white">
-      <div className="no-print flex items-center justify-between gap-2 border-b bg-card px-4 py-2 text-sm">
-        <Button asChild variant="ghost" size="sm"><Link to={`/quotations/${q.id}`}>← Back to quotation</Link></Button>
-        <Button size="sm" onClick={() => window.print()}>Print</Button>
-      </div>
-      <div className="print-sheet mx-auto my-4 bg-white p-8 text-[12px] leading-tight text-black print:my-0 print:p-6">
-        <div className="text-center text-base font-bold tracking-wide">QUOTATION</div>
-        <div className="text-center text-xs text-neutral-700">{org?.org_name ?? 'JYOTHI FOODS'}{org?.address ? ` · ${org.address}` : ''}{org?.org_phone ? ` · Ph ${org.org_phone}` : ''}{org?.fssai_no ? ` · FSSAI ${org.fssai_no}` : ''}</div>
-        <div className="mt-2 grid grid-cols-2 border border-black">
-          <div className="border-r border-black p-2"><div className="font-bold">{q.customer_name}</div><div>{q.customer_town}</div>{phones && <div>PH NO : {phones}</div>}</div>
-          <div className="p-2">
-            <div className="flex justify-between"><span className="font-bold">Date</span><span>{dateDMY(q.quote_date)}</span></div>
-            <div className="flex justify-between"><span className="font-bold">Quotation No.</span><span>{q.quote_no}</span></div>
-            <div className="flex justify-between"><span>Valid till</span><span>{q.valid_till ? dateDMY(q.valid_till) : ''}</span></div>
-            <div className="flex justify-between"><span>Transport Name</span><span>{q.transport_name ?? ''}</span></div>
-            <div className="flex justify-between"><span>L.R No.</span><span>{q.lr_no ?? ''}</span></div>
-            <div className="flex justify-between"><span>Freight</span><span>{toNumber(q.freight) ? amount(q.freight) : ''}</span></div>
-          </div>
-        </div>
-        <table className="mt-2 w-full border-collapse border border-black">
-          <thead><tr className="border-b border-black"><th className="w-10 border-r border-black p-1 text-left">S.No</th><th className="w-16 border-r border-black p-1 text-left">CODE</th><th className="border-r border-black p-1 text-left">Item Name</th><th className="w-16 border-r border-black p-1 text-right">Jars</th><th className="w-16 border-r border-black p-1 text-right">Boxes</th><th className="w-16 border-r border-black p-1 text-right">Qty</th><th className="w-16 border-r border-black p-1 text-right">Rate</th><th className="w-24 p-1 text-right">Total</th></tr></thead>
-          <tbody>
-            {lines.data.map((l, i) => <tr key={l.id ?? i}><td className="border-r border-black px-1 text-center">{i + 1}</td><td className="border-r border-black px-1">{l.item_code}</td><td className="border-r border-black px-1">{l.item_name}</td><td className="border-r border-black px-1 text-right tabular-nums">{qty(l.units_per_box)}</td><td className="border-r border-black px-1 text-right tabular-nums">{qty(l.boxes)}</td><td className="border-r border-black px-1 text-right tabular-nums">{qty(l.qty)}</td><td className="border-r border-black px-1 text-right tabular-nums">{amount(l.rate)}</td><td className="px-1 text-right tabular-nums">{amount(l.amount)}</td></tr>)}
-            {Array.from({ length: Math.max(0, 18 - lines.data.length) }).map((_, i) => <tr key={`pad-${i}`} className="h-4"><td className="border-r border-black" /><td className="border-r border-black" /><td className="border-r border-black" /><td className="border-r border-black" /><td className="border-r border-black" /><td className="border-r border-black" /><td className="border-r border-black" /><td /></tr>)}
-          </tbody>
-          <tfoot><tr className="border-t border-black font-bold"><td colSpan={4} className="border-r border-black px-1 text-right">Total:</td><td className="border-r border-black px-1 text-right tabular-nums">{qty(totalBoxes)}</td><td className="border-r border-black px-1 text-right tabular-nums">{int(totalQty)}</td><td className="border-r border-black" /><td /></tr></tfoot>
-        </table>
-        <div className="mt-1 grid grid-cols-[1fr_auto] border border-black">
-          <div className="border-r border-black p-1"><div className="font-bold">Total amount in words :</div><div>{amountInWords(toNumber(q.total))}</div></div>
-          <div className="p-1 text-right">{toNumber(q.discount) > 0 && <div>Discount : {amount(q.discount)}</div>}{toNumber(q.freight) > 0 && <div>Freight : {amount(q.freight)}</div>}{toNumber(q.round_off) !== 0 && <div>Round off : {amount(q.round_off)}</div>}<div className="text-sm font-bold">Net Amount : <span className="ml-4 tabular-nums">{amount(q.total)}</span></div></div>
-        </div>
-        <div className="mt-1 flex justify-between border border-black p-1"><span className="font-bold">E&amp;E.O</span><span>For {org?.org_name ?? 'JYOTHI FOODS'}</span></div>
-        <ol className="mt-2 list-decimal space-y-0.5 pl-5">
-          <li className="font-bold uppercase">Damage or breakage only {int(org?.breakage_recovery_pct ?? 0)}% recovery.</li>
-          <li>Interest at {int(org?.interest_pct_pa ?? 0)}% will be charged from the date of the bill if not paid within {int(org?.credit_days ?? 0)} days.</li>
-          <li>Subject to {org?.jurisdiction ?? ''} jurisdiction only.</li>
-        </ol>
-        <div className="mt-8 flex items-end justify-between"><div className="text-center font-bold">THANKING YOU FOR SHOPPING &amp; VISIT AGAIN</div><div>Authorised Signatory.</div></div>
-      </div>
-      <style>{`.print-sheet { width: 210mm; min-height: 297mm; } @page { size: A4; margin: 10mm; } @media print { .print-sheet { width: auto; min-height: 0; box-shadow: none; } body { background: white; } }`}</style>
-    </div>
+    <SalesDocPrint
+      title="QUOTATION"
+      org={me.data}
+      template={template.data}
+      party={{ name: q.customer_name ?? '', town: q.customer_town ?? '', phones }}
+      meta={[
+        { label: 'Date', value: dateDMY(q.quote_date), bold: true },
+        { label: 'Quotation No.', value: q.quote_no ?? '', bold: true },
+        { label: 'Valid till', value: q.valid_till ? dateDMY(q.valid_till) : '' },
+        { label: 'Transport Name', value: q.transport_name ?? '', transport: true },
+        { label: 'L.R No.', value: q.lr_no ?? '', transport: true },
+        { label: 'Freight', value: toNumber(q.freight) ? amount(q.freight) : '', transport: true },
+      ]}
+      lines={lines.data.map((l, i) => ({ key: String(l.id ?? i), code: l.item_code ?? '', name: l.item_name ?? '', units_per_box: toNumber(l.units_per_box), boxes: toNumber(l.boxes), qty: toNumber(l.qty), rate: toNumber(l.rate), amount: toNumber(l.amount) }))}
+      totals={{ discount: toNumber(q.discount), freight: toNumber(q.freight), round_off: toNumber(q.round_off), total: toNumber(q.total) }}
+      backTo={`/quotations/${q.id}`}
+      backLabel="Back to quotation"
+    />
   );
 }

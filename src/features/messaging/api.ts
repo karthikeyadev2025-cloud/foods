@@ -260,7 +260,7 @@ export function listDocSettings(): Promise<DocMessageSetting[]> {
   return expectRows(supabase.from('transaction_message_settings').select('*'));
 }
 
-export async function saveDocSetting(docType: string, v: { is_enabled: boolean; template_id: string | null }): Promise<void> {
+export async function saveDocSetting(docType: string, v: { is_enabled: boolean; template_id: string | null; send_pdf?: boolean }): Promise<void> {
   const org_id = await currentOrgId();
   await expectOk(supabase.from('transaction_message_settings').upsert({ org_id, doc_type: docType, ...v }, { onConflict: 'org_id,doc_type' }));
 }

@@ -8,7 +8,7 @@ import { LoginPage } from '@/features/auth/routes/LoginPage';
 import { WelcomePage } from '@/features/auth/routes/WelcomePage';
 import { CustomersPage } from '@/features/customers/routes/CustomersPage';
 import { DashboardPage } from '@/features/dashboard/routes/DashboardPage';
-import { ChallanEditPage, ChallansPage } from '@/features/documents/routes/ChallansPage';
+import { ChallanEditPage, ChallanPrintPage, ChallansPage } from '@/features/documents/routes/ChallansPage';
 import { OrderEditPage, OrdersPage } from '@/features/documents/routes/OrdersPage';
 import { PriceListsPage } from '@/features/documents/routes/PriceListsPage';
 import { PurchaseReturnsPage } from '@/features/documents/routes/PurchaseReturnsPage';
@@ -59,6 +59,7 @@ export const router = createBrowserRouter([
       guarded('invoices', [
         { path: '/invoices/:id/print', element: <InvoicePrintPage /> },
         { path: '/quotations/:id/print', element: <QuotationPrintPage /> },
+        { path: '/challans/:id/print', element: <ChallanPrintPage /> },
       ]),
       guarded('vehicles', [{ path: '/vehicles/trips/:id/print', element: <TripPrintPage /> }]),
       guarded('stock', [

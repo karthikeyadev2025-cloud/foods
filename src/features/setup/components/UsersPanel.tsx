@@ -17,8 +17,8 @@ import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
 import { money } from '@/lib/format';
 import { ROLES, roleLabel } from '@/lib/permissions';
-import { createUser, listStaff, updateStaff, type Staff } from '../api';
-import { editUserSchema, newUserSchema, orNull, type EditUserInput, type NewUserInput } from '../schema';
+import { createUser, listStaff, resetPassword, updateStaff, type Staff } from '../api';
+import { editUserSchema, newUserSchema, orNull, resetPasswordSchema, type EditUserInput, type NewUserInput, type ResetPasswordInput } from '../schema';
 
 const STAFF_KEY = ['setup', 'staff'] as const;
 
@@ -268,13 +268,26 @@ function EditUserDialog({
   });
   const e = form.formState.errors;
   const lockRole = isSelf || (!isOwner && (staff.role === 'owner' || staff.role === 'admin'));
+  const [resetting, setResetting] = useState(false);
+  const canReset = !isSelf && Boolean(staff.auth_uid) && (isOwner || (staff.role !== 'owner' && staff.role !== 'admin'));
+
+  if (resetting) return <ResetPasswordDialog staff={staff} onClose={() => setResetting(false)} />;
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit user</DialogTitle>
-          {isSelf && <DialogDescription>You cannot change your own role or deactivate yourself.</DialogDescription>}
+          {isSelf ? (
+            <DialogDescription>You cannot change your own role or deactivate yourself.</DialogDescription>
+          ) : canReset ? (
+            <DialogDescription>
+              Forgotten password?{' '}
+              <button type="button" className="text-primary hover:underline" onClick={() => setResetting(true)}>
+                Set a new password
+              </button>
+            </DialogDescription>
+          ) : null}
         </DialogHeader>
         <form onSubmit={form.handleSubmit((v) => save.mutate(v))} className="grid grid-cols-2 gap-3" noValidate>
           <Field label="Full name" htmlFor="eu-name" error={e.full_name?.message} className="col-span-2">
@@ -311,6 +324,46 @@ function EditUserDialog({
             </Button>
             <Button type="submit" disabled={save.isPending}>
               {save.isPending ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** A new password for someone else's login. Goes through the reset-password edge function. */
+function ResetPasswordDialog({ staff, onClose }: { staff: Staff; onClose: () => void }) {
+  const form = useForm<ResetPasswordInput>({ resolver: zodResolver(resetPasswordSchema), defaultValues: { password: '', confirm: '' } });
+  const reset = useMutation({
+    mutationFn: (v: ResetPasswordInput) => resetPassword(staff.id, v.password),
+    onSuccess: () => {
+      toast({ title: `Password changed for ${staff.full_name}`, description: 'Tell them the new password in person; it is not sent anywhere.' });
+      onClose();
+    },
+    onError: (err) => toastError(err, 'Could not change the password'),
+  });
+  const e = form.formState.errors;
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>New password for {staff.full_name}</DialogTitle>
+          <DialogDescription>Their current password stops working at once. At least 8 characters.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={form.handleSubmit((v) => reset.mutate(v))} className="space-y-3" noValidate>
+          <Field label="New password" htmlFor="rp-pass" error={e.password?.message}>
+            <Input id="rp-pass" type="password" autoComplete="new-password" autoFocus {...form.register('password')} />
+          </Field>
+          <Field label="Type it again" htmlFor="rp-confirm" error={e.confirm?.message}>
+            <Input id="rp-confirm" type="password" autoComplete="new-password" {...form.register('confirm')} />
+          </Field>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={reset.isPending}>
+              {reset.isPending ? 'Changing…' : 'Change password'}
             </Button>
           </DialogFooter>
         </form>

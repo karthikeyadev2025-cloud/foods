@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, FileCheck, Plus } from 'lucide-react';
+import { Download, FileCheck, Plus, Printer } from 'lucide-react';
+import { SalesDocPrint } from '@/components/print/SalesDocPrint';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Combobox } from '@/components/Combobox';
@@ -13,9 +14,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { usePermissions } from '@/features/auth/hooks';
+import { useMe, usePermissions } from '@/features/auth/hooks';
 import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
-import { stockLocationsApi } from '@/features/setup/api';
+import { getPrintTemplate, stockLocationsApi } from '@/features/setup/api';
 import { listVehicles } from '@/features/vehicles/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
@@ -107,6 +108,7 @@ function ChallanEditor({ challan, initialLines }: { challan?: ChallanRow; initia
           <Badge variant={stateTone[challan.state ?? 'open']}>{challan.state === 'converted' ? 'billed' : challan.state}</Badge>
           <span className="text-sm text-muted-foreground">{dateDMY(challan.challan_date)} · from {challan.location_name}{challan.invoice_no ? <> · billed as <Link to={`/invoices/${challan.invoice_id}`} className="text-primary hover:underline">{challan.invoice_no}</Link></> : null}</span>
           <span className="ml-auto flex gap-2">
+            <Button asChild size="sm" variant="outline"><Link to={`/challans/${challan.id}/print`}><Printer /> Print</Link></Button>
             {perms.canEdit('invoices') && challan.state === 'open' && <Button size="sm" onClick={() => setConverting(true)}><FileCheck /> Convert to invoice</Button>}
             {perms.canEdit('invoices') && challan.state === 'open' && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => cancel.mutate()} disabled={cancel.isPending}>Cancel challan</Button>}
           </span>
@@ -153,5 +155,40 @@ function ConvertChallanDialog({ challan, onClose }: { challan: ChallanRow; onClo
         <DialogFooter><Button variant="outline" onClick={onClose}>Back</Button><Button onClick={() => convert.mutate()} disabled={convert.isPending}>{convert.isPending ? 'Billing…' : 'Create invoice'}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ------------------------------------------------------------------ print
+/** Delivery challan on the shared sheet: quantities only, no money. */
+export function ChallanPrintPage() {
+  const { id } = useParams();
+  const me = useMe();
+  const challan = useQuery({ queryKey: ['challans', 'one', id], queryFn: () => getChallan(id ?? ''), enabled: Boolean(id) });
+  const lines = useQuery({ queryKey: ['challans', 'lines', id], queryFn: () => getChallanLines(id ?? ''), enabled: Boolean(id) });
+  const customer = useQuery({ queryKey: ['customers', 'one', challan.data?.customer_id], queryFn: () => getCustomer(challan.data?.customer_id ?? ''), enabled: Boolean(challan.data?.customer_id) });
+  const template = useQuery({ queryKey: ['setup', 'print_templates', 'challan'], queryFn: () => getPrintTemplate('challan') });
+  useEffect(() => { document.title = challan.data ? `Challan ${challan.data.challan_no}` : 'Challan'; }, [challan.data]);
+  if (challan.isLoading || lines.isLoading || me.isLoading || template.isLoading) return <Spinner label="Preparing print…" full />;
+  if (!challan.data || !lines.data) return <p className="p-6 text-sm text-destructive">Challan not found.</p>;
+  const c = challan.data;
+  const phones = [customer.data?.mobile1, customer.data?.mobile2, customer.data?.mobile3].filter(Boolean).join(',');
+  return (
+    <SalesDocPrint
+      title="DELIVERY CHALLAN"
+      org={me.data}
+      template={template.data}
+      party={{ name: c.customer_name ?? '', town: c.customer_town ?? '', phones }}
+      meta={[
+        { label: 'Date', value: dateDMY(c.challan_date), bold: true },
+        { label: 'Challan No.', value: c.challan_no ?? '', bold: true },
+        { label: 'From', value: c.location_name ?? '' },
+        { label: 'Vehicle', value: c.vehicle_number ?? '', transport: true },
+        { label: 'Notes', value: c.notes ?? '' },
+      ]}
+      lines={lines.data.map((l, i) => ({ key: String(l.id ?? i), code: l.item_code ?? '', name: l.item_name ?? '', units_per_box: toNumber(l.units_per_box), boxes: toNumber(l.boxes), qty: toNumber(l.boxes) * toNumber(l.units_per_box), rate: 0, amount: 0 }))}
+      totals={null}
+      backTo={`/challans/${c.id}`}
+      backLabel="Back to challan"
+    />
   );
 }

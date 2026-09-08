@@ -112,7 +112,7 @@ function DocMessages({ canEdit }: { canEdit: boolean }) {
   const templates = useQuery({ queryKey: ['setup', 'message_templates'], queryFn: templatesApi.list });
   const rows = useQuery({ queryKey: ['messaging', 'doc_settings'], queryFn: listDocSettings });
   const save = useMutation({
-    mutationFn: ({ doc_type, is_enabled, template_id }: { doc_type: string; is_enabled: boolean; template_id: string | null }) => saveDocSetting(doc_type, { is_enabled, template_id }),
+    mutationFn: ({ doc_type, ...v }: { doc_type: string; is_enabled: boolean; template_id: string | null; send_pdf: boolean }) => saveDocSetting(doc_type, v),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['messaging', 'doc_settings'] }),
     onError: (e) => toastError(e, 'Could not save'),
   });
@@ -121,26 +121,28 @@ function DocMessages({ canEdit }: { canEdit: boolean }) {
     <Card>
       <CardHeader>
         <CardTitle>Automatic document messages</CardTitle>
-        <CardDescription>Each goes to the customer on the document, in their language, only while messaging is on.</CardDescription>
+        <CardDescription>Each goes to the customer on the document, in their language, only while messaging is on. "Attach" adds the document itself (a link to its print page from the app's web address on the Business profile).</CardDescription>
       </CardHeader>
       <CardContent>
         {rows.isLoading ? <Spinner /> : (
           <Table>
-            <TableHeader><TableRow><TableHead>Send</TableHead><TableHead>Document</TableHead><TableHead>Template</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Send</TableHead><TableHead>Document</TableHead><TableHead>Template</TableHead><TableHead>Attach</TableHead></TableRow></TableHeader>
             <TableBody>
               {DOC_MESSAGE_TYPES.map((d) => {
                 const c = current(d.doc_type);
                 const opts = (templates.data ?? []).filter((t) => t.is_active && t.purpose === d.purpose);
+                const base = { doc_type: d.doc_type, is_enabled: c?.is_enabled ?? false, template_id: c?.template_id ?? null, send_pdf: c?.send_pdf ?? false };
                 return (
                   <TableRow key={d.doc_type}>
-                    <TableCell><Checkbox aria-label={`Send ${d.label}`} checked={c?.is_enabled ?? false} disabled={!canEdit || save.isPending} onChange={(ev) => save.mutate({ doc_type: d.doc_type, is_enabled: ev.target.checked, template_id: c?.template_id ?? null })} /></TableCell>
+                    <TableCell><Checkbox aria-label={`Send ${d.label}`} checked={base.is_enabled} disabled={!canEdit || save.isPending} onChange={(ev) => save.mutate({ ...base, is_enabled: ev.target.checked })} /></TableCell>
                     <TableCell><div className="font-medium">{d.label}</div><div className="text-xs text-muted-foreground">{d.when}</div></TableCell>
                     <TableCell>
-                      <NativeSelect aria-label={`${d.label} template`} className="h-8" value={c?.template_id ?? ''} disabled={!canEdit || save.isPending} onChange={(ev) => save.mutate({ doc_type: d.doc_type, is_enabled: c?.is_enabled ?? false, template_id: ev.target.value || null })}>
+                      <NativeSelect aria-label={`${d.label} template`} className="h-8" value={base.template_id ?? ''} disabled={!canEdit || save.isPending} onChange={(ev) => save.mutate({ ...base, template_id: ev.target.value || null })}>
                         <option value="">{d.purpose === 'custom' ? '— pick a template —' : '— by customer language —'}</option>
                         {opts.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                       </NativeSelect>
                     </TableCell>
+                    <TableCell><Checkbox aria-label={`Attach ${d.label} document`} checked={base.send_pdf} disabled={!canEdit || save.isPending} onChange={(ev) => save.mutate({ ...base, send_pdf: ev.target.checked })} /></TableCell>
                   </TableRow>
                 );
               })}

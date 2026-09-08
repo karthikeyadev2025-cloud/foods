@@ -3006,9 +3006,12 @@ export type Database = {
       orgs: {
         Row: {
           address: string | null
+          app_url: string | null
+          bank_details: string | null
           breakage_recovery_pct: number
           created_at: string
           credit_days: number
+          email: string | null
           fssai_no: string | null
           id: string
           interest_pct_pa: number
@@ -3016,14 +3019,20 @@ export type Database = {
           jurisdiction: string | null
           license_key: string | null
           license_valid_till: string | null
+          logo_url: string | null
           name: string
           phone: string | null
+          signature_url: string | null
+          tagline: string | null
         }
         Insert: {
           address?: string | null
+          app_url?: string | null
+          bank_details?: string | null
           breakage_recovery_pct?: number
           created_at?: string
           credit_days?: number
+          email?: string | null
           fssai_no?: string | null
           id?: string
           interest_pct_pa?: number
@@ -3031,14 +3040,20 @@ export type Database = {
           jurisdiction?: string | null
           license_key?: string | null
           license_valid_till?: string | null
+          logo_url?: string | null
           name: string
           phone?: string | null
+          signature_url?: string | null
+          tagline?: string | null
         }
         Update: {
           address?: string | null
+          app_url?: string | null
+          bank_details?: string | null
           breakage_recovery_pct?: number
           created_at?: string
           credit_days?: number
+          email?: string | null
           fssai_no?: string | null
           id?: string
           interest_pct_pa?: number
@@ -3046,8 +3061,11 @@ export type Database = {
           jurisdiction?: string | null
           license_key?: string | null
           license_valid_till?: string | null
+          logo_url?: string | null
           name?: string
           phone?: string | null
+          signature_url?: string | null
+          tagline?: string | null
         }
         Relationships: []
       }
@@ -3358,6 +3376,7 @@ export type Database = {
           paper: string
           show_fields: NonNullable<Json>
           terms: string[] | null
+          updated_at: string
         }
         Insert: {
           doc_type: string
@@ -3370,6 +3389,7 @@ export type Database = {
           paper?: string
           show_fields?: NonNullable<Json>
           terms?: string[] | null
+          updated_at?: string
         }
         Update: {
           doc_type?: string
@@ -3382,6 +3402,7 @@ export type Database = {
           paper?: string
           show_fields?: NonNullable<Json>
           terms?: string[] | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -5875,6 +5896,61 @@ export type Database = {
           },
         ]
       }
+      v_audit_log: {
+        Row: {
+          action: string | null
+          actor: string | null
+          actor_name: string | null
+          actor_role: Database["public"]["Enums"]["staff_role"] | null
+          after: Json | null
+          before: Json | null
+          created_at: string | null
+          id: number | null
+          org_id: string | null
+          row_id: string | null
+          table_name: string | null
+        }
+        Relationships: []
+      }
+      v_backups: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
+          file_path: string | null
+          id: string | null
+          is_auto: boolean | null
+          org_id: string | null
+          size_bytes: number | null
+          status: Database["public"]["Enums"]["backup_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backups_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "backups_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "backups_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "backups_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       v_batch_ingredients: {
         Row: {
           amount: number | null
@@ -7499,6 +7575,7 @@ export type Database = {
         Row: {
           address: string | null
           auth_uid: string | null
+          bank_details: string | null
           breakage_recovery_pct: number | null
           credit_days: number | null
           fssai_no: string | null
@@ -7508,12 +7585,16 @@ export type Database = {
           is_mestry: boolean | null
           jurisdiction: string | null
           license_valid_till: string | null
+          logo_url: string | null
+          org_email: string | null
           org_id: string | null
           org_name: string | null
           org_phone: string | null
           phone: string | null
           role: Database["public"]["Enums"]["staff_role"] | null
+          signature_url: string | null
           staff_id: string | null
+          tagline: string | null
         }
         Relationships: []
       }
@@ -9571,6 +9652,43 @@ export type Database = {
         Args: { p_list: string; p_route?: string; p_town?: string }
         Returns: number
       }
+      audit_search: {
+        Args: {
+          p_action?: string
+          p_actor?: string
+          p_from?: string
+          p_limit?: number
+          p_search?: string
+          p_table?: string
+          p_to?: string
+        }
+        Returns: {
+          action: string | null
+          actor: string | null
+          actor_name: string | null
+          actor_role: Database["public"]["Enums"]["staff_role"] | null
+          after: Json | null
+          before: Json | null
+          created_at: string | null
+          id: number | null
+          org_id: string | null
+          row_id: string | null
+          table_name: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "v_audit_log"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      backups_due: {
+        Args: { p_now?: string }
+        Returns: {
+          keep_copies: number
+          org_id: string
+        }[]
+      }
       balance_sheet: {
         Args: { p_as_on?: string; p_org: string }
         Returns: {
@@ -9859,6 +9977,22 @@ export type Database = {
       gen_random_uuid: { Args: Record<PropertyKey, never>; Returns: string }
       gen_salt: { Args: { "": string }; Returns: string }
       generate_barcodes: { Args: { p_item?: string }; Returns: number }
+      get_backup_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          auto_enabled: boolean
+          frequency: string
+          keep_copies: number
+          org_id: string
+          run_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "backup_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_messaging_settings: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -9978,6 +10112,7 @@ export type Database = {
         }
         Returns: string
       }
+      org_snapshot: { Args: { p_org?: string }; Returns: Json }
       outstanding_ageing: {
         Args: { p_as_on?: string; p_org: string; p_route?: string }
         Returns: {
@@ -10165,6 +10300,7 @@ export type Database = {
         Returns: string
       }
       reorder_sections: { Args: { p_ids: string[] }; Returns: undefined }
+      restore_org_snapshot: { Args: { p: Json }; Returns: Json }
       reverse_journal: {
         Args: {
           p_date: string
@@ -10218,6 +10354,7 @@ export type Database = {
       save_messaging_settings: { Args: { p: Json }; Returns: Json }
       save_order: { Args: { p_header: Json; p_lines: Json }; Returns: string }
       save_payment: { Args: { p: Json }; Returns: string }
+      save_print_template: { Args: { p: Json }; Returns: string }
       save_purchase: {
         Args: { p_header: Json; p_lines: Json }
         Returns: string
@@ -10289,6 +10426,7 @@ export type Database = {
       }
       show_limit: { Args: Record<PropertyKey, never>; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      snapshot_tables: { Args: Record<PropertyKey, never>; Returns: string[] }
       stock_movements: {
         Args: {
           p_from?: string

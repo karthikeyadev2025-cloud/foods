@@ -158,6 +158,183 @@ export async function createUser(input: CreateUserInput): Promise<Staff> {
   return data.staff;
 }
 
+/** New password for another user's login (reset-password edge function; owner, or admin for non-admins). */
+export async function resetPassword(staffId: string, password: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke<{ ok: true } | { error: string }>('reset-password', {
+    body: { staff_id: staffId, password },
+  });
+  if (error) throw error;
+  if (!data || 'error' in data) throw new Error(data?.error ?? 'reset-password returned nothing');
+}
+
+// ------------------------------------------------------------------
+// Owner control (db/17_owner.sql): branding, print templates, backup, audit
+// ------------------------------------------------------------------
+
+/** Logo or signature image into the public `branding` bucket; returns its URL. */
+export async function uploadBranding(kind: 'logo' | 'signature', file: File): Promise<string> {
+  const org = await currentOrgId();
+  const ext = (file.name.split('.').pop() ?? 'png').toLowerCase();
+  const path = `${org}/${kind}-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('branding').upload(path, file, { contentType: file.type || undefined, upsert: false });
+  if (error) throw error;
+  return supabase.storage.from('branding').getPublicUrl(path).data.publicUrl;
+}
+
+export type PrintTemplate = Tables['print_templates']['Row'];
+export type PrintDocType = 'invoice' | 'quotation' | 'challan';
+export const PRINT_DOC_TYPES: { key: PrintDocType; label: string }[] = [
+  { key: 'invoice', label: 'Invoice' },
+  { key: 'quotation', label: 'Quotation' },
+  { key: 'challan', label: 'Delivery challan' },
+];
+export const PAPERS = [
+  { key: 'A4', label: 'A4 (210 × 297 mm)' },
+  { key: 'A5', label: 'A5 (148 × 210 mm)' },
+  { key: 'thermal_80', label: 'Thermal roll 80 mm' },
+  { key: 'thermal_58', label: 'Thermal roll 58 mm' },
+] as const;
+/** Every block a print can show or hide. Default is on; the designer stores explicit false. */
+export const PRINT_BLOCKS: { key: string; label: string; group: 'header' | 'columns' | 'footer'; money?: boolean }[] = [
+  { key: 'logo', label: 'Logo', group: 'header' },
+  { key: 'tagline', label: 'Tagline', group: 'header' },
+  { key: 'address', label: 'Address & phone', group: 'header' },
+  { key: 'fssai', label: 'FSSAI number', group: 'header' },
+  { key: 'email', label: 'Email', group: 'header' },
+  { key: 'phones', label: 'Customer phones', group: 'header' },
+  { key: 'transport', label: 'Transport / L.R block', group: 'header' },
+  { key: 'code', label: 'CODE column', group: 'columns' },
+  { key: 'jars', label: 'Jars column', group: 'columns' },
+  { key: 'qty', label: 'Qty column', group: 'columns' },
+  { key: 'rate', label: 'Rate column', group: 'columns', money: true },
+  { key: 'amount', label: 'Amount column', group: 'columns', money: true },
+  { key: 'words', label: 'Amount in words', group: 'footer', money: true },
+  { key: 'charges', label: 'Discount / freight / round-off lines', group: 'footer', money: true },
+  { key: 'bank', label: 'Bank details', group: 'footer' },
+  { key: 'terms', label: 'Numbered terms', group: 'footer' },
+  { key: 'signature', label: 'Signature image', group: 'footer' },
+  { key: 'thanks', label: '"Thanking you" line', group: 'footer' },
+];
+
+export async function getPrintTemplate(docType: string): Promise<PrintTemplate | null> {
+  const { data, error } = await supabase.from('print_templates').select('*').eq('doc_type', docType).eq('is_default', true).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export type PrintTemplateInput = {
+  doc_type: string;
+  paper: string;
+  show_fields: Record<string, boolean>;
+  terms: string[];
+  header_html: string | null;
+  footer_html: string | null;
+};
+export async function savePrintTemplate(p: PrintTemplateInput): Promise<string> {
+  const { data, error } = await supabase.rpc('save_print_template', { p: { ...p } });
+  if (error) throw error;
+  return data;
+}
+
+export type BackupSettings = Tables['backup_settings']['Row'];
+export type BackupRow = Database['public']['Views']['v_backups']['Row'];
+
+export async function getBackupSettings(): Promise<BackupSettings> {
+  const { data, error } = await supabase.rpc('get_backup_settings');
+  if (error) throw error;
+  return data;
+}
+export async function saveBackupSettings(patch: Tables['backup_settings']['Update']): Promise<void> {
+  const org_id = await currentOrgId();
+  await expectOk(supabase.from('backup_settings').update(patch).eq('org_id', org_id));
+}
+export function listBackups(): Promise<BackupRow[]> {
+  return expectRows(supabase.from('v_backups').select('*').order('created_at', { ascending: false }).limit(200));
+}
+export type BackupResult = { backup_id?: string; file_path?: string; size_bytes?: number; pruned?: number; error?: string };
+export async function runBackupNow(): Promise<BackupResult> {
+  const { data, error } = await supabase.functions.invoke<BackupResult>('backup-org', { body: {} });
+  if (error) throw error;
+  if (!data) throw new Error('backup-org returned nothing');
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+/** Five-minute signed link to the private backup file. */
+export async function backupDownloadUrl(filePath: string): Promise<string> {
+  const { data, error } = await supabase.storage.from('backups').createSignedUrl(filePath, 300);
+  if (error) throw error;
+  return data.signedUrl;
+}
+export type RestoreResult = { org_id: string; restored: Record<string, number>; taken_at: string | null };
+export async function restoreBackup(backupId: string): Promise<RestoreResult> {
+  const { data, error } = await supabase.functions.invoke<RestoreResult | { error: string }>('restore-backup', { body: { backup_id: backupId } });
+  if (error) throw error;
+  if (!data || 'error' in data) throw new Error(data?.error ?? 'restore-backup returned nothing');
+  return data;
+}
+
+export type AuditRow = Database['public']['Functions']['audit_search']['Returns'][number];
+export type AuditFilters = { from?: string; to?: string; table?: string; actor?: string; action?: string; search?: string; limit?: number };
+export async function searchAudit(f: AuditFilters): Promise<AuditRow[]> {
+  const { data, error } = await supabase.rpc('audit_search', {
+    ...(f.from ? { p_from: `${f.from}T00:00:00` } : {}),
+    ...(f.to ? { p_to: `${f.to}T23:59:59` } : {}),
+    ...(f.table ? { p_table: f.table } : {}),
+    ...(f.actor ? { p_actor: f.actor } : {}),
+    ...(f.action ? { p_action: f.action } : {}),
+    ...(f.search ? { p_search: f.search } : {}),
+    p_limit: f.limit ?? 200,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+/** Audited tables, in the words the owner uses. */
+export const AUDIT_TABLES: { key: string; label: string }[] = [
+  { key: 'orgs', label: 'Business profile' },
+  { key: 'staff', label: 'Users' },
+  { key: 'role_permissions', label: 'Permissions' },
+  { key: 'customers', label: 'Customers' },
+  { key: 'items', label: 'Items' },
+  { key: 'item_price_overrides', label: 'Customer rates' },
+  { key: 'suppliers', label: 'Suppliers' },
+  { key: 'vehicles', label: 'Vehicles' },
+  { key: 'price_lists', label: 'Price lists' },
+  { key: 'discount_schemes', label: 'Discount schemes' },
+  { key: 'invoices', label: 'Invoices' },
+  { key: 'quotations', label: 'Quotations' },
+  { key: 'orders', label: 'Orders' },
+  { key: 'delivery_challans', label: 'Challans' },
+  { key: 'purchases', label: 'Purchases' },
+  { key: 'purchase_returns', label: 'Purchase returns' },
+  { key: 'sales_returns', label: 'Sales returns' },
+  { key: 'receipts', label: 'Receipts' },
+  { key: 'payments', label: 'Payments' },
+  { key: 'cheques', label: 'Cheques' },
+  { key: 'cash_bank_accounts', label: 'Cash & bank accounts' },
+  { key: 'ledger_accounts', label: 'Ledger accounts' },
+  { key: 'account_transfers', label: 'Transfers' },
+  { key: 'stock_transfers', label: 'Stock transfers' },
+  { key: 'stock_counts', label: 'Stock counts' },
+  { key: 'production_batches', label: 'Production batches' },
+  { key: 'recipes', label: 'Recipes' },
+  { key: 'number_series', label: 'Numbering' },
+  { key: 'receipt_modes', label: 'Receipt modes' },
+  { key: 'uoms', label: 'Units' },
+  { key: 'pack_types', label: 'Pack types' },
+  { key: 'expense_heads', label: 'Expense heads' },
+  { key: 'sections', label: 'Sections' },
+  { key: 'stock_locations', label: 'Locations' },
+  { key: 'routes', label: 'Routes' },
+  { key: 'message_templates', label: 'Message templates' },
+  { key: 'reminder_rules', label: 'Reminder rules' },
+  { key: 'transaction_message_settings', label: 'Document messages' },
+  { key: 'print_templates', label: 'Print templates' },
+  { key: 'backup_settings', label: 'Backup settings' },
+];
+export function auditTableLabel(key: string | null): string {
+  return AUDIT_TABLES.find((t) => t.key === key)?.label ?? key ?? '';
+}
+
 // ------------------------------------------------------------------
 // Data import (db/07_import.sql)
 // ------------------------------------------------------------------

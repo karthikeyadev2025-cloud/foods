@@ -1,5 +1,8 @@
 import type { ComponentType } from 'react';
+import { AuditPanel } from './components/AuditPanel';
+import { BackupPanel } from './components/BackupPanel';
 import { ImportPanel } from './components/ImportPanel';
+import { PrintDesigner } from './components/PrintDesigner';
 import { OrgProfileForm } from './components/OrgProfileForm';
 import { PermissionsMatrix } from './components/PermissionsMatrix';
 import { UsersPanel } from './components/UsersPanel';
@@ -92,6 +95,24 @@ export const SETUP_STEPS: SetupStep[] = [
     label: 'Permissions',
     why: 'What each role can view, edit and delete. Enforced by the database.',
     Component: PermissionsMatrix,
+  },
+  {
+    slug: 'print',
+    label: 'Print designer',
+    why: 'Paper size, which columns and blocks each printed document shows, and the wording of the numbered terms.',
+    Component: PrintDesigner,
+  },
+  {
+    slug: 'backup',
+    label: 'Backup',
+    why: 'A copy of everything, on a schedule and on demand, and the way back if something goes badly wrong.',
+    Component: BackupPanel,
+  },
+  {
+    slug: 'audit',
+    label: 'Audit trail',
+    why: 'Who changed what, and when. Nothing here can be edited or deleted.',
+    Component: AuditPanel,
   },
   {
     slug: 'import',

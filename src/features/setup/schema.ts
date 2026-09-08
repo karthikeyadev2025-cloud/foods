@@ -123,8 +123,20 @@ export const orgSchema = z.object({
   interest_pct_pa: z.coerce.number().min(0).max(100),
   credit_days: z.coerce.number().int().min(0).max(365),
   jurisdiction: optionalText,
+  email: z.string().trim().max(120).refine((v) => v === '' || v.includes('@'), 'Enter a valid email'),
+  tagline: optionalText,
+  bank_details: z.string().trim().max(500),
+  app_url: z.string().trim().max(200).refine((v) => v === '' || /^https?:\/\//.test(v), 'Starts with http:// or https://'),
 });
 export type OrgInput = z.infer<typeof orgSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(8, 'At least 8 characters').max(72),
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, { message: 'Passwords do not match', path: ['confirm'] });
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 export const STAFF_ROLES = [
   'owner',

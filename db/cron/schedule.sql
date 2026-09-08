@@ -28,4 +28,8 @@ select cron.schedule('run-reminders', '30 4 * * *', $$select call_edge_function(
 -- Drain the outbound queue every 5 minutes (quiet hours and the daily cap are applied in claim_queued_messages()).
 select cron.schedule('nikki-send', '*/5 * * * *', $$select call_edge_function('nikki-send')$$);
 
--- To stop: select cron.unschedule('run-reminders'); select cron.unschedule('nikki-send');
+-- Automatic backups: the function asks backups_due() which orgs have reached their run hour
+-- (Setup → Backup: on/off, daily or weekly, time, copies to keep). Checked hourly at :05.
+select cron.schedule('backup-org', '5 * * * *', $$select call_edge_function('backup-org')$$);
+
+-- To stop: select cron.unschedule('run-reminders'); select cron.unschedule('nikki-send'); select cron.unschedule('backup-org');

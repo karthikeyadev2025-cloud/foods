@@ -420,10 +420,16 @@ footer.doc b { color: var(--ink); font-weight: 600; }
   .rail li.part { break-after: avoid; break-inside: avoid; }
   .rail a { color: #000; }
 
-  /* Each part starts a fresh page, so the eight parts read as eight sections. */
-  .part-head { break-before: page; padding-top: 0; margin-top: 0; }
-  .part-head:first-of-type { break-before: auto; }
+  /* A part is a heavy rule, not a page break. Starting each of the eight on a
+     fresh page left six pages 40–60% empty — better than two blank pages in a
+     thirty-four page book, spent on white space nobody asked for. The rule and
+     the spacing mark the part perfectly well. */
+  .part-head { break-before: auto; break-after: avoid; margin: 30px 0 0; padding-top: 13px; }
+  .part-head:first-of-type { margin-top: 0; }
 
+  section.ch { margin-top: 22px; }
+  h4 { margin: 17px 0 6px; }
+  p, li { orphans: 2; widows: 2; }
   section.ch > h3, h4 { break-after: avoid; }
   .term, .note, .warn, ol.steps > li, tr { break-inside: avoid; }
   thead { display: table-header-group; }

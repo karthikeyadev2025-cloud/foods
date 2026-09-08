@@ -20,11 +20,23 @@ import { stockLocationsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { amount, dateDMY, int, qty, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { fefoSuggest } from '@/features/stock/inventory-api';
 import { TRIP_STATUSES, getTrip, setTripStatus, settleTrip, tripLoadingSheet, tripSettlement, tripTone, vanLoad, type TripStatus } from '../trips-api';
 import { TripsLink } from './TripsPage';
 
 interface LoadDraft { key: string; item_id: string; item_code: string; item_name: string; units_per_box: number; boxes: number }
 let seq = 0;
+
+/** FEFO: which batches to pull for this line, earliest expiry first. */
+function FefoHint({ itemId, boxes }: { itemId: string; boxes: number }) {
+  const picks = useQuery({ queryKey: ['stock', 'fefo', itemId, boxes], queryFn: () => fefoSuggest(itemId, boxes), enabled: Boolean(itemId) && boxes > 0 });
+  if (!picks.data?.length) return null;
+  return (
+    <div className="whitespace-nowrap text-left text-[10px] leading-tight text-amber-800">
+      {picks.data.map((p) => <div key={p.batch_no ?? ''}>take {qty(p.take_boxes)} from {p.batch_no}{p.expiry_date ? ` (exp ${dateDMY(p.expiry_date)})` : ''}</div>)}
+    </div>
+  );
+}
 
 export function TripDetailPage() {
   const { id } = useParams();
@@ -132,7 +144,7 @@ export function TripDetailPage() {
                     <TableRow key={l.key}>
                       <TableCell className="font-medium">{l.item_code}</TableCell><TableCell>{l.item_name}</TableCell><TableCell className="num text-muted-foreground">{int(l.units_per_box)}</TableCell>
                       <TableCell className="num"><Input type="number" step="0.001" className="num h-8" aria-label={`Boxes ${l.item_code}`} value={l.boxes} onChange={(e) => setLines((p) => p.map((x) => x.key === l.key ? { ...x, boxes: toNumber(e.target.value) } : x))} /></TableCell>
-                      <TableCell className="num text-muted-foreground">{qty(l.boxes * l.units_per_box)}</TableCell>
+                      <TableCell className="num text-muted-foreground">{qty(l.boxes * l.units_per_box)}<FefoHint itemId={l.item_id} boxes={l.boxes} /></TableCell>
                       <TableCell><Button type="button" variant="ghost" size="icon" aria-label={`Remove ${l.item_code}`} onClick={() => setLines((p) => p.filter((x) => x.key !== l.key))}><Trash2 className="text-destructive" /></Button></TableCell>
                     </TableRow>
                   ))}

@@ -126,7 +126,6 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
   };
 
   const onItemPicked = async (item: ItemRow) => {
-    setEntryItem(item);
     let rate = toNumber(item.unit_rate);
     if (customer?.id && item.id) {
       try {
@@ -135,6 +134,21 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
         /* master rate stays */
       }
     }
+    if (item.scanned && item.id && item.units_per_box) {
+      // Scanned: a box code adds one box, a unit code adds one jar; repeat scans accumulate.
+      const add = item.scanned === 'box' ? 1 : 1 / item.units_per_box;
+      setLines((prev) => {
+        const i = prev.findIndex((l) => l.item_id === item.id && l.rate === rate);
+        if (i >= 0) return prev.map((l, j) => (j === i ? { ...l, boxes: Math.round((l.boxes + add) * 1000) / 1000 } : l));
+        return [...prev, { key: nextKey(), item_id: item.id ?? '', item_code: item.item_code ?? '', item_name: item.name ?? '', units_per_box: item.units_per_box ?? 0, boxes: Math.round(add * 1000) / 1000, rate }];
+      });
+      setEntryItem(null);
+      setEntryBoxes('');
+      setEntryRate('');
+      setTimeout(focusCode, 0);
+      return;
+    }
+    setEntryItem(item);
     setEntryRate(rate ? String(rate) : '');
     setEntryBoxes('');
     setTimeout(() => boxesRef.current?.focus(), 0);
@@ -527,7 +541,7 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
             </div>
             {canEdit && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Type CODE → Enter → Boxes → Enter → Rate → Enter adds the line. Jars, Qty and Total come from the item master.
+                Type CODE → Enter → Boxes → Enter → Rate → Enter adds the line. Jars, Qty and Total come from the item master. Scanning a barcode into CODE adds a box (or a jar) straight away.
               </p>
             )}
           </CardContent>

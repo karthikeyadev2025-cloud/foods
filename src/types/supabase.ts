@@ -1691,6 +1691,7 @@ export type Database = {
       item_barcodes: {
         Row: {
           barcode: string
+          created_at: string
           id: string
           item_id: string
           org_id: string
@@ -1698,6 +1699,7 @@ export type Database = {
         }
         Insert: {
           barcode: string
+          created_at?: string
           id?: string
           item_id: string
           org_id: string
@@ -1705,6 +1707,7 @@ export type Database = {
         }
         Update: {
           barcode?: string
+          created_at?: string
           id?: string
           item_id?: string
           org_id?: string
@@ -1758,28 +1761,34 @@ export type Database = {
       item_batches: {
         Row: {
           batch_no: string
+          created_at: string
           expiry_date: string | null
           id: string
           item_id: string
           mfg_date: string | null
+          notes: string | null
           org_id: string
           production_batch_id: string | null
         }
         Insert: {
           batch_no: string
+          created_at?: string
           expiry_date?: string | null
           id?: string
           item_id: string
           mfg_date?: string | null
+          notes?: string | null
           org_id: string
           production_batch_id?: string | null
         }
         Update: {
           batch_no?: string
+          created_at?: string
           expiry_date?: string | null
           id?: string
           item_id?: string
           mfg_date?: string | null
+          notes?: string | null
           org_id?: string
           production_batch_id?: string | null
         }
@@ -5008,6 +5017,170 @@ export type Database = {
           },
         ]
       }
+      stock_count_items: {
+        Row: {
+          count_id: string
+          counted_base: number | null
+          counted_boxes: number | null
+          id: string
+          item_id: string
+          posted_base: number | null
+          system_base: number
+          units_per_box: number
+        }
+        Insert: {
+          count_id: string
+          counted_base?: number | null
+          counted_boxes?: number | null
+          id?: string
+          item_id: string
+          posted_base?: number | null
+          system_base?: number
+          units_per_box: number
+        }
+        Update: {
+          count_id?: string
+          counted_base?: number | null
+          counted_boxes?: number | null
+          id?: string
+          item_id?: string
+          posted_base?: number | null
+          system_base?: number
+          units_per_box?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_count_items_count_id_fkey"
+            columns: ["count_id"]
+            referencedRelation: "stock_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_items_count_id_fkey"
+            columns: ["count_id"]
+            referencedRelation: "v_stock_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "stock_count_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+        ]
+      }
+      stock_counts: {
+        Row: {
+          count_date: string
+          count_no: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          location_id: string
+          notes: string | null
+          org_id: string
+          posted_at: string | null
+          posted_by: string | null
+          section_id: string | null
+          status: string
+        }
+        Insert: {
+          count_date?: string
+          count_no?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location_id: string
+          notes?: string | null
+          org_id: string
+          posted_at?: string | null
+          posted_by?: string | null
+          section_id?: string | null
+          status?: string
+        }
+        Update: {
+          count_date?: string
+          count_no?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location_id?: string
+          notes?: string | null
+          org_id?: string
+          posted_at?: string | null
+          posted_by?: string | null
+          section_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_counts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "stock_counts_location_id_fkey"
+            columns: ["location_id"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "stock_counts_posted_by_fkey"
+            columns: ["posted_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_posted_by_fkey"
+            columns: ["posted_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "stock_counts_section_id_fkey"
+            columns: ["section_id"]
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_ledger: {
         Row: {
           batch_id: string | null
@@ -5062,6 +5235,12 @@ export type Database = {
             foreignKeyName: "stock_ledger_batch_id_fkey"
             columns: ["batch_id"]
             referencedRelation: "item_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_ledger_batch_id_fkey"
+            columns: ["batch_id"]
+            referencedRelation: "v_item_batches"
             referencedColumns: ["id"]
           },
           {
@@ -5154,6 +5333,143 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      stock_transfer_items: {
+        Row: {
+          boxes: number
+          id: string
+          item_id: string
+          qty_base: number
+          transfer_id: string
+          units_per_box: number
+        }
+        Insert: {
+          boxes: number
+          id?: string
+          item_id: string
+          qty_base: number
+          transfer_id: string
+          units_per_box: number
+        }
+        Update: {
+          boxes?: number
+          id?: string
+          item_id?: string
+          qty_base?: number
+          transfer_id?: string
+          units_per_box?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfer_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_transfer_id_fkey"
+            columns: ["transfer_id"]
+            referencedRelation: "stock_transfers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_transfer_id_fkey"
+            columns: ["transfer_id"]
+            referencedRelation: "v_stock_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_transfers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          from_location: string
+          id: string
+          notes: string | null
+          org_id: string
+          to_location: string
+          transfer_no: string | null
+          txn_date: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          from_location: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          to_location: string
+          transfer_no?: string | null
+          txn_date?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          from_location?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          to_location?: string
+          transfer_no?: string | null
+          txn_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfers_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_from_location_fkey"
+            columns: ["from_location"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_to_location_fkey"
+            columns: ["to_location"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -6668,6 +6984,141 @@ export type Database = {
             columns: ["vehicle_id"]
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_item_barcodes: {
+        Row: {
+          barcode: string | null
+          created_at: string | null
+          id: string | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          level: string | null
+          mrp_per_piece: number | null
+          org_id: string | null
+          pieces_per_unit: number | null
+          unit_rate: number | null
+          units_per_box: number | null
+          uom_code: string | null
+          uom_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_barcodes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_barcodes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_barcodes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "item_barcodes_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "item_barcodes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_barcodes_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "item_barcodes_uom_id_fkey"
+            columns: ["uom_id"]
+            referencedRelation: "uoms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_item_batches: {
+        Row: {
+          batch_no: string | null
+          created_at: string | null
+          expiry_date: string | null
+          id: string | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          mfg_date: string | null
+          notes: string | null
+          org_id: string | null
+          produced_base: number | null
+          production_batch_id: string | null
+          production_batch_no: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "item_batches_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "item_batches_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_batches_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "item_batches_production_batch_id_fkey"
+            columns: ["production_batch_id"]
+            referencedRelation: "production_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_batches_production_batch_id_fkey"
+            columns: ["production_batch_id"]
+            referencedRelation: "v_batch_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_batches_production_batch_id_fkey"
+            columns: ["production_batch_id"]
+            referencedRelation: "v_production_sheet"
+            referencedColumns: ["batch_id"]
           },
         ]
       }
@@ -8596,6 +9047,138 @@ export type Database = {
           },
         ]
       }
+      v_stock_count_lines: {
+        Row: {
+          count_id: string | null
+          counted_base: number | null
+          counted_boxes: number | null
+          id: string | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          pack_code: string | null
+          posted_base: number | null
+          section_name: string | null
+          section_sort: number | null
+          system_base: number | null
+          system_boxes: number | null
+          unit_rate: number | null
+          units_per_box: number | null
+          variance_boxes: number | null
+          variance_value: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_count_items_count_id_fkey"
+            columns: ["count_id"]
+            referencedRelation: "stock_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_items_count_id_fkey"
+            columns: ["count_id"]
+            referencedRelation: "v_stock_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "stock_count_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+        ]
+      }
+      v_stock_counts: {
+        Row: {
+          count_date: string | null
+          count_no: string | null
+          counted_count: number | null
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
+          id: string | null
+          line_count: number | null
+          location_id: string | null
+          location_name: string | null
+          notes: string | null
+          org_id: string | null
+          posted_at: string | null
+          posted_by: string | null
+          posted_by_name: string | null
+          section_id: string | null
+          section_name: string | null
+          status: string | null
+          variance_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_counts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "stock_counts_location_id_fkey"
+            columns: ["location_id"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "stock_counts_posted_by_fkey"
+            columns: ["posted_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_posted_by_fkey"
+            columns: ["posted_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "stock_counts_section_id_fkey"
+            columns: ["section_id"]
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_stock_on_hand: {
         Row: {
           is_low: boolean | null
@@ -8653,6 +9236,113 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      v_stock_transfer_lines: {
+        Row: {
+          boxes: number | null
+          id: string | null
+          item_code: string | null
+          item_id: string | null
+          item_name: string | null
+          pack_code: string | null
+          qty_base: number | null
+          transfer_id: string | null
+          units_per_box: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfer_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_profit"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_item_id_fkey"
+            columns: ["item_id"]
+            referencedRelation: "v_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_transfer_id_fkey"
+            columns: ["transfer_id"]
+            referencedRelation: "stock_transfers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfer_items_transfer_id_fkey"
+            columns: ["transfer_id"]
+            referencedRelation: "v_stock_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_stock_transfers: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
+          from_location: string | null
+          from_name: string | null
+          id: string | null
+          line_count: number | null
+          notes: string | null
+          org_id: string | null
+          to_location: string | null
+          to_name: string | null
+          total_boxes: number | null
+          transfer_no: string | null
+          txn_date: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfers_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_from_location_fkey"
+            columns: ["from_location"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_to_location_fkey"
+            columns: ["to_location"]
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -8890,6 +9580,26 @@ export type Database = {
           section: string
         }[]
       }
+      batch_balances: {
+        Args: { p_item?: string; p_org: string }
+        Returns: {
+          batch_id: string
+          batch_no: string
+          consumed_base: number
+          days_to_expiry: number
+          expiry_date: string
+          is_expired: boolean
+          is_near_expiry: boolean
+          item_code: string
+          item_id: string
+          item_name: string
+          mfg_date: string
+          produced_base: number
+          remaining_base: number
+          remaining_boxes: number
+          units_per_box: number
+        }[]
+      }
       bootstrap_org: {
         Args: { p_full_name: string; p_org_name: string; p_phone?: string }
         Returns: string
@@ -8934,6 +9644,7 @@ export type Database = {
       cancel_challan: { Args: { p_challan: string }; Returns: undefined }
       cancel_order: { Args: { p_order: string }; Returns: undefined }
       cancel_production_batch: { Args: { p_batch: string }; Returns: undefined }
+      cancel_stock_count: { Args: { p_count: string }; Returns: undefined }
       cash_flow: {
         Args: { p_from: string; p_org: string; p_to: string }
         Returns: {
@@ -9109,18 +9820,45 @@ export type Database = {
           uom_id: string
         }[]
       }
+      ean13_check: { Args: { p_body: string }; Returns: string }
       effective_unit_rate: {
         Args: { p_customer: string; p_date?: string; p_item: string }
         Returns: number
       }
       ensure_default_accounts: { Args: { p_org: string }; Returns: undefined }
       ensure_system_accounts: { Args: { p_org: string }; Returns: undefined }
+      expiry_report: {
+        Args: { p_days?: number; p_org: string }
+        Returns: {
+          batch_id: string
+          batch_no: string
+          days_to_expiry: number
+          expiry_date: string
+          is_expired: boolean
+          item_code: string
+          item_id: string
+          item_name: string
+          mfg_date: string
+          remaining_boxes: number
+          value_at_rate: number
+        }[]
+      }
+      fefo_suggest: {
+        Args: { p_boxes: number; p_item: string }
+        Returns: {
+          batch_no: string
+          expiry_date: string
+          remaining_boxes: number
+          take_boxes: number
+        }[]
+      }
       fulfil_order: {
         Args: { p_extra?: Json; p_lines?: Json; p_order: string }
         Returns: string
       }
       gen_random_uuid: { Args: Record<PropertyKey, never>; Returns: string }
       gen_salt: { Args: { "": string }; Returns: string }
+      generate_barcodes: { Args: { p_item?: string }; Returns: number }
       get_messaging_settings: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -9160,6 +9898,13 @@ export type Database = {
       }
       invoice_message_vars: { Args: { p_invoice: string }; Returns: Json }
       is_service_call: { Args: Record<PropertyKey, never>; Returns: boolean }
+      item_by_barcode: {
+        Args: { p_code: string }
+        Returns: {
+          item_id: string
+          level: string
+        }[]
+      }
       item_profit: {
         Args: { p_from: string; p_group?: string; p_org: string; p_to: string }
         Returns: {
@@ -9186,6 +9931,10 @@ export type Database = {
           line_id: number
           narration: string
         }[]
+      }
+      location_stock_base: {
+        Args: { p_date?: string; p_item: string; p_location: string }
+        Returns: number
       }
       mark_message_status: {
         Args: {
@@ -9220,6 +9969,15 @@ export type Database = {
       normalize_item_code: { Args: { p: string }; Returns: string }
       normalize_mobile: { Args: { p: string }; Returns: string }
       open_production_batch: { Args: { p: Json }; Returns: string }
+      open_stock_count: {
+        Args: {
+          p_date?: string
+          p_location: string
+          p_notes?: string
+          p_section?: string
+        }
+        Returns: string
+      }
       outstanding_ageing: {
         Args: { p_as_on?: string; p_org: string; p_route?: string }
         Returns: {
@@ -9301,6 +10059,7 @@ export type Database = {
       }
       post_purchase_stock: { Args: { p_purchase: string }; Returns: undefined }
       post_return_stock: { Args: { p_return: string }; Returns: undefined }
+      post_stock_count: { Args: { p_count: string }; Returns: number }
       price_list_rate: {
         Args: { p_date: string; p_item: string; p_list: string }
         Returns: number
@@ -9483,6 +10242,10 @@ export type Database = {
         Args: { p_header: Json; p_lines: Json }
         Returns: string
       }
+      save_stock_transfer: {
+        Args: { p_header: Json; p_lines: Json }
+        Returns: string
+      }
       save_transfer: { Args: { p: Json }; Returns: string }
       seed_role_permissions: { Args: { p_org: string }; Returns: undefined }
       send_custom_message: {
@@ -9601,6 +10364,10 @@ export type Database = {
       update_batch_actuals: {
         Args: { p: Json; p_batch: string }
         Returns: undefined
+      }
+      update_stock_count: {
+        Args: { p_count: string; p_lines: Json }
+        Returns: number
       }
       van_load: {
         Args: { p_from_location: string; p_lines: Json; p_trip: string }

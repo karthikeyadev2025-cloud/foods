@@ -4,7 +4,8 @@ import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/pagin
 import type { Database } from '@/types/supabase';
 
 type Tables = Database['public']['Tables'];
-export type ItemRow = Database['public']['Views']['v_item_list']['Row'];
+/** `scanned` is set when the row came from a barcode: 'box' or a single 'unit'. */
+export type ItemRow = Database['public']['Views']['v_item_list']['Row'] & { scanned?: 'box' | 'unit' };
 export type Item = Tables['items']['Row'];
 export type ItemType = Database['public']['Enums']['item_type'];
 
@@ -41,6 +42,16 @@ export async function listAllItems(q: Omit<ItemListQuery, 'page' | 'pageSize'>):
 /** Bill-entry lookup: active items by code or name, exact code first. */
 export async function searchItems(q: string, opts: { finishedOnly?: boolean } = {}): Promise<ItemRow[]> {
   const s = sanitizeSearch(q);
+  // A scanner types 8–14 digits and Enter: resolve the barcode to its item first.
+  if (/^\d{8,14}$/.test(s)) {
+    const { data } = await supabase.rpc('item_by_barcode', { p_code: s });
+    const hit = data?.[0];
+    if (hit?.item_id) {
+      const row: ItemRow = await expectOne(supabase.from('v_item_list').select('*').eq('id', hit.item_id).single());
+      row.scanned = hit.level === 'unit' ? 'unit' : 'box';
+      return [row];
+    }
+  }
   let query = supabase.from('v_item_list').select('*').eq('is_active', true);
   if (opts.finishedOnly) query = query.eq('type', 'finished_good');
   if (s) query = query.or(`item_code.ilike.${s}%,name.ilike.%${s}%`);

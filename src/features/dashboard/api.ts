@@ -23,6 +23,8 @@ export interface DashboardSummary {
   cheques_in_hand: number;
   cheques_due: number;
   payables: number;
+  expiring_batches: number;
+  open_counts: number;
 }
 
 export async function dashboardSummary(orgId: string, date: string): Promise<DashboardSummary> {
@@ -46,6 +48,8 @@ export async function dashboardSummary(orgId: string, date: string): Promise<Das
     cheques_in_hand: n('cheques_in_hand'),
     cheques_due: n('cheques_due'),
     payables: n('payables'),
+    expiring_batches: n('expiring_batches'),
+    open_counts: n('open_counts'),
   };
 }
 

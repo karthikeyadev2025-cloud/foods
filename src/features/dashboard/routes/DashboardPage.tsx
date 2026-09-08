@@ -53,7 +53,7 @@ export function DashboardPage() {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Tile perms={perms} module="stock" to="/stock/low" icon={Boxes} label="Low stock" value={s ? int(s.low_stock_items) : null} sub="items at or below reorder level" tone={s && s.low_stock_items > 0 ? 'warn' : undefined} />
-        <Tile perms={perms} module="stock" to="/stock" icon={AlertTriangle} label="Negative stock" value={s ? int(s.negative_stock) : null} sub="items below zero — fix by entry, never hidden" tone={s && s.negative_stock > 0 ? 'bad' : undefined} />
+        <Tile perms={perms} module="stock" to="/stock/batches" icon={AlertTriangle} label="Expiring this week" value={s ? int(s.expiring_batches) : null} sub={s && s.negative_stock > 0 ? `${int(s.negative_stock)} item${s.negative_stock === 1 ? '' : 's'} in negative stock` : s && s.open_counts > 0 ? `${int(s.open_counts)} stock count${s.open_counts === 1 ? '' : 's'} open` : 'batches with stock left, FEFO'} tone={s && (s.expiring_batches > 0 || s.negative_stock > 0) ? 'bad' : undefined} />
         <Tile perms={perms} module="vehicles" to="/vehicles/trips" icon={Truck} label="Vehicles out" value={s ? int(s.vehicles_out) : null} sub="dispatched, not yet settled" />
         <Tile perms={perms} module="production" to="/production" icon={Factory} label="Batches open" value={s ? int(s.batches_open) : null} sub="waiting for the chief's actuals" />
       </div>

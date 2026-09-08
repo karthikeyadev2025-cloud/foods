@@ -19,11 +19,16 @@ import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, dateTimeDMY, qty, toISODate, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { closingStock, listItemStock, stockMovements, type ClosingStockRow } from '../api';
+import { BarcodesPanel, BatchesPanel, CountsPanel, TransfersPanel } from '../components/inventory';
 
 const TABS = [
   { key: 'closing', label: 'Closing stock' },
   { key: 'movements', label: 'Movements' },
   { key: 'low', label: 'Low stock' },
+  { key: 'batches', label: 'Batches & expiry' },
+  { key: 'transfers', label: 'Transfers' },
+  { key: 'counts', label: 'Stock count' },
+  { key: 'barcodes', label: 'Barcodes' },
 ] as const;
 export type StockTab = (typeof TABS)[number]['key'];
 
@@ -41,6 +46,10 @@ export function StockPage({ tab = 'closing' }: { tab?: StockTab }) {
       {tab === 'closing' && <ClosingStock />}
       {tab === 'movements' && <Movements />}
       {tab === 'low' && <LowStock />}
+      {tab === 'batches' && <BatchesPanel />}
+      {tab === 'transfers' && <TransfersPanel />}
+      {tab === 'counts' && <CountsPanel />}
+      {tab === 'barcodes' && <BarcodesPanel />}
     </div>
   );
 }

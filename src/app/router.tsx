@@ -29,7 +29,10 @@ import { ReportsPage } from '@/features/reports/routes/ReportsPage';
 import { ReturnNewPage, ReturnViewPage, ReturnsPage } from '@/features/returns/routes/ReturnsPage';
 import { SetupPage } from '@/features/setup/routes/SetupPage';
 import { SetupWizard } from '@/features/setup/routes/SetupWizard';
+import { LabelsPrintPage } from '@/features/stock/components/inventory';
+import { CountSheetPage } from '@/features/stock/routes/CountSheetPage';
 import { StockPage } from '@/features/stock/routes/StockPage';
+import { TransferPrintPage } from '@/features/stock/routes/TransferPrintPage';
 import { TripDetailPage } from '@/features/vehicles/routes/TripDetailPage';
 import { TripPrintPage } from '@/features/vehicles/routes/TripPrintPage';
 import { TripsPage } from '@/features/vehicles/routes/TripsPage';
@@ -58,6 +61,10 @@ export const router = createBrowserRouter([
         { path: '/quotations/:id/print', element: <QuotationPrintPage /> },
       ]),
       guarded('vehicles', [{ path: '/vehicles/trips/:id/print', element: <TripPrintPage /> }]),
+      guarded('stock', [
+        { path: '/stock/transfers/:id/print', element: <TransferPrintPage /> },
+        { path: '/stock/labels', element: <LabelsPrintPage /> },
+      ]),
       {
         path: '/',
         element: <AppShell />,
@@ -114,6 +121,11 @@ export const router = createBrowserRouter([
             { path: 'stock', element: <StockPage /> },
             { path: 'stock/movements', element: <StockPage tab="movements" /> },
             { path: 'stock/low', element: <StockPage tab="low" /> },
+            { path: 'stock/batches', element: <StockPage tab="batches" /> },
+            { path: 'stock/transfers', element: <StockPage tab="transfers" /> },
+            { path: 'stock/counts', element: <StockPage tab="counts" /> },
+            { path: 'stock/counts/:id', element: <CountSheetPage /> },
+            { path: 'stock/barcodes', element: <StockPage tab="barcodes" /> },
           ]),
           guarded('production', [
             { path: 'production', element: <ProductionPage /> },

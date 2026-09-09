@@ -10626,6 +10626,15 @@ export type Database = {
           sale_value: number
         }[]
       }
+      items_needing_measure: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          item_code: string
+          name: string
+          problem: string
+          section_name: string
+        }[]
+      }
       ledger_account_book: {
         Args: { p_account: string; p_from?: string; p_to?: string }
         Returns: {

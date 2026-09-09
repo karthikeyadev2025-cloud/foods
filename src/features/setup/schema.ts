@@ -18,14 +18,26 @@ export const UOM_BASES = [
   { value: 'weight', label: 'Weight (grams per 1)' },
 ] as const;
 
-export const uomSchema = z.object({
-  code,
-  name,
-  basis: z.enum(['box', 'unit', 'piece', 'weight']),
-  weight_g: z.coerce.number().min(0),
-  sort_order: sortOrder,
-  is_active: z.boolean(),
-});
+export const uomSchema = z
+  .object({
+    code,
+    name,
+    basis: z.enum(['box', 'unit', 'piece', 'weight']),
+    weight_g: z.coerce.number().min(0),
+    sort_order: sortOrder,
+    is_active: z.boolean(),
+  })
+  /**
+   * A weight unit with no grams is the one broken unit the database cannot work
+   * around: it has nothing to divide by, so every item stocked in it stops
+   * converting, and the billing screen used to fail on a NOT NULL constraint
+   * that could not say why. Only the shop knows whether their unit means a
+   * kilogram or half of one, so it is asked for here rather than guessed.
+   */
+  .refine((v) => v.basis !== 'weight' || v.weight_g > 0, {
+    path: ['weight_g'],
+    message: 'A weight unit needs its grams — 1000 for a kilogram, 1 for a gram',
+  });
 export type UomInput = z.infer<typeof uomSchema>;
 
 export const packTypeSchema = z.object({

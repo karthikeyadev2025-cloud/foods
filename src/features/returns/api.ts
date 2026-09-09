@@ -1,5 +1,6 @@
 import { expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
-import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
+import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
+import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
 
 type Views = Database['public']['Views'];
@@ -21,8 +22,7 @@ export interface ReturnListQuery extends PageQuery {
 
 function applyFilters(q: ReturnListQuery) {
   let query = supabase.from('v_return_list').select('*', { count: 'exact' });
-  const s = sanitizeSearch(q.search);
-  if (s) query = query.or(`return_no.ilike.%${s}%,customer_name.ilike.%${s}%,invoice_no.ilike.%${s}%`);
+  query = orIlike(query, ['return_no', 'customer_name', 'invoice_no'], q.search);
   if (q.kind) query = query.eq('kind', q.kind);
   if (q.from) query = query.gte('return_date', q.from);
   if (q.to) query = query.lte('return_date', q.to);

@@ -1,5 +1,6 @@
 import { currentOrgId } from '@/features/auth/api';
 import { expectOk, expectOne, expectRows, supabase } from '@/lib/supabase';
+import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
 
 type Tables = Database['public']['Tables'];
@@ -108,7 +109,7 @@ export function listJournalEntries(opts: { from?: string; to?: string; manualOnl
   if (opts.from) query = query.gte('entry_date', opts.from);
   if (opts.to) query = query.lte('entry_date', opts.to);
   if (opts.manualOnly) query = query.eq('is_manual', true);
-  if (opts.search) query = query.or(`entry_no.ilike.%${opts.search}%,narration.ilike.%${opts.search}%,doc_no.ilike.%${opts.search}%`);
+  query = orIlike(query, ['entry_no', 'narration', 'doc_no'], opts.search);
   return expectRows(query.order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(300));
 }
 

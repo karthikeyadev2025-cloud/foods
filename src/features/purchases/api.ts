@@ -1,6 +1,7 @@
 import { currentOrgId } from '@/features/auth/api';
 import { expectOk, expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
-import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
+import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
+import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
 
 type Tables = Database['public']['Tables'];
@@ -18,8 +19,7 @@ export interface PurchaseListQuery extends PageQuery {
 
 function applyFilters(q: PurchaseListQuery) {
   let query = supabase.from('v_purchase_list').select('*', { count: 'exact' });
-  const s = sanitizeSearch(q.search);
-  if (s) query = query.or(`bill_no.ilike.%${s}%,supplier_name.ilike.%${s}%`);
+  query = orIlike(query, ['bill_no', 'supplier_name'], q.search);
   if (q.from) query = query.gte('bill_date', q.from);
   if (q.to) query = query.lte('bill_date', q.to);
   if (q.supplierId) query = query.eq('supplier_id', q.supplierId);
@@ -75,9 +75,11 @@ export function listSuppliers(): Promise<SupplierRow[]> {
 }
 
 export function searchSuppliers(q: string): Promise<SupplierRow[]> {
-  const s = sanitizeSearch(q);
-  let query = supabase.from('v_supplier_list').select('*').eq('is_active', true);
-  if (s) query = query.or(`name.ilike.%${s}%,town.ilike.%${s}%,mobile1.ilike.%${s}%`);
+  const query = orIlike(
+    supabase.from('v_supplier_list').select('*').eq('is_active', true),
+    ['name', 'town', 'mobile1'],
+    q,
+  );
   return expectRows(query.order('name').limit(15));
 }
 

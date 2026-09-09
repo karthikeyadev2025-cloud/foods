@@ -85,7 +85,7 @@ export function DocLines({ lines, onChange, editable, customerId, date, showRate
               <TableCell className="num text-muted-foreground">{lines.length + 1}</TableCell>
               <TableCell>
                 <div ref={codeWrapRef}>
-                  <Combobox<ItemRow> value={entryItem} onChange={setEntryItem} search={(q) => searchItems(q, { finishedOnly: rateSource === 'sale' })} queryKey={rateSource === 'sale' ? 'items' : 'items-all'} getKey={(it) => it.id ?? ''} getLabel={(it) => it.item_code ?? ''} renderOption={(it) => <span><span className="font-medium">{it.item_code}</span> {it.name}<span className="text-muted-foreground"> · {it.units_per_box}/box</span></span>} placeholder="CODE" aria-label="Item code" onPicked={onItemPicked} />
+                  <Combobox<ItemRow> value={entryItem} onChange={setEntryItem} search={(q) => searchItems(q, { finishedOnly: rateSource === 'sale' })} queryKey={rateSource === 'sale' ? 'items' : 'items-all'} getKey={(it) => it.id ?? ''} getLabel={(it) => it.item_code ?? ''} renderOption={(it) => <span><span className="font-medium">{it.item_code}</span> {it.name}<span className="text-muted-foreground"> · {it.units_per_box}/box</span></span>} placeholder="Code or name" aria-label="Item code or name" onPicked={onItemPicked} />
                 </div>
               </TableCell>
               <TableCell className="text-muted-foreground">{entryItem?.name ?? 'Type a code or name, Enter to pick'}</TableCell>

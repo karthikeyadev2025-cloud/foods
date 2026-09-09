@@ -1,5 +1,6 @@
 import { expectRows, queuedRpc, supabase } from '@/lib/supabase';
-import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
+import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
+import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
 
 export type PaymentRow = Database['public']['Views']['v_payment_list']['Row'];
@@ -12,8 +13,7 @@ export interface PaymentListQuery extends PageQuery {
 
 function applyFilters(q: PaymentListQuery) {
   let query = supabase.from('v_payment_list').select('*', { count: 'exact' });
-  const s = sanitizeSearch(q.search);
-  if (s) query = query.or(`payment_no.ilike.%${s}%,party_name.ilike.%${s}%,narration.ilike.%${s}%`);
+  query = orIlike(query, ['payment_no', 'party_name', 'narration'], q.search);
   if (q.kind) query = query.eq('party_kind', q.kind);
   if (q.from) query = query.gte('payment_date', q.from);
   if (q.to) query = query.lte('payment_date', q.to);

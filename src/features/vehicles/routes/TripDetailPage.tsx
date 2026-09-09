@@ -151,7 +151,7 @@ export function TripDetailPage() {
                   <TableRow className="bg-muted/30">
                     <TableCell>
                       <div ref={codeWrap}>
-                        <Combobox<ItemRow> value={entryItem} onChange={setEntryItem} search={(q) => searchItems(q, { finishedOnly: true })} queryKey="items" getKey={(i) => i.id ?? ''} getLabel={(i) => i.item_code ?? ''} renderOption={(i) => <span><span className="font-medium">{i.item_code}</span> {i.name}<span className="text-muted-foreground"> · stock {qty(toNumber(i.stock_base) / (i.units_per_box || 1))} bx</span></span>} placeholder="CODE" aria-label="Item code" onPicked={() => setTimeout(() => boxesRef.current?.focus(), 0)} />
+                        <Combobox<ItemRow> value={entryItem} onChange={setEntryItem} search={(q) => searchItems(q, { finishedOnly: true })} queryKey="items" getKey={(i) => i.id ?? ''} getLabel={(i) => i.item_code ?? ''} renderOption={(i) => <span><span className="font-medium">{i.item_code}</span> {i.name}<span className="text-muted-foreground"> · stock {qty(toNumber(i.stock_base) / (i.units_per_box || 1))} bx</span></span>} placeholder="Code or name…" aria-label="Item code or name" onPicked={() => setTimeout(() => boxesRef.current?.focus(), 0)} />
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{entryItem?.name ?? ''}</TableCell>

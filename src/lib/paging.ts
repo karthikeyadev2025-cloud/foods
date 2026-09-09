@@ -23,9 +23,6 @@ export function rangeFor(page: number, pageSize: number): [number, number] {
 }
 
 /** Strip characters that would break a PostgREST `or(... ilike ...)` filter. */
-export function sanitizeSearch(s: string | undefined): string {
-  return (s ?? '').replace(/[,()%\\]/g, ' ').trim();
-}
 
 export function pageCount(total: number, pageSize: number): number {
   return Math.max(1, Math.ceil(total / pageSize));

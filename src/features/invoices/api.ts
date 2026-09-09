@@ -1,5 +1,6 @@
 import { expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
-import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
+import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
+import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
 
 type Views = Database['public']['Views'];
@@ -25,8 +26,7 @@ export interface InvoiceListQuery extends PageQuery {
 
 function applyFilters(q: InvoiceListQuery) {
   let query = supabase.from('v_invoice_list').select('*', { count: 'exact' });
-  const s = sanitizeSearch(q.search);
-  if (s) query = query.or(`invoice_no.ilike.%${s}%,customer_name.ilike.%${s}%,customer_town.ilike.%${s}%`);
+  query = orIlike(query, ['invoice_no', 'customer_name', 'customer_town'], q.search);
   if (q.status) query = query.eq('status', q.status);
   if (q.from) query = query.gte('invoice_date', q.from);
   if (q.to) query = query.lte('invoice_date', q.to);

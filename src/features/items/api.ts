@@ -1,6 +1,7 @@
 import { currentOrgId } from '@/features/auth/api';
 import { expectOne, expectRows, supabase } from '@/lib/supabase';
-import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
+import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
+import { orIlike, rankByCode } from '@/lib/search';
 import type { Database } from '@/types/supabase';
 
 type Tables = Database['public']['Tables'];
@@ -18,8 +19,7 @@ export interface ItemListQuery extends PageQuery {
 
 function applyFilters(q: ItemListQuery) {
   let query = supabase.from('v_item_list').select('*', { count: 'exact' });
-  const s = sanitizeSearch(q.search);
-  if (s) query = query.or(`item_code.ilike.%${s}%,name.ilike.%${s}%`);
+  query = orIlike(query, ['item_code', 'name'], q.search);
   if (q.sectionId) query = query.eq('section_id', q.sectionId);
   if (q.packTypeId) query = query.eq('pack_type_id', q.packTypeId);
   if (q.type) query = query.eq('type', q.type);
@@ -39,9 +39,9 @@ export async function listAllItems(q: Omit<ItemListQuery, 'page' | 'pageSize'>):
   return expectRows(applyFilters({ ...q, page: 1, pageSize: 5000 }).range(0, 4999));
 }
 
-/** Bill-entry lookup: active items by code or name, exact code first. */
+/** Bill-entry lookup: active items by code or by any words of the name, exact code first. */
 export async function searchItems(q: string, opts: { finishedOnly?: boolean } = {}): Promise<ItemRow[]> {
-  const s = sanitizeSearch(q);
+  const s = (q ?? '').trim();
   // A scanner types 8–14 digits and Enter: resolve the barcode to its item first.
   if (/^\d{8,14}$/.test(s)) {
     const { data } = await supabase.rpc('item_by_barcode', { p_code: s });
@@ -54,10 +54,11 @@ export async function searchItems(q: string, opts: { finishedOnly?: boolean } = 
   }
   let query = supabase.from('v_item_list').select('*').eq('is_active', true);
   if (opts.finishedOnly) query = query.eq('type', 'finished_good');
-  if (s) query = query.or(`item_code.ilike.${s}%,name.ilike.%${s}%`);
-  const rows = await expectRows(query.order('item_code').limit(15));
-  const upper = s.toUpperCase();
-  return rows.sort((a, b) => Number(b.item_code === upper) - Number(a.item_code === upper));
+  query = orIlike(query, ['item_code', 'name'], s);
+  // Fetched wider than it is shown: the code someone typed in full has to survive
+  // the trip through a list ordered by code before ranking can lift it to the top.
+  const rows = await expectRows(query.order('item_code').limit(40));
+  return rankByCode(rows, s).slice(0, 15);
 }
 
 /** The customer's effective unit rate today (overrides → price list → master). */

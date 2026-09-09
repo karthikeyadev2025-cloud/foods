@@ -1,6 +1,7 @@
 import { currentOrgId } from '@/features/auth/api';
 import { expectOk, expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
-import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
+import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
+import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
 
 type Tables = Database['public']['Tables'];
@@ -54,8 +55,7 @@ export interface DocListQuery extends PageQuery {
 
 function quotationQuery(q: DocListQuery) {
   let query = supabase.from('v_quotation_list').select('*', { count: 'exact' });
-  const s = sanitizeSearch(q.search);
-  if (s) query = query.or(`quote_no.ilike.%${s}%,customer_name.ilike.%${s}%,customer_town.ilike.%${s}%`);
+  query = orIlike(query, ['quote_no', 'customer_name', 'customer_town'], q.search);
   if (q.state) query = query.eq('state', q.state);
   if (q.from) query = query.gte('quote_date', q.from);
   if (q.to) query = query.lte('quote_date', q.to);
@@ -115,8 +115,7 @@ export async function convertQuotation(id: string, locationId: string, invoiceDa
 export function listOrders(opts: { kind: OrderKind; state?: DocState | ''; search?: string }): Promise<OrderRow[]> {
   let query = supabase.from('v_order_list').select('*').eq('kind', opts.kind);
   if (opts.state) query = query.eq('state', opts.state);
-  const s = sanitizeSearch(opts.search);
-  if (s) query = query.or(`order_no.ilike.%${s}%,party_name.ilike.%${s}%`);
+  query = orIlike(query, ['order_no', 'party_name'], opts.search);
   return expectRows(query.order('order_date', { ascending: false }).order('created_at', { ascending: false }).limit(300));
 }
 
@@ -172,8 +171,7 @@ export async function convertInboundToOrder(inboundId: string, header: { custome
 export function listChallans(opts: { state?: DocState | ''; search?: string } = {}): Promise<ChallanRow[]> {
   let query = supabase.from('v_challan_list').select('*');
   if (opts.state) query = query.eq('state', opts.state);
-  const s = sanitizeSearch(opts.search);
-  if (s) query = query.or(`challan_no.ilike.%${s}%,customer_name.ilike.%${s}%,customer_town.ilike.%${s}%`);
+  query = orIlike(query, ['challan_no', 'customer_name', 'customer_town'], opts.search);
   return expectRows(query.order('challan_date', { ascending: false }).order('created_at', { ascending: false }).limit(300));
 }
 
@@ -205,8 +203,7 @@ export async function convertChallan(id: string, extra: { invoice_date: string; 
 // ---------------- purchase returns ----------------
 export function listPurchaseReturns(search?: string): Promise<PurchaseReturnRow[]> {
   let query = supabase.from('v_purchase_return_list').select('*');
-  const s = sanitizeSearch(search);
-  if (s) query = query.or(`return_no.ilike.%${s}%,supplier_name.ilike.%${s}%,bill_no.ilike.%${s}%`);
+  query = orIlike(query, ['return_no', 'supplier_name', 'bill_no'], search);
   return expectRows(query.order('return_date', { ascending: false }).order('created_at', { ascending: false }).limit(300));
 }
 

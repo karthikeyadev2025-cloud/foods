@@ -258,7 +258,7 @@ export function ReturnNewPage() {
             <TableRow className="bg-muted/30">
               <TableCell>
                 <div ref={codeWrap}>
-                  <Combobox<ItemRow> value={entryItem} onChange={setEntryItem} search={(q) => searchItems(q, { finishedOnly: true })} queryKey="items" getKey={(it) => it.id ?? ''} getLabel={(it) => it.item_code ?? ''} renderOption={(it) => <span><span className="font-medium">{it.item_code}</span> {it.name}</span>} placeholder="CODE" aria-label="Item code"
+                  <Combobox<ItemRow> value={entryItem} onChange={setEntryItem} search={(q) => searchItems(q, { finishedOnly: true })} queryKey="items" getKey={(it) => it.id ?? ''} getLabel={(it) => it.item_code ?? ''} renderOption={(it) => <span><span className="font-medium">{it.item_code}</span> {it.name}</span>} placeholder="Code or name…" aria-label="Item code or name"
                     onPicked={(it) => { setEntryRate(String(toNumber(it.unit_rate))); setTimeout(() => boxesRef.current?.focus(), 0); }} />
                 </div>
               </TableCell>

@@ -465,8 +465,8 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
                                 <span className="text-muted-foreground"> · {it.units_per_box}/box · ₹{amount(it.unit_rate)}</span>
                               </span>
                             )}
-                            placeholder="CODE"
-                            aria-label="Item code"
+                            placeholder="Code or name"
+                            aria-label="Item code or name"
                             onPicked={onItemPicked}
                           />
                         </div>

@@ -1,6 +1,7 @@
 import { currentOrgId } from '@/features/auth/api';
 import { expectOk, expectOne, expectRows, supabase } from '@/lib/supabase';
-import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
+import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
+import { orIlike } from '@/lib/search';
 import type { Database, Json } from '@/types/supabase';
 
 type Tables = Database['public']['Tables'];
@@ -169,8 +170,7 @@ export interface MessageListQuery extends PageQuery {
 
 function applyLogFilters(q: MessageListQuery) {
   let query = supabase.from('v_message_log').select('*', { count: 'exact' });
-  const s = sanitizeSearch(q.search);
-  if (s) query = query.or(`customer_name.ilike.%${s}%,to_number.ilike.%${s}%,body.ilike.%${s}%`);
+  query = orIlike(query, ['customer_name', 'to_number', 'body'], q.search);
   if (q.status) query = query.eq('status', q.status);
   if (q.purpose) query = query.eq('purpose', q.purpose);
   if (q.customerId) query = query.eq('customer_id', q.customerId);

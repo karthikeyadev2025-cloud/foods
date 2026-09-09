@@ -1,6 +1,7 @@
 import { currentOrgId } from '@/features/auth/api';
 import { expectOne, expectRows, supabase } from '@/lib/supabase';
-import { rangeFor, sanitizeSearch, type Page, type PageQuery } from '@/lib/paging';
+import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
+import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
 
 type Tables = Database['public']['Tables'];
@@ -14,8 +15,7 @@ export interface CustomerListQuery extends PageQuery {
 
 function applyFilters(q: CustomerListQuery) {
   let query = supabase.from('v_customer_list').select('*', { count: 'exact' });
-  const s = sanitizeSearch(q.search);
-  if (s) query = query.or(`name.ilike.%${s}%,mobile1.ilike.%${s}%,town.ilike.%${s}%,code.ilike.%${s}%`);
+  query = orIlike(query, ['name', 'mobile1', 'town', 'code'], q.search);
   if (q.routeId) query = query.eq('route_id', q.routeId);
   if (!q.includeInactive) query = query.eq('is_active', true);
   return query.order('town').order('name');
@@ -34,9 +34,11 @@ export function listAllCustomers(q: Omit<CustomerListQuery, 'page' | 'pageSize'>
 
 /** Picker lookup by name, mobile or town. */
 export function searchCustomers(q: string): Promise<CustomerRow[]> {
-  const s = sanitizeSearch(q);
-  let query = supabase.from('v_customer_list').select('*').eq('is_active', true);
-  if (s) query = query.or(`name.ilike.%${s}%,mobile1.ilike.%${s}%,town.ilike.%${s}%,code.ilike.${s}%`);
+  const query = orIlike(
+    supabase.from('v_customer_list').select('*').eq('is_active', true),
+    ['name', 'mobile1', 'town', 'code'],
+    q,
+  );
   return expectRows(query.order('name').limit(15));
 }
 

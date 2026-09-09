@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, Download, GripVertical, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useForm, type DefaultValues, type FieldValues, type Path } from 'react-hook-form';
+import { useSearchParams } from 'react-router-dom';
 import type { ZodType, ZodTypeDef } from 'zod';
 import { Field } from '@/components/Field';
 import { Spinner } from '@/components/Spinner';
@@ -103,7 +104,10 @@ export function MasterCrud<R extends { id: string }, F extends FieldValues>({
   const queryClient = useQueryClient();
   const queryKey = masterQueryKey(config.key);
   const rows = useQuery({ queryKey, queryFn: config.list });
-  const [search, setSearch] = useState('');
+  // A link from the global search arrives as ?q=<name>, so the list opens on the
+  // record that was clicked rather than at the top of everything.
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState(params.get('q') ?? '');
   const [editing, setEditing] = useState<{ mode: 'create' } | { mode: 'edit'; row: R } | null>(null);
   const [deleting, setDeleting] = useState<R | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);

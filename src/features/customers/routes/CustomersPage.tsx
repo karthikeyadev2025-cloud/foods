@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Download, Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/PageHeader';
 import { Pager } from '@/components/Pager';
 import { Spinner } from '@/components/Spinner';
@@ -23,7 +23,9 @@ import { CustomerDialog } from '../components/CustomerDialog';
 
 export function CustomersPage() {
   const perms = usePermissions();
-  const [search, setSearch] = useState('');
+  // Arrived from the global search: open on that customer.
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState(params.get('q') ?? '');
   const [routeId, setRouteId] = useState('');
   const [includeInactive, setIncludeInactive] = useState(false);
   const [page, setPage] = useState(1);

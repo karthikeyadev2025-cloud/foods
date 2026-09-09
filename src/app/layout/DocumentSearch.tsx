@@ -62,7 +62,7 @@ export function DocumentSearch() {
   const go = (hit: DocumentHit) => {
     setOpen(false);
     setText('');
-    navigate(kindHref(hit.kind, hit.doc_id));
+    navigate(kindHref(hit.kind, hit.doc_id, hit.party));
   };
 
   const onKeyDown = (ev: React.KeyboardEvent) => {
@@ -93,7 +93,7 @@ export function DocumentSearch() {
       <Input
         ref={inputRef}
         className="h-8 pl-8"
-        placeholder="Search any bill — number, name, phone, item, amount"
+        placeholder="Search anything — customer, supplier, product, bill"
         aria-label="Search all bills"
         value={text}
         onChange={(ev) => {
@@ -112,8 +112,8 @@ export function DocumentSearch() {
             <p role="alert" className="p-3 text-sm text-destructive">{(hits.error as Error).message}</p>
           ) : !rows.length ? (
             <p className="p-3 text-sm text-muted-foreground">
-              Nothing found for “{term}”. You can search by bill number, customer or supplier, phone number, town,
-              item, amount, vehicle, cheque number or anything typed in the notes.
+              Nothing found for “{term}”. You can search for a customer, supplier, product or member of staff, or for
+              any bill by its number, phone, town, item, amount, vehicle, cheque number or notes.
             </p>
           ) : (
             rows.map((hit, i) => (
@@ -132,7 +132,7 @@ export function DocumentSearch() {
                   {hit.party ?? '—'}
                   {hit.town && <span className="text-muted-foreground"> · {hit.town}</span>}
                 </span>
-                <span className="shrink-0 text-xs text-muted-foreground">{hit.doc_date ? dateDMY(hit.doc_date) : ''}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{hit.doc_date ? dateDMY(hit.doc_date) : (hit.state ?? '')}</span>
                 <span className="w-24 shrink-0 text-right tabular-nums">{hit.amount == null ? '' : amount(hit.amount)}</span>
               </button>
             ))

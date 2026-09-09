@@ -11113,6 +11113,19 @@ export type Database = {
         Returns: string
       }
       save_transfer: { Args: { p: Json }; Returns: string }
+      search_documents: {
+        Args: { p_limit?: number; p_term: string }
+        Returns: {
+          amount: number
+          doc_date: string
+          doc_id: string
+          doc_no: string
+          kind: string
+          party: string
+          state: string
+          town: string
+        }[]
+      }
       seed_role_permissions: { Args: { p_org: string }; Returns: undefined }
       send_custom_message: {
         Args: { p_body: string; p_customer: string; p_media_url?: string }

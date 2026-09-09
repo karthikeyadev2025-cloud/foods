@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, CloudOff, LogOut, Send, Smartphone } from 'lucide-react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { NAV } from '@/app/nav';
+import { DocumentSearch } from '@/app/layout/DocumentSearch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { signOut } from '@/features/auth/api';
@@ -73,13 +74,13 @@ export function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="no-print flex h-12 shrink-0 items-center justify-between border-b bg-card px-4">
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            ERP
-            <Link to="/m" className="flex items-center gap-1 text-xs hover:text-foreground" title="The driver / salesman screens, sized for a phone">
+          <div className="flex min-w-0 flex-1 items-center gap-3 text-sm text-muted-foreground">
+            <Link to="/m" className="flex shrink-0 items-center gap-1 text-xs hover:text-foreground" title="The driver / salesman screens, sized for a phone">
               <Smartphone className="h-3.5 w-3.5" aria-hidden /> Phone view
             </Link>
+            <DocumentSearch />
           </div>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex shrink-0 items-center gap-3 text-sm">
             {me.data && (
               <>
                 <span className="font-medium">{me.data.full_name}</span>

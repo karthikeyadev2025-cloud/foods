@@ -803,7 +803,7 @@ html { scroll-behavior: smooth; }
 
   <ol class="steps">
     <li><strong>Item name.</strong> What everyone calls it. "Boondi Laddu 250g", not "BL250". Say it out loud &mdash; if a new worker would understand it, it is right.</li>
-    <li><strong>Item code.</strong> A short code for narrow screens and count sheets. Leave it blank and the system makes one.</li>
+    <li><strong>Item code.</strong> Already filled in with the next number in the master &mdash; leave it as it is. Change it only for a <em>repack</em> of an existing product, which is written with a letter after the number: 27A is a repack of 27. Letter codes are skipped by the numbering, so they never use up a number. Two products can never share a code; if you type one that is taken, the screen says so and tells you which number is free.</li>
     <li><strong>Type.</strong> <em>Finished</em> for what you sell, <em>Raw material</em> for what you buy to make it (besan, oil, sugar), <em>Packing</em> for covers and boxes. This decides which screens the item appears on &mdash; a raw material must not turn up on a customer's bill.</li>
     <li><strong>Section (mestri).</strong> Which part of the factory makes it. Chapter 7 explains sections.</li>
     <li><strong>Stock kept in.</strong> The unit stock is counted in &mdash; KG for loose, PCS for pieces. Chapter 5.</li>
@@ -1105,6 +1105,7 @@ html { scroll-behavior: smooth; }
     <li><strong>Mode</strong> &mdash; cash, UPI, cheque, bank transfer. From the list you set in chapter 10.</li>
     <li><strong>Reference</strong> &mdash; cheque number, UPI transaction id. Skip for cash.</li>
     <li><strong>Against which bills.</strong> The open bills are listed. Tick the ones this money settles, or let it settle the oldest first, which is the default and usually right.</li>
+    <li><strong>Check the Remaining column.</strong> Beside each bill it shows what is still owed on it <em>after</em> this receipt, and the bold figure at the bottom is the customer's total outstanding once you save. That is the number to read back to the customer while they are still on the phone.</li>
     <li><kbd>Save</kbd>, then <kbd>Print</kbd> if the customer wants a slip.</li>
   </ol>
 

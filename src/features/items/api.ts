@@ -72,6 +72,17 @@ export function getItem(id: string): Promise<ItemRow> {
   return expectOne(supabase.from('v_item_list').select('*').eq('id', id).single());
 }
 
+/**
+ * The next serial code for a new product. A suggestion the person can overwrite
+ * — the unique index on (org_id, item_code) is what actually guarantees it is
+ * free, and it stays the last word.
+ */
+export async function nextItemCode(): Promise<string> {
+  const { data, error } = await supabase.rpc('next_item_code');
+  if (error) throw error;
+  return data ?? '';
+}
+
 export async function itemCodeExists(code: string, exceptId?: string): Promise<boolean> {
   let query = supabase.from('items').select('id').eq('item_code', code).limit(1);
   if (exceptId) query = query.neq('id', exceptId);

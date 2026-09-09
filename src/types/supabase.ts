@@ -10755,6 +10755,7 @@ export type Database = {
         Args: { p_doc_type: string; p_org: string }
         Returns: string
       }
+      next_item_code: { Args: Record<PropertyKey, never>; Returns: string }
       normalize_code: { Args: { p: string }; Returns: string }
       normalize_item_code: { Args: { p: string }; Returns: string }
       normalize_mobile: { Args: { p: string }; Returns: string }

@@ -19,7 +19,7 @@ import { receiptModesApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
-import { amount, dateDMY, money, round, toISODate, toNumber } from '@/lib/format';
+import { amount, dateDMY, money, round, toISODate, toNumber, type Numeric } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { getReceipt, getReceiptAllocations, getReceiptLines, listAllReceipts, listReceipts, saveReceipt } from '../api';
 
@@ -119,6 +119,17 @@ export function ReceiptNewPage() {
   const allocations = manual ? Object.fromEntries(Object.entries(alloc).map(([k, v]) => [k, toNumber(v)])) : fifo;
   const allocated = round(Object.values(allocations).reduce((s, v) => s + v, 0), 2);
   const onAccount = round(total - allocated, 2);
+  /**
+   * What each bill still owes once this receipt is applied. The clerk is asked
+   * this on the phone while the customer is still standing there, and working
+   * it out in their head against a column of balances is how part-payments get
+   * recorded against the wrong invoice.
+   */
+  const remainingOn = (invoiceId: string, balance: Numeric) => round(toNumber(balance) - (allocations[invoiceId] ?? 0), 2);
+  const remainingTotal = round(
+    (open.data ?? []).reduce((s, i) => s + remainingOn(i.invoice_id ?? '', i.balance), 0),
+    2,
+  );
   const modeOf = (id: string) => modes.data?.find((m) => m.id === id);
 
   const save = useMutation({
@@ -200,7 +211,7 @@ export function ReceiptNewPage() {
               <p className="text-sm text-muted-foreground">No open invoices — the full amount stays on account as an advance.</p>
             ) : (
               <Table>
-                <TableHeader><TableRow><TableHead>Invoice</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Balance</TableHead><TableHead className="w-32 text-right">Allocate</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Invoice</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Balance</TableHead><TableHead className="w-32 text-right">Allocate</TableHead><TableHead className="text-right">Remaining</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {(open.data ?? []).map((i) => {
                     const id = i.invoice_id ?? '';
@@ -208,13 +219,14 @@ export function ReceiptNewPage() {
                       <TableRow key={id}>
                         <TableCell className="font-medium">{i.invoice_no}</TableCell><TableCell>{dateDMY(i.invoice_date)}</TableCell><TableCell className="num">{amount(i.balance)}</TableCell>
                         <TableCell className="num">{manual ? <Input type="number" step="0.01" className="num h-8" aria-label={`Allocate to ${i.invoice_no}`} value={alloc[id] ?? ''} onChange={(ev) => setAlloc((p) => ({ ...p, [id]: ev.target.value }))} /> : amount(fifo[id] ?? 0)}</TableCell>
+                        <TableCell className={remainingOn(id, i.balance) === 0 ? 'num text-muted-foreground' : 'num'}>{amount(remainingOn(id, i.balance))}</TableCell>
                       </TableRow>
                     );
                   })}
                 </TableBody>
                 <TableFooter>
-                  <TableRow><TableCell colSpan={3} className="text-right">Allocated</TableCell><TableCell className="num">{amount(allocated)}</TableCell></TableRow>
-                  <TableRow><TableCell colSpan={3} className="text-right">On account</TableCell><TableCell className={onAccount < 0 ? 'num text-destructive' : 'num'}>{amount(onAccount)}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={3} className="text-right">Allocated</TableCell><TableCell className="num">{amount(allocated)}</TableCell><TableCell className="num font-semibold">{amount(remainingTotal)}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={3} className="text-right">On account</TableCell><TableCell className={onAccount < 0 ? 'num text-destructive' : 'num'}>{amount(onAccount)}</TableCell><TableCell className="text-right text-xs font-normal text-muted-foreground">still owed</TableCell></TableRow>
                 </TableFooter>
               </Table>
             )}

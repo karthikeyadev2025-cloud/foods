@@ -14,7 +14,7 @@ import { packTypesApi, sectionsApi, uomsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { int, money } from '@/lib/format';
 import { boxRate, normalizeItemCode, parsePackingFromName, piecesPerBox } from '@/lib/units';
-import { createItem, itemCodeExists, updateItem, uploadItemImage, type ItemRow, type ItemUpdate } from '../api';
+import { createItem, itemCodeExists, nextItemCode, updateItem, uploadItemImage, type ItemRow, type ItemUpdate } from '../api';
 import { ITEM_DEFAULTS, ITEM_TYPES, itemSchema, type ItemInput } from '../schema';
 
 const norm = (s: string) => s.toUpperCase().replace(/[\s.]+/g, '');
@@ -136,6 +136,18 @@ export function ItemForm({ item }: { item?: ItemRow }) {
     if (pick) setValue('base_uom_id', pick.id, { shouldDirty: false });
   }, [uoms.data, packCode, isFinished, getValues, setValue]);
 
+  /**
+   * A new product opens with the next serial code already filled in, so the
+   * master stays in order and nobody has to go and look up which numbers are
+   * free. It is only a suggestion — the field stays editable, because a repack
+   * is written 27A by hand and must not disturb the count.
+   */
+  const suggested = useQuery({ queryKey: ['items', 'next-code'], queryFn: nextItemCode, enabled: !isEdit });
+  useEffect(() => {
+    if (isEdit || !suggested.data || getValues('item_code')) return;
+    setValue('item_code', suggested.data, { shouldDirty: false });
+  }, [isEdit, suggested.data, getValues, setValue]);
+
   // Raw and packing materials have no box packing: 1 unit = 1 piece.
   useEffect(() => {
     if (!isFinished) {
@@ -157,7 +169,8 @@ export function ItemForm({ item }: { item?: ItemRow }) {
     mutationFn: async (v: ItemInput) => {
       const code = normalizeItemCode(v.item_code);
       if (await itemCodeExists(code, item?.id ?? undefined)) {
-        throw new Error(`Item code ${code} already exists. Codes are unique — for a repack use a new code like ${code}A or ${code} NEW.`);
+        const free = await nextItemCode();
+        throw new Error(`Item code ${code} is already used. Codes are unique — ${free} is free, or write ${code}A if this is a repack of ${code}.`);
       }
       const values = {
         item_code: code,
@@ -204,7 +217,7 @@ export function ItemForm({ item }: { item?: ItemRow }) {
           <CardTitle>Identity</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-3">
-          <Field label="Item code" htmlFor="it-code" error={e.item_code?.message} help="Text, e.g. 27A or 06A. Unique.">
+          <Field label="Item code" htmlFor="it-code" error={e.item_code?.message} help={isEdit ? 'Fixed once the product exists.' : 'The next serial, filled in for you. Change it for a repack — 27A, 06A.'}>
             <Input id="it-code" autoFocus={!isEdit} disabled={isEdit} className="uppercase" {...register('item_code')} />
           </Field>
           <Field label="Type" htmlFor="it-type" error={e.type?.message}>

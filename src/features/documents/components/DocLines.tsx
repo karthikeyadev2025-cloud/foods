@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { effectiveUnitRate, searchItems, type ItemRow } from '@/features/items/api';
-import { amount, int, qty, toNumber } from '@/lib/format';
+import { amount, qty, toNumber } from '@/lib/format';
 import { invoiceLine, invoiceTotals } from '@/lib/units';
 import { nextLineKey, type DocLine } from '../api';
 
@@ -101,7 +101,7 @@ export function DocLines({ lines, onChange, editable, customerId, date, showRate
         <TableFooter>
           <TableRow>
             <TableCell colSpan={4} className="text-right">Total</TableCell>
-            <TableCell className="num">{qty(totals.totalBoxes)}</TableCell><TableCell className="num">{int(totals.totalQty)}</TableCell>
+            <TableCell className="num">{qty(totals.totalBoxes)}</TableCell><TableCell />
             {showRate && <TableCell />}{showRate && <TableCell className="num">{amount(totals.netAmount)}</TableCell>}
             {editable && <TableCell />}
           </TableRow>

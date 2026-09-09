@@ -101,21 +101,24 @@ export function invoiceLine(input: InvoiceLineInput): InvoiceLine {
 
 export interface InvoiceTotals {
   totalBoxes: number;
-  totalQty: number;
   netAmount: number;
 }
 
-/** Footer figures: total boxes, total qty, net amount. */
-export function invoiceTotals(lines: readonly Pick<InvoiceLine, 'boxes' | 'qty' | 'total'>[]): InvoiceTotals {
+/**
+ * Footer figures: total boxes and net amount.
+ *
+ * Deliberately no total quantity. Adding up the quantity column sums pieces of
+ * one item to jars of another, so the figure reads like a count of goods and
+ * means nothing — boxes are what the shop loads, checks and argues about.
+ */
+export function invoiceTotals(lines: readonly Pick<InvoiceLine, 'boxes' | 'total'>[]): InvoiceTotals {
   let totalBoxes = 0;
-  let totalQty = 0;
   let netAmount = 0;
   for (const l of lines) {
     totalBoxes += l.boxes;
-    totalQty += l.qty;
     netAmount += l.total;
   }
-  return { totalBoxes: round(totalBoxes, 3), totalQty: round(totalQty, 3), netAmount: round(netAmount, 2) };
+  return { totalBoxes: round(totalBoxes, 3), netAmount: round(netAmount, 2) };
 }
 
 /**

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { amount, int, qty } from '@/lib/format';
+import { amount, qty } from '@/lib/format';
 import { amountInWords } from '@/lib/money';
 import { fillTerms, showField, type PrintOrg, type PrintTemplateLike } from './template';
 
@@ -65,7 +65,6 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
   };
   const colCount = 3 + Number(cols.code) + Number(cols.jars) + Number(cols.qty) + Number(cols.rate) + Number(cols.amount) - 1;
   const totalBoxes = lines.reduce((s, l) => s + l.boxes, 0);
-  const totalQty = lines.reduce((s, l) => s + l.qty, 0);
   const terms = fillTerms(template?.terms, org);
   const cell = 'border-r border-black px-1';
   const orgName = org?.org_name ?? 'JYOTHI FOODS';
@@ -148,7 +147,8 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
           <tr className="border-t border-black font-bold">
             <td colSpan={2 + Number(cols.code) + Number(cols.jars)} className={`${cell} text-right`}>Total:</td>
             <td className={`${cell} text-right tabular-nums`}>{qty(totalBoxes)}</td>
-            {cols.qty && <td className={`${cell} text-right tabular-nums`}>{int(totalQty)}</td>}
+            {/* No quantity total: it would add pieces of one item to jars of another. */}
+            {cols.qty && <td className={cell} />}
             {cols.rate && <td className={cell} />}
             {cols.amount && <td />}
           </tr>

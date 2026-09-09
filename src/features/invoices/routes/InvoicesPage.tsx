@@ -14,7 +14,7 @@ import { usePermissions } from '@/features/auth/hooks';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
-import { amount, dateDMY, int, qty } from '@/lib/format';
+import { amount, dateDMY, qty } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { INVOICE_STATUSES, listAllInvoices, listInvoices, type InvoiceStatus } from '../api';
 
@@ -56,7 +56,6 @@ export function InvoicesPage() {
           Town: r.customer_town,
           Status: r.status,
           Boxes: Number(r.total_boxes ?? 0),
-          Qty: Number(r.total_qty ?? 0),
           Subtotal: Number(r.subtotal ?? 0),
           Freight: Number(r.freight ?? 0),
           'Net amount': Number(r.total ?? 0),
@@ -134,7 +133,6 @@ export function InvoicesPage() {
                 <TableHead>Customer</TableHead>
                 <TableHead>Town</TableHead>
                 <TableHead className="text-right">Boxes</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
                 <TableHead className="text-right">Net</TableHead>
                 <TableHead className="text-right">Balance</TableHead>
                 <TableHead>Status</TableHead>
@@ -155,7 +153,6 @@ export function InvoicesPage() {
                   <TableCell>{r.customer_name}</TableCell>
                   <TableCell className="text-muted-foreground">{r.customer_town ?? '—'}</TableCell>
                   <TableCell className="num">{qty(r.total_boxes)}</TableCell>
-                  <TableCell className="num">{int(r.total_qty)}</TableCell>
                   <TableCell className="num">{amount(r.total)}</TableCell>
                   <TableCell className={Number(r.balance ?? 0) > 0 && r.status !== 'cancelled' ? 'num font-medium' : 'num text-muted-foreground'}>
                     {r.status === 'cancelled' || r.status === 'draft' ? '—' : amount(r.balance)}

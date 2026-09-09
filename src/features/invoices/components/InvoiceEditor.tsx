@@ -21,7 +21,7 @@ import { stockLocationsApi } from '@/features/setup/api';
 import { listVehicles } from '@/features/vehicles/api';
 import { listOpenTrips } from '@/features/vehicles/trips-api';
 import { toast, toastError } from '@/hooks/use-toast';
-import { amount, dateDMY, int, qty, toISODate, toNumber } from '@/lib/format';
+import { amount, dateDMY, qty, toISODate, toNumber } from '@/lib/format';
 import { amountInWords } from '@/lib/money';
 import { invoiceLine, invoiceTotals } from '@/lib/units';
 import {
@@ -531,7 +531,7 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
                       Total
                     </TableCell>
                     <TableCell className="num">{qty(totals.totalBoxes)}</TableCell>
-                    <TableCell className="num">{int(totals.totalQty)}</TableCell>
+                    <TableCell />
                     <TableCell />
                     <TableCell className="num">{amount(totals.netAmount)}</TableCell>
                     {canEdit && <TableCell />}

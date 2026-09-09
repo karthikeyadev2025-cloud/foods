@@ -45,8 +45,10 @@ describe('invoice line maths', () => {
     expect(lines).toHaveLength(17);
     const t = invoiceTotals(lines);
     expect(t.totalBoxes).toBe(32);
-    expect(t.totalQty).toBe(753);
     expect(t.netAmount).toBe(34258);
+    // No quantity total on purpose: the client asked for boxes only, because
+    // summing the qty column adds pieces of one item to jars of another.
+    expect(t).not.toHaveProperty('totalQty');
   });
 
   it('refuses a zero or missing packing instead of falling back to 8', () => {

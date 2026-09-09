@@ -93,7 +93,7 @@ export function DocumentSearch() {
       <Input
         ref={inputRef}
         className="h-8 pl-8"
-        placeholder="Search any bill — number, customer or town"
+        placeholder="Search any bill — number, name, phone, item, amount"
         aria-label="Search all bills"
         value={text}
         onChange={(ev) => {
@@ -112,7 +112,8 @@ export function DocumentSearch() {
             <p role="alert" className="p-3 text-sm text-destructive">{(hits.error as Error).message}</p>
           ) : !rows.length ? (
             <p className="p-3 text-sm text-muted-foreground">
-              Nothing found for “{term}”. Try the bill number on its own, or the customer&rsquo;s name.
+              Nothing found for “{term}”. You can search by bill number, customer or supplier, phone number, town,
+              item, amount, vehicle, cheque number or anything typed in the notes.
             </p>
           ) : (
             rows.map((hit, i) => (

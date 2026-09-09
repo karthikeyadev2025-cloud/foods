@@ -136,8 +136,8 @@ export function PurchaseEditor() {
               onPicked={focusCode}
             />
           </Field>
-          <Field label="Bill no." htmlFor="pu-bill" error={e.bill_no?.message}>
-            <Input id="pu-bill" {...register('bill_no')} />
+          <Field label="Bill no." htmlFor="pu-bill" error={e.bill_no?.message} help="Leave blank and it is numbered for you. Type the supplier's own number when their bill has one.">
+            <Input id="pu-bill" placeholder="Numbered automatically" {...register('bill_no')} />
           </Field>
           <Field label="Bill date" htmlFor="pu-date" error={e.bill_date?.message}>
             <Input id="pu-date" type="date" {...register('bill_date')} />

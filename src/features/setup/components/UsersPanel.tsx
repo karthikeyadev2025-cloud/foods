@@ -181,10 +181,10 @@ function NewUserDialog({ isOwner, onClose }: { isOwner: boolean; onClose: () => 
           <Field label="Full name" htmlFor="nu-name" error={e.full_name?.message} className="col-span-2">
             <Input id="nu-name" autoFocus {...form.register('full_name')} />
           </Field>
-          <Field label="Email (login)" htmlFor="nu-email" error={e.email?.message}>
-            <Input id="nu-email" type="email" autoComplete="off" {...form.register('email')} />
+          <Field label="Email (login)" htmlFor="nu-email" error={e.email?.message} help="Leave blank if this person never signs in.">
+            <Input id="nu-email" type="email" autoComplete="off" placeholder="Not needed for a driver or mestri" {...form.register('email')} />
           </Field>
-          <Field label="Password" htmlFor="nu-password" error={e.password?.message} help="At least 8 characters.">
+          <Field label="Password" htmlFor="nu-password" error={e.password?.message} help="Only if you gave an email. At least 8 characters.">
             <Input id="nu-password" type="password" autoComplete="new-password" {...form.register('password')} />
           </Field>
           <Field label="Phone" htmlFor="nu-phone" error={e.phone?.message}>

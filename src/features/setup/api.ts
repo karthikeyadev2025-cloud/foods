@@ -145,11 +145,33 @@ export interface CreateUserInput {
 }
 
 /**
- * Creating a login needs the service role, so it runs in the `create-user` edge
+ * Creating a LOGIN needs the service role, so it runs in the `create-user` edge
  * function (supabase/functions/create-user). The function checks the caller is an
  * owner/admin of the org and inserts the staff row.
+ *
+ * Someone who will never sign in needs no login and no edge function — just the
+ * staff row, which staff_write already lets an owner or admin insert. That is
+ * most of this list: drivers, mestris, anybody who exists here to be picked from
+ * a dropdown or counted in the attendance register. staff.auth_uid is nullable
+ * precisely so a person can exist without an account.
  */
 export async function createUser(input: CreateUserInput): Promise<Staff> {
+  if (!input.email.trim()) {
+    return expectOne(
+      supabase
+        .from('staff')
+        .insert({
+          org_id: await currentOrgId(),
+          full_name: input.full_name,
+          phone: input.phone,
+          role: input.role,
+          is_mestry: input.is_mestry,
+          daily_wage: input.daily_wage,
+        })
+        .select('*')
+        .single(),
+    );
+  }
   const { data, error } = await supabase.functions.invoke<{ staff: Staff } | { error: string }>('create-user', {
     body: input,
   });

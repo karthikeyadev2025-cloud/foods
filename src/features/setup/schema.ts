@@ -175,15 +175,35 @@ export const STAFF_ROLES = [
   'sales_exec',
 ] as const;
 
-export const newUserSchema = z.object({
-  full_name: name,
-  email: z.string().trim().min(1, 'Email is required').email('Enter a valid email'),
-  password: z.string().min(8, 'At least 8 characters'),
-  phone: optionalText,
-  role: z.enum(STAFF_ROLES),
-  is_mestry: z.boolean(),
-  daily_wage: z.coerce.number().min(0),
-});
+export const newUserSchema = z
+  .object({
+    full_name: name,
+    email: z.string().trim().max(120),
+    password: z.string().max(72),
+    phone: optionalText,
+    role: z.enum(STAFF_ROLES),
+    is_mestry: z.boolean(),
+    daily_wage: z.coerce.number().min(0),
+  })
+  /**
+   * A login is optional. Most of the people on this list never sign in — a
+   * driver whose work is the trip sheet, a mestri named on a section, anyone
+   * whose only reason to exist here is to be picked from a dropdown or counted
+   * in attendance. Demanding an email invented one, and an invented email is a
+   * login nobody controls.
+   *
+   * The two halves go together though: an email with no password is an account
+   * that cannot be used, and a password with no email has nothing to attach to.
+   */
+  .refine((v) => !v.email || v.email.includes('@'), { path: ['email'], message: 'Enter a valid email' })
+  .refine((v) => !v.email || v.password.length >= 8, {
+    path: ['password'],
+    message: 'A login needs a password of at least 8 characters',
+  })
+  .refine((v) => !v.password || Boolean(v.email), {
+    path: ['email'],
+    message: 'A password needs an email to sign in with',
+  });
 export type NewUserInput = z.infer<typeof newUserSchema>;
 
 export const editUserSchema = z.object({

@@ -10998,6 +10998,10 @@ export type Database = {
         Args: { p_org: string; p_valid_till: string }
         Returns: undefined
       }
+      reopen_invoice: {
+        Args: { p_invoice: string }
+        Returns: Database["public"]["Enums"]["invoice_status"]
+      }
       reorder_sections: { Args: { p_ids: string[] }; Returns: undefined }
       require_feature: { Args: { p_feature: string }; Returns: undefined }
       restore_org_snapshot: { Args: { p: Json }; Returns: Json }

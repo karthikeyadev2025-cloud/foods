@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Printer, Trash2 } from 'lucide-react';
+import { Pencil, Printer, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
@@ -28,6 +28,7 @@ import {
   INVOICE_STATUSES,
   assignVehicle,
   saveInvoice,
+  reopenInvoice,
   setInvoiceStatus,
   type InvoiceLineRow,
   type InvoiceRow,
@@ -109,6 +110,7 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
   const rateRef = useRef<HTMLInputElement>(null);
   const codeWrapRef = useRef<HTMLDivElement>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
 
   const invoiceDate = watch('invoice_date');
   const tripId = watch('trip_id');
@@ -230,6 +232,22 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
     onError: (err) => toastError(err, 'Could not change status'),
   });
 
+  /**
+   * Correcting a confirmed bill. The invoice goes back to draft with its stock
+   * and ledger reversed, so the same screen that wrote it can rewrite it — and
+   * it keeps its number, which is the whole point: the customer already has that
+   * number on their copy.
+   */
+  const reopen = useMutation({
+    mutationFn: () => reopenInvoice(invoice?.id ?? ''),
+    onSuccess: async (from) => {
+      await invalidate();
+      setReopenOpen(false);
+      toast({ title: `Invoice ${invoice?.invoice_no} is a draft again`, description: `Stock and ledger from the ${from} bill have been reversed. Save and confirm to post the corrected figures.` });
+    },
+    onError: (err) => toastError(err, 'Could not reopen the invoice'),
+  });
+
   const vehicle = useMutation({
     mutationFn: (vehicleId: string) => assignVehicle(invoice?.id ?? '', vehicleId || null),
     onSuccess: async () => {
@@ -274,6 +292,11 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
             {perms.canEdit('invoices') && invoice.status === 'dispatched' && (
               <Button size="sm" variant="secondary" onClick={() => status.mutate('delivered')} disabled={status.isPending}>
                 Mark delivered
+              </Button>
+            )}
+            {perms.canEdit('invoices') && invoice.status !== 'draft' && invoice.status !== 'cancelled' && (
+              <Button size="sm" variant="outline" onClick={() => setReopenOpen(true)} disabled={reopen.isPending}>
+                <Pencil /> Edit invoice
               </Button>
             )}
             {perms.canEdit('invoices') && invoice.status !== 'cancelled' && invoice.status !== 'delivered' && (
@@ -600,6 +623,27 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
           </div>
         )}
       </form>
+
+      <Dialog open={reopenOpen} onOpenChange={setReopenOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit invoice {invoice?.invoice_no}?</DialogTitle>
+            <DialogDescription>
+              It goes back to a draft so you can change the lines. The goods return to stock and the ledger entry is
+              reversed until you confirm it again. The invoice keeps its number, so the copy the customer already has
+              still matches.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReopenOpen(false)}>
+              Leave it
+            </Button>
+            <Button onClick={() => reopen.mutate()} disabled={reopen.isPending}>
+              Edit invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="max-w-sm">

@@ -101,6 +101,17 @@ export async function setInvoiceStatus(id: string, status: InvoiceStatus): Promi
   if (error) throw error;
 }
 
+/**
+ * Put a confirmed invoice back to draft so it can be corrected, reversing its
+ * stock and ledger posting on the way. Refuses if a receipt or a return has
+ * already been raised against it. Returns the status it came from.
+ */
+export async function reopenInvoice(id: string): Promise<InvoiceStatus> {
+  const { data, error } = await supabase.rpc('reopen_invoice', { p_invoice: id });
+  if (error) throw error;
+  return (data ?? 'draft') as InvoiceStatus;
+}
+
 /** Vehicle is assigned after the invoice exists, at any status. */
 export async function assignVehicle(id: string, vehicleId: string | null): Promise<void> {
   const { error } = await supabase.from('invoices').update({ vehicle_id: vehicleId }).eq('id', id);

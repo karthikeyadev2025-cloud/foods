@@ -698,7 +698,7 @@ html { scroll-behavior: smooth; }
   <ol class="steps">
     <li>Press <kbd>Add user</kbd>.</li>
     <li><strong>Name</strong> &mdash; the person's real name, as you would say it out loud.</li>
-    <li><strong>Email and password</strong> &mdash; these are their login. <em>Leave both blank</em> if this person will never sign in &mdash; a mestri who only needs to be named on sections and batches does not need a login at all.</li>
+    <li><strong>Email and password</strong> &mdash; these are their login, and they are <em>optional</em>. Leave both blank for anyone who will never sign in: a driver whose work is the trip sheet, a mestri named on sections and batches, anyone who only needs to be picked from a list or counted in the attendance register. Do not invent an email to get past the form &mdash; an invented email is a login nobody controls. Give a login only to people who will actually open the program, and then fill in both boxes.</li>
     <li><strong>Role</strong> &mdash; see the table below.</li>
     <li>Tick <strong>Is a mestri (runs a section)</strong> if they head a section.</li>
     <li>Press <kbd>Save</kbd>.</li>
@@ -1021,7 +1021,26 @@ html { scroll-behavior: smooth; }
   </ol>
 
   <div class="warn">
-    <p><b>Correcting a bill.</b> A saved invoice can be edited on the same day. After that, do not edit it &mdash; the numbers have already reached reports and the customer's account. Raise a <strong>sales return</strong> (chapter 21) or a fresh bill. This is not the system being awkward; it is the difference between a book you can defend and one you cannot.</p>
+    <p><b>Correcting a bill.</b> Open it and press <kbd>Edit invoice</kbd>. See below &mdash; it is safe, and the bill keeps its number.</p>
+  </div>
+  <h4>Changing a bill you have already saved</h4>
+  <p>Open the invoice from the list and press <kbd>Edit invoice</kbd> at the top. Confirm the message, change what is wrong, and press <kbd>Save</kbd> then confirm it again.</p>
+
+  <p>What the system does behind that button, so nobody has to wonder:</p>
+  <ul>
+    <li>The goods go <strong>back into stock</strong>, so the shelf figure is right while you are editing.</li>
+    <li>The accounts entry is <strong>reversed</strong>, so the customer does not owe for the bill twice.</li>
+    <li>The bill goes back to being a <strong>draft</strong> so its lines can be changed.</li>
+    <li>Confirming again posts the corrected stock and the corrected amount, once.</li>
+    <li><strong>The invoice number does not change.</strong> That is the whole point &mdash; the customer already has that number on their copy.</li>
+  </ul>
+
+  <div class="warn">
+    <p><b>Two things stop an edit, on purpose.</b> If a <strong>receipt</strong> has been entered against the bill, or a <strong>return</strong> raised on it, the screen refuses and says which. Undo that first. Money and goods that have already moved must be unwound deliberately by a person who can see what they are unwinding &mdash; not silently by a button.</p>
+  </div>
+
+  <div class="note">
+    <p><b>Every version is kept.</b> <span class="path">Setup &rsaquo; Audit trail</span> records who edited the bill, when, and what changed. Correcting an honest mistake is normal; the record of it is what keeps the book defensible.</p>
   </div>
 </section>
 

@@ -10481,6 +10481,20 @@ export type Database = {
         Args: { p_ref_id: string; p_ref_table: string }
         Returns: string
       }
+      duplicate_stock_rows: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          copies: number
+          item_code: string
+          item_id: string
+          location_name: string
+          name: string
+          qty_base: number
+          ref_table: string
+          txn_date: string
+          txn_type: string
+        }[]
+      }
       ean13_check: { Args: { p_body: string }; Returns: string }
       effective_unit_rate: {
         Args: { p_customer: string; p_date?: string; p_item: string }
@@ -10622,6 +10636,16 @@ export type Database = {
           level: string
         }[]
       }
+      item_data_problems: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          fix: string
+          item_code: string
+          item_id: string
+          name: string
+          problem: string
+        }[]
+      }
       item_profit: {
         Args: { p_from: string; p_group?: string; p_org: string; p_to: string }
         Returns: {
@@ -10760,6 +10784,24 @@ export type Database = {
         Returns: Database["public"]["Enums"]["staff_role"]
       }
       my_staff_id: { Args: Record<PropertyKey, never>; Returns: string }
+      negative_stock: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          boxes: number
+          came_in: number
+          item_code: string
+          item_id: string
+          last_moved: string
+          location_id: string
+          location_name: string
+          movements: number
+          name: string
+          qty_base: number
+          section_name: string
+          units_per_box: number
+          went_out: number
+        }[]
+      }
       next_doc_no: {
         Args: { p_doc_type: string; p_org: string }
         Returns: string
@@ -11002,6 +11044,10 @@ export type Database = {
           skip_reason: string
           town: string
         }[]
+      }
+      remove_duplicate_stock_rows: {
+        Args: { p_apply?: boolean }
+        Returns: number
       }
       remove_license_device: { Args: { p_id: string }; Returns: undefined }
       render_template: {

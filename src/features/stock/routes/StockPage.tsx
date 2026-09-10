@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
-import { Fragment, useMemo, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Fragment, useMemo, useState, useEffect } from 'react';
+import { NavLink, useSearchParams } from 'react-router-dom';
 import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
 import { PageHeader } from '@/components/PageHeader';
@@ -14,13 +14,14 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FeatureLocked } from '@/features/auth/components/RequireFeature';
 import { useMe, usePermissions } from '@/features/auth/hooks';
-import { searchItems, type ItemRow } from '@/features/items/api';
+import { getItem, searchItems, type ItemRow } from '@/features/items/api';
 import type { FeatureKey } from '@/lib/permissions';
 import { sectionsApi, stockLocationsApi } from '@/features/setup/api';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, dateTimeDMY, qty, toISODate, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { closingStock, listItemStock, stockMovements, type ClosingStockRow } from '../api';
+import { DataHealth } from '../components/health';
 import { BarcodesPanel, BatchesPanel, CountsPanel, TransfersPanel } from '../components/inventory';
 
 const TABS: { key: string; label: string; feature?: FeatureKey }[] = [
@@ -31,8 +32,11 @@ const TABS: { key: string; label: string; feature?: FeatureKey }[] = [
   { key: 'transfers', label: 'Transfers', feature: 'inventory' },
   { key: 'counts', label: 'Stock count', feature: 'inventory' },
   { key: 'barcodes', label: 'Barcodes', feature: 'inventory' },
+  // Core, not an inventory extra: a shop on Starter has the same bad rows as
+  // one on Full, and no other way to find them.
+  { key: 'health', label: 'Problems' },
 ];
-export type StockTab = 'closing' | 'movements' | 'low' | 'batches' | 'transfers' | 'counts' | 'barcodes';
+export type StockTab = 'closing' | 'movements' | 'low' | 'batches' | 'transfers' | 'counts' | 'barcodes' | 'health';
 
 export function StockPage({ tab = 'closing' }: { tab?: StockTab }) {
   const perms = usePermissions();
@@ -59,6 +63,7 @@ export function StockPage({ tab = 'closing' }: { tab?: StockTab }) {
           {tab === 'transfers' && <TransfersPanel />}
           {tab === 'counts' && <CountsPanel />}
           {tab === 'barcodes' && <BarcodesPanel />}
+          {tab === 'health' && <DataHealth />}
         </>
       )}
     </div>
@@ -184,6 +189,23 @@ function ClosingStock() {
 
 function Movements() {
   const [item, setItem] = useState<ItemRow | null>(null);
+  /**
+   * Arriving from Problems with ?item=... — that screen names a product whose
+   * stock has gone below nothing, and the next question is always "which
+   * movement did that", so it hands the item over rather than making the
+   * person find it again in a list of two hundred.
+   */
+  const [params] = useSearchParams();
+  const wanted = params.get('item');
+  const preset = useQuery({
+    queryKey: ['items', 'one', wanted],
+    queryFn: () => getItem(wanted ?? ''),
+    enabled: Boolean(wanted) && !item,
+  });
+  useEffect(() => {
+    if (preset.data && !item) setItem(preset.data);
+  }, [preset.data, item]);
+
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [locationId, setLocationId] = useState('');

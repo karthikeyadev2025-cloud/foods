@@ -46,7 +46,8 @@ with expected(ord, file, kind, obj, detail) as (
     (33, '33_document_search.sql','function','search_documents',           'one search across every kind of bill'),
     (34, '34_search_any_detail.sql','fixed','search_documents#invoice_items', 'search by phone, amount, item, vehicle, cheque or note'),
     (35, '35_search_masters.sql','fixed',   'search_documents#v_supplier_list', 'the search finds people and products, not only their bills'),
-    (36, '36_delete_and_void.sql','function','delete_master',              'delete and cancel on every screen')
+    (36, '36_delete_and_void.sql','function','delete_master',              'delete and cancel on every screen'),
+    (37, '37_data_health.sql',  'function', 'negative_stock',              'Stock > Problems: negative stock, unusable products, duplicate rows')
 )
 select
   e.ord                                          as "#",

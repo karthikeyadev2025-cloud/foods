@@ -168,6 +168,7 @@ export const router = createRouter([
             { path: 'stock/counts', element: <StockPage tab="counts" /> },
             { path: 'stock/counts/:id', element: <CountSheetPage /> },
             { path: 'stock/barcodes', element: <StockPage tab="barcodes" /> },
+          { path: 'stock/health', element: <StockPage tab="health" /> },
           ]),
           guarded('production', [
             { path: 'production', element: <ProductionPage /> },

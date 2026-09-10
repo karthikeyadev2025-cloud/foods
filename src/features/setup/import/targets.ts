@@ -22,6 +22,8 @@ export interface ImportTarget {
   description: string;
   fields: ImportField[];
   needsLocation?: boolean;
+  /** Has fields that must match a Setup list — so the file may name one that does not exist yet. */
+  hasLookups?: boolean;
   bundled?: BundledFile[];
 }
 
@@ -42,7 +44,8 @@ export const IMPORT_TARGETS: ImportTarget[] = [
     key: 'items',
     label: 'Items',
     description:
-      'Matched by item code (text: 27A, 06A…). Packing is required and never assumed to be 8. Pack type and section must already exist in Setup.',
+      'Matched by item code (text: 27A, 06A…). Packing is required and never assumed to be 8. Pack type and section must already exist in Setup, unless you ask for them to be created.',
+    hasLookups: true,
     fields: [
       { key: 'item_code', label: 'Item code', required: true, aliases: ['code', 'itemcode', 'itemno'] },
       { key: 'name', label: 'Item name', required: true, aliases: ['itemname', 'groupitemname', 'description'] },

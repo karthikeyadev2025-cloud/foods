@@ -439,6 +439,8 @@ export interface ImportResult {
 export type ImportOptions = {
   location_id?: string;
   txn_date?: string;
+  /** Create pack types and sections the file names but Setup has never seen (db/38). */
+  create_lookups?: boolean;
 };
 
 function asRecord(v: unknown): Record<string, unknown> {

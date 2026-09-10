@@ -15,6 +15,7 @@ import { dateTimeDMY, int, toISODate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { listImportJobs, listStaff, runImport, stockLocationsApi, type ImportResult } from '../api';
 import { autoMap, buildRows, missingRequired, parseSpreadsheet, type ColumnMap, type ParsedFile } from '../import/parse';
+import { groupProblems } from '../import/problems';
 import { IMPORT_TARGETS, findTarget, type ImportTarget } from '../import/targets';
 
 type Step = 'source' | 'map' | 'preview' | 'done';
@@ -39,6 +40,7 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
   const [loadingFile, setLoadingFile] = useState(false);
   // The workbook as read, so another sheet can be opened without re-uploading.
   const [book, setBook] = useState<ArrayBuffer | null>(null);
+  const [createLookups, setCreateLookups] = useState(false);
 
   const target = findTarget(targetKey) ?? IMPORT_TARGETS[0];
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list, enabled: Boolean(target?.needsLocation) });
@@ -100,10 +102,14 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
   };
 
   const options = useMemo(
-    () => (target?.needsLocation ? { location_id: locationId, txn_date: txnDate } : {}),
-    [target, locationId, txnDate],
+    () => ({
+      ...(target?.needsLocation ? { location_id: locationId, txn_date: txnDate } : {}),
+      ...(target?.hasLookups && createLookups ? { create_lookups: true } : {}),
+    }),
+    [target, locationId, txnDate, createLookups],
   );
   const rows = useMemo(() => (file ? buildRows(file, map) : []), [file, map]);
+  const problems = useMemo(() => groupProblems(result?.error_rows ?? []), [result]);
   const missing = target ? missingRequired(map, target.fields) : [];
   const optionsMissing = Boolean(target?.needsLocation) && !locationId;
 
@@ -327,6 +333,31 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
             </div>
           )}
 
+          {/*
+            Pack type and section are optional fields that must match a Setup
+            list. Before this, a file naming a pack type Setup had never seen
+            lost the whole product — 250 rows, 250 errors, over a label that
+            touches no figure. Off by default all the same: this is how "BOX",
+            "Box" and "BOZ" become three pack types.
+          */}
+          {target.hasLookups && (
+            <label className="flex max-w-3xl cursor-pointer items-start gap-2 rounded-md border p-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1 accent-primary"
+                checked={createLookups}
+                onChange={(e) => setCreateLookups(e.target.checked)}
+              />
+              <span>
+                <span className="font-medium">Create missing pack types and sections</span>
+                <span className="block text-xs text-muted-foreground">
+                  A pack type or section your file names but Setup has never seen is created as it appears, instead of
+                  the product being skipped. Check the spelling first — BOX and BOZ would become two pack types.
+                </span>
+              </span>
+            </label>
+          )}
+
           <div className="flex items-center justify-between">
             <Button variant="outline" onClick={reset}>
               Start over
@@ -369,6 +400,31 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
                   <Download /> Download error rows
                 </Button>
               </div>
+
+              {/*
+                What is actually wrong, before the row-by-row list. 250 rows of
+                the same sentence reads as 250 problems; it is usually one, and
+                the second one is below the fold where nobody sees it until the
+                next attempt fails for a reason they could have read here.
+              */}
+              <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
+                <p className="text-sm font-medium">
+                  {problems.length === 1 ? 'One thing is wrong:' : `${int(problems.length)} things are wrong:`}
+                </p>
+                <ul className="mt-2 space-y-1.5 text-sm">
+                  {problems.map((p) => (
+                    <li key={p.message}>
+                      <span className="font-medium tabular-nums">{int(p.count)}</span>{' '}
+                      {p.count === 1 ? 'row' : 'rows'} — <span className="text-destructive">{p.message}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        Row {p.rows.join(', ')}
+                        {p.more && ' and more'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
               <div className="max-h-72 overflow-auto rounded-md border">
                 <Table>
                   <TableHeader>

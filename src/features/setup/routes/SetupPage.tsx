@@ -3,6 +3,8 @@ import { Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FeatureLocked } from '@/features/auth/components/RequireFeature';
 import { usePermissions } from '@/features/auth/hooks';
+import { dateTimeDMY } from '@/lib/format';
+import { APP_VERSION, BUILD_SHA, BUILT_AT } from '@/lib/desktop';
 import { cn } from '@/lib/utils';
 import { SETUP_STEPS, type SetupStep } from '../steps';
 
@@ -44,6 +46,16 @@ export function SetupPage() {
         ))}
       </nav>
       {open(current) ? <current.Component /> : <FeatureLocked feature={current.feature!} />}
+
+      {/*
+        Which build is actually running. Without this, "the change is not there"
+        and "the site has not been redeployed" look identical from the outside,
+        and the hunt starts in the wrong place.
+      */}
+      <p className="pt-6 text-xs text-muted-foreground">
+        App version {APP_VERSION} · build <span className="font-mono">{BUILD_SHA}</span>
+        {BUILT_AT && ` · ${dateTimeDMY(BUILT_AT)}`}
+      </p>
     </div>
   );
 }

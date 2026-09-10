@@ -204,6 +204,11 @@ export function ItemsPage() {
                           invalidate={['items']}
                           onDelete={() => deleteMaster('item', r.id ?? '')}
                           onDeactivate={() => updateItem(r.id ?? '', { is_active: false })}
+                          deactivateWarning={
+                            boxes !== 0
+                              ? `${r.name} still shows ${qty(boxes)} boxes in stock. Setting it inactive hides it from new work; it does not clear that figure, and it will keep counting in stock reports.`
+                              : undefined
+                          }
                         />
                       </TableCell>
                     )}

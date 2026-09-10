@@ -196,6 +196,11 @@ export function CustomersPage() {
                         invalidate={['customers']}
                         onDelete={() => deleteMaster('customer', r.id ?? '')}
                         onDeactivate={() => updateCustomer(r.id ?? '', { is_active: false })}
+                        deactivateWarning={
+                          Number(r.outstanding ?? 0) !== 0
+                            ? `${r.name} still owes ${money(r.outstanding)}. Setting them inactive stops new bills; the outstanding stays on the books and in the ageing report until it is collected or written off.`
+                            : undefined
+                        }
                       />
                     </TableCell>
                   )}

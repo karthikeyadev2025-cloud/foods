@@ -26,6 +26,12 @@ export interface DeleteButtonProps {
    * them closing this, finding the record, opening it and hunting for a tick box.
    */
   onDeactivate?: () => Promise<unknown>;
+  /**
+   * What setting this record inactive will NOT deal with — stock still on the
+   * shelf, money still owed. Inactive hides a record from new work; it settles
+   * nothing, and a balance nobody can see any more is worse than one they can.
+   */
+  deactivateWarning?: ReactNode;
 }
 
 /**
@@ -46,6 +52,7 @@ export function DeleteButton({
   disabled,
   onDone,
   onDeactivate,
+  deactivateWarning,
 }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -113,6 +120,9 @@ export function DeleteButton({
           </DialogHeader>
           {refusal && (
             <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{refusal}</p>
+          )}
+          {offerInactive && deactivateWarning && (
+            <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{deactivateWarning}</p>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>

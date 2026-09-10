@@ -37,6 +37,8 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
   const [txnDate, setTxnDate] = useState(toISODate());
   const [result, setResult] = useState<ImportResult | null>(null);
   const [loadingFile, setLoadingFile] = useState(false);
+  // The workbook as read, so another sheet can be opened without re-uploading.
+  const [book, setBook] = useState<ArrayBuffer | null>(null);
 
   const target = findTarget(targetKey) ?? IMPORT_TARGETS[0];
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list, enabled: Boolean(target?.needsLocation) });
@@ -61,11 +63,26 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
     setLoadingFile(true);
     try {
       const buf = await f.arrayBuffer();
+      setBook(buf);
       loadParsed(parseSpreadsheet(buf, f.name));
     } catch (err) {
       toastError(err, 'Could not read the file');
     } finally {
       setLoadingFile(false);
+    }
+  };
+
+  /**
+   * Switch sheets without choosing the file again. A workbook with a sheet per
+   * kind of data is the normal way people keep this, and until now the import
+   * read the first one and said nothing about the others.
+   */
+  const onSheet = (sheet: string) => {
+    if (!book || !file) return;
+    try {
+      loadParsed(parseSpreadsheet(book, file.name, sheet));
+    } catch (err) {
+      toastError(err, 'Could not read that sheet');
     }
   };
 
@@ -181,9 +198,31 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
               <label htmlFor="import-file" className="flex cursor-pointer flex-col items-center gap-2 text-sm">
                 <Upload className="h-6 w-6 text-muted-foreground" aria-hidden />
                 <span className="font-medium">Choose an .xlsx, .xls or .csv file</span>
-                <span className="text-xs text-muted-foreground">First sheet, first row as headers.</span>
+                <span className="text-xs text-muted-foreground">First row is the headings. A file with several sheets lets you pick one.</span>
                 <Input id="import-file" type="file" accept=".xlsx,.xls,.csv" className="max-w-xs" onChange={onFile} disabled={!canEdit || loadingFile} />
               </label>
+            </div>
+
+            {/*
+              A blank template teaches the column names; this one is filled in,
+              so the first import can be tried end to end before anybody types
+              two hundred rows of their own.
+            */}
+            <div className="flex items-start justify-between gap-3 rounded-md border p-2 text-sm">
+              <span>
+                <span className="flex items-center gap-1 font-medium">
+                  <FileSpreadsheet className="h-4 w-4" aria-hidden /> Sample file
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  One sheet per kind — sections, items, customers, opening stock, rates — with the right headings and a
+                  few rows filled in. Open it, replace the rows with yours, and upload it.
+                </span>
+              </span>
+              <Button asChild size="sm" variant="outline">
+                <a href="/seed/sample-import.xlsx" download>
+                  <Download /> Download
+                </a>
+              </Button>
             </div>
             {target.bundled && (
               <div className="space-y-2">
@@ -212,9 +251,20 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
       {step === 'map' && file && (
         <div className="space-y-3">
           <p className="text-sm">
-            <span className="font-medium">{file.name}</span> — {int(file.rows.length)} rows, {file.headers.length} columns.
+            <span className="font-medium">{file.name}</span>
+            {file.sheets.length > 1 && <> — sheet <span className="font-medium">{file.sheet}</span></>}
+            {' — '}{int(file.rows.length)} rows, {file.headers.length} columns.
             Match each field to a column; required fields are marked.
           </p>
+          {file.sheets.length > 1 && (
+            <Field label="Sheet" htmlFor="im-sheet" help="This file has more than one sheet. Only the one chosen here is imported.">
+              <NativeSelect id="im-sheet" className="h-8 w-64" value={file.sheet} onChange={(ev) => onSheet(ev.target.value)}>
+                {file.sheets.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </NativeSelect>
+            </Field>
+          )}
           <div className="rounded-md border">
             <Table>
               <TableHeader>

@@ -5,14 +5,27 @@ export interface ParsedFile {
   name: string;
   headers: string[];
   rows: string[][];
+  /** Every sheet in the workbook, so a multi-sheet file can be chosen from. */
+  sheets: string[];
+  /** The one that was read. */
+  sheet: string;
 }
 
-/** Read the first sheet of an XLSX/XLS/CSV. Cells come back as display strings so "27 A" stays text. */
-export function parseSpreadsheet(data: ArrayBuffer | string, name: string): ParsedFile {
+/**
+ * Read one sheet of an XLSX/XLS/CSV. Cells come back as display strings so
+ * "27 A" stays text.
+ *
+ * `sheet` picks which one; without it the first is read, as before. The sheet
+ * NAMES come back either way, because a workbook of five sheets used to import
+ * its first one and say nothing — the other four looked as though they had
+ * simply not been in the file.
+ */
+export function parseSpreadsheet(data: ArrayBuffer | string, name: string, sheet?: string): ParsedFile {
   const wb = XLSX.read(data, { type: typeof data === 'string' ? 'string' : 'array', raw: false });
-  const first = wb.SheetNames[0];
-  const ws = first ? wb.Sheets[first] : undefined;
-  if (!ws) return { name, headers: [], rows: [] };
+  const sheets = wb.SheetNames ?? [];
+  const chosen = sheet && sheets.includes(sheet) ? sheet : sheets[0];
+  const ws = chosen ? wb.Sheets[chosen] : undefined;
+  if (!ws) return { name, headers: [], rows: [], sheets, sheet: chosen ?? '' };
   const grid = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: false, defval: '', blankrows: false });
   const toText = (v: unknown) => (v === null || v === undefined ? '' : String(v).trim());
   const [head = [], ...body] = grid;
@@ -20,7 +33,7 @@ export function parseSpreadsheet(data: ArrayBuffer | string, name: string): Pars
   const rows = body
     .map((r) => headers.map((_, i) => toText(r[i])))
     .filter((r) => r.some((c) => c !== ''));
-  return { name, headers, rows };
+  return { name, headers, rows, sheets, sheet: chosen ?? '' };
 }
 
 /** "Item Code" → "itemcode", "Units / box" → "unitsbox" */

@@ -165,14 +165,27 @@ select * from (
   -- Read through to_jsonb so this still answers on a database that has not
   -- reached 21 yet: naming the columns directly would make this diagnostic fail
   -- on exactly the databases it is meant to diagnose.
+  -- The plan trial belongs here too. This row used to read "starter plan, valid
+  -- until 2027-09-30" and nothing else, while a ten-day clock ran underneath
+  -- that would shut Purchases, Quotations, Payments, Production and Vans on a
+  -- date nobody had been told. A status of ok over a cliff is a wrong answer.
   select 200 + row_number() over (order by to_jsonb(o)->>'name'), '',
          'organisation: ' || coalesce(to_jsonb(o)->>'name', '?'),
-         case when (to_jsonb(o)->>'license_valid_till')::date < current_date then 'EXPIRED' else 'ok' end,
-         format('%s plan, %s until %s, licence key %s',
+         case when (to_jsonb(o)->>'license_valid_till')::date < current_date then 'EXPIRED'
+              when (to_jsonb(o)->>'plan_full_until')::date >= current_date  then 'TRIAL'
+              else 'ok' end,
+         format('%s plan, %s until %s, licence key %s.%s',
                 coalesce(to_jsonb(o)->>'license_plan', 'unknown'),
                 case when (to_jsonb(o)->>'license_valid_till')::date < current_date then 'EXPIRED' else 'valid' end,
                 coalesce(to_jsonb(o)->>'license_valid_till', '?'),
-                case when (to_jsonb(o)->>'license_key') is not null then 'installed' else 'NOT installed' end)
+                case when (to_jsonb(o)->>'license_key') is not null then 'installed' else 'NOT installed' end,
+                case when (to_jsonb(o)->>'plan_full_until')::date >= current_date
+                     then format(' EVERY screen is open for %s more day(s), until %s — then it drops to %s. To keep them: select set_license_plan(''%s'', ''full'');',
+                                 ((to_jsonb(o)->>'plan_full_until')::date - current_date) + 1,
+                                 to_jsonb(o)->>'plan_full_until',
+                                 coalesce(to_jsonb(o)->>'license_plan', '?'),
+                                 o.id)
+                     else '' end)
     from orgs o
 ) report
 order by ord;

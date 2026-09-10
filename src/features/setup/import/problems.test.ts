@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ImportErrorRow } from '../api';
-import { groupProblems } from './problems';
+import { groupProblems, sampleColumn } from './problems';
 
 const row = (n: number, error: string): ImportErrorRow => ({ row: n, error, data: {} });
 
@@ -48,5 +48,57 @@ describe('groupProblems', () => {
 
   it('returns nothing for no errors', () => {
     expect(groupProblems([])).toEqual([]);
+  });
+});
+
+describe('sampleColumn', () => {
+  // The real shape of the file that failed: packing varies down the column,
+  // pieces-per-unit does not.
+  const rows = [
+    ['1', '8', '38'],
+    ['2', '48', '38'],
+    ['3', '21', '38'],
+    ['4', '8', '38'],
+  ];
+
+  it('flags the column that reads the same on every row', () => {
+    const s = sampleColumn(rows, 2);
+    expect(s.constant).toBe(true);
+    expect(s.values).toEqual(['38']);
+  });
+
+  it('does not flag a column that actually varies', () => {
+    const s = sampleColumn(rows, 1);
+    expect(s.constant).toBe(false);
+    expect(s.values).toEqual(['8', '48', '21']);
+  });
+
+  it('shows a handful of distinct values and says there are more', () => {
+    const many = Array.from({ length: 30 }, (_, i) => [String(i)]);
+    const s = sampleColumn(many, 0);
+    expect(s.values).toEqual(['0', '1', '2', '3']);
+    expect(s.more).toBe(true);
+  });
+
+  it('counts blanks and does not treat them as a value', () => {
+    const s = sampleColumn([['a'], [''], ['  '], ['a']], 0);
+    expect(s.values).toEqual(['a']);
+    expect(s.blanks).toBe(2);
+  });
+
+  it('calls nothing constant on a file too short to judge', () => {
+    // Two identical rows is a coincidence, not a pattern worth a warning.
+    expect(sampleColumn([['5'], ['5']], 0).constant).toBe(false);
+    expect(sampleColumn([['5'], ['5'], ['5']], 0).constant).toBe(true);
+  });
+
+  it('survives a ragged row that is shorter than the header', () => {
+    const s = sampleColumn([['a', 'b'], ['c']], 1);
+    expect(s.values).toEqual(['b']);
+    expect(s.blanks).toBe(1);
+  });
+
+  it('reports an entirely empty column rather than pretending it has values', () => {
+    expect(sampleColumn([[''], ['']], 0)).toMatchObject({ values: [], blanks: 2, constant: false });
   });
 });

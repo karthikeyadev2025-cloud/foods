@@ -41,3 +41,48 @@ export function groupProblems(errorRows: ImportErrorRow[]): Problem[] {
   // Commonest first: the one blocking the most rows is the one to fix first.
   return [...byMessage.values()].sort((a, b) => b.count - a.count || a.message.localeCompare(b.message));
 }
+
+export interface ColumnSample {
+  /** Up to a handful of the distinct values in this column. */
+  values: string[];
+  /** True when there are more distinct values than shown. */
+  more: boolean;
+  /** Every row carries the same value — nearly always a column matched to the wrong field. */
+  constant: boolean;
+  /** How many rows have nothing here at all. */
+  blanks: number;
+}
+
+const SAMPLES = 4;
+
+/**
+ * What is really in a column, not just its first cell.
+ *
+ * The mapping step used to show one value, and one value cannot show you that
+ * "Pieces per unit" reads 38 on every row of a file whose products are packed
+ * 8, 48 and 21 to a box. That is a column matched to the wrong field, it is
+ * obvious the moment three values are visible instead of one, and it decides
+ * how many pieces come out of a box on every bill afterwards.
+ */
+export function sampleColumn(rows: string[][], index: number): ColumnSample {
+  const distinct = new Set<string>();
+  const values: string[] = [];
+  let blanks = 0;
+  for (const r of rows) {
+    const v = (r[index] ?? '').trim();
+    if (!v) {
+      blanks += 1;
+      continue;
+    }
+    if (distinct.has(v)) continue;
+    distinct.add(v);
+    if (values.length < SAMPLES) values.push(v);
+  }
+  return {
+    values,
+    more: distinct.size > values.length,
+    // One value everywhere, and enough rows for that to mean something.
+    constant: distinct.size === 1 && rows.length - blanks > 2,
+    blanks,
+  };
+}

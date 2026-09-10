@@ -62,6 +62,19 @@ export const FEATURES = [
 export type FeatureKey = (typeof FEATURES)[number]['key'];
 export const featureInfo = (f: FeatureKey) => FEATURES.find((x) => x.key === f);
 
+/** Starter is inside Growth is inside Full, so a plan is a rank, not a set. */
+const PLAN_RANK: Record<PlanKey, number> = { starter: 0, growth: 1, full: 2 };
+
+/**
+ * What closes when the plan trial ends, by name.
+ *
+ * So a warning can say "Purchases and Quotations close on the 19th" instead of
+ * "your plan changes", which tells a shopkeeper nothing about tomorrow morning.
+ */
+export function featuresOutsidePlan(plan: PlanKey): string[] {
+  return FEATURES.filter((f) => PLAN_RANK[f.plan] > PLAN_RANK[plan]).map((f) => f.label);
+}
+
 /** Which feature a module belongs to. Attendance is its own, so Starter can open it
  * while Payments stays shut; everything else Starter has is `core`. */
 export function moduleFeature(m: ModuleKey): FeatureKey {

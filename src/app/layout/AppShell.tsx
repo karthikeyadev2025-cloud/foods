@@ -10,7 +10,7 @@ import { useLicense, useMe, usePermissions } from '@/features/auth/hooks';
 import { useOnline, useOutbox } from '@/hooks/use-offline';
 import { toast, toastError } from '@/hooks/use-toast';
 import { dateDMY } from '@/lib/format';
-import { roleLabel } from '@/lib/permissions';
+import { featuresOutsidePlan, roleLabel } from '@/lib/permissions';
 import { isSupabaseConfigured, replayOutbox } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
@@ -177,6 +177,31 @@ export function LicenceBar({ canOpenSetup }: { canOpenSetup: boolean }) {
     tone = 'red';
     text = 'The licence has expired and the app is read-only: screens and exports work, new documents are blocked until it is renewed.';
   } else if (s.status === 'active' && s.days_left <= 14) text = `Licence expires ${s.valid_till ? dateDMY(s.valid_till) : ''} (${s.days_left} day${s.days_left === 1 ? '' : 's'}).`;
+
+  /*
+    The PLAN trial, which is a different thing from the licence trial above and
+    was warned about nowhere. The licence trial decides whether the shop can
+    bill at all, so it keeps the bar when both are running; but a plan trial
+    ending silently takes Purchases, Quotations, Payments, Production and Vans
+    off the screen one morning with no notice, and the people using them find
+    out by opening the menu and not seeing them. Named, dated, and counted
+    down, five days ahead.
+  */
+  const planDays = s.plan_trial_days_left;
+  if (!text && planDays != null) {
+    const closing = featuresOutsidePlan(s.paid_plan);
+    if (planDays <= 5 && closing.length > 0) {
+      tone = planDays <= 2 ? 'red' : 'amber';
+      const named = closing.slice(0, 4).join(', ');
+      const rest = closing.length > 4 ? ` and ${closing.length - 4} more` : '';
+      text =
+        `Everything is open for ${planDays} more day${planDays === 1 ? '' : 's'}` +
+        `${s.plan_full_until ? `, until ${dateDMY(s.plan_full_until)}` : ''}. ` +
+        `Then this becomes ${s.paid_plan_name} and these close: ${named}${rest}. ` +
+        'Nothing entered is lost — the screens simply shut.';
+    }
+  }
+
   if (!text) return null;
   return (
     <div role={tone === 'red' ? 'alert' : 'status'} className={barClass(tone)}>

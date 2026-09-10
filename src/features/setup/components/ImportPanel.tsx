@@ -15,7 +15,7 @@ import { dateTimeDMY, int, toISODate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { listImportJobs, listStaff, runImport, stockLocationsApi, type ImportResult } from '../api';
 import { autoMap, buildRows, missingRequired, parseSpreadsheet, type ColumnMap, type ParsedFile } from '../import/parse';
-import { groupProblems } from '../import/problems';
+import { groupProblems, sampleColumn } from '../import/problems';
 import { IMPORT_TARGETS, findTarget, type ImportTarget } from '../import/targets';
 
 type Step = 'source' | 'map' | 'preview' | 'done';
@@ -277,7 +277,7 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
                 <TableRow>
                   <TableHead>Field</TableHead>
                   <TableHead>Column in your file</TableHead>
-                  <TableHead>First value</TableHead>
+                  <TableHead>What is in it</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -307,7 +307,9 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
                           ))}
                         </NativeSelect>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{idx >= 0 ? file.rows[0]?.[idx] : ''}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {idx >= 0 && <ColumnPreview rows={file.rows} index={idx} />}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -468,6 +470,34 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
 
       <ImportHistory />
     </section>
+  );
+}
+
+/**
+ * A few real values from the column, and a warning when every row holds the
+ * same one.
+ *
+ * One value used to be shown here, and one value cannot reveal that "Pieces per
+ * unit" reads 38 on every row of a file whose products are packed 8, 48 and 21
+ * to a box. That is a column matched to the wrong field, and it decides how
+ * many pieces come out of a box on every bill from then on.
+ */
+function ColumnPreview({ rows, index }: { rows: string[][]; index: number }) {
+  const s = useMemo(() => sampleColumn(rows, index), [rows, index]);
+  if (s.values.length === 0) return <span className="text-xs">every row is blank</span>;
+  return (
+    <div className="space-y-0.5">
+      <div className="text-xs">
+        {s.values.join(' · ')}
+        {s.more && ' …'}
+      </div>
+      {s.constant && (
+        <div className="text-xs font-medium text-amber-700">
+          the same on all {int(rows.length - s.blanks)} rows — is this the right column?
+        </div>
+      )}
+      {s.blanks > 0 && <div className="text-xs">{int(s.blanks)} blank</div>}
+    </div>
   );
 }
 

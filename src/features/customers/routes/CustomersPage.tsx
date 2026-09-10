@@ -20,7 +20,7 @@ import { toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
 import { amount, money } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
-import { listAllCustomers, listCustomers, type CustomerRow } from '../api';
+import { listAllCustomers, listCustomers, updateCustomer, type CustomerRow } from '../api';
 import { CustomerDialog } from '../components/CustomerDialog';
 
 export function CustomersPage() {
@@ -195,6 +195,7 @@ export function CustomersPage() {
                         detail="A customer who has ever been billed cannot be deleted — the screen will say so and you can set them inactive instead."
                         invalidate={['customers']}
                         onDelete={() => deleteMaster('customer', r.id ?? '')}
+                        onDeactivate={() => updateCustomer(r.id ?? '', { is_active: false })}
                       />
                     </TableCell>
                   )}

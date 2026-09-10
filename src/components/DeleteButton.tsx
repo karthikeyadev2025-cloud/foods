@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
+import { errorMessage } from '@/lib/errors';
 
 export interface DeleteButtonProps {
   /** What is being removed, as a person would say it: "invoice 0041", "P. SRINIVAS". */
@@ -19,6 +20,12 @@ export interface DeleteButtonProps {
   disabled?: boolean;
   /** Runs after a successful delete, e.g. to navigate away from the record. */
   onDone?: (outcome: string) => void;
+  /**
+   * Sets the record inactive. Offered only once a refusal has actually named
+   * that as the way out — which is the moment the person wants it, and saves
+   * them closing this, finding the record, opening it and hunting for a tick box.
+   */
+  onDeactivate?: () => Promise<unknown>;
 }
 
 /**
@@ -38,6 +45,7 @@ export function DeleteButton({
   variant = 'icon',
   disabled,
   onDone,
+  onDeactivate,
 }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -54,8 +62,22 @@ export function DeleteButton({
     },
     // Kept on the dialog rather than thrown as a toast: the refusal explains what
     // to do instead, and a toast is gone before it has been read.
-    onError: (err) => setRefusal(err instanceof Error ? err.message : String(err)),
+    onError: (err) => setRefusal(errorMessage(err)),
   });
+
+  const deactivate = useMutation({
+    mutationFn: () => onDeactivate!(),
+    onSuccess: async () => {
+      await Promise.all(invalidate.map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
+      setOpen(false);
+      setRefusal(null);
+      toast({ title: `${label} set inactive`, description: 'It is gone from new work. Every old record still reads correctly.' });
+    },
+    onError: (err) => setRefusal(errorMessage(err)),
+  });
+
+  // Only when the database itself said so — never guessed at from the error code.
+  const offerInactive = Boolean(onDeactivate) && Boolean(refusal?.toLowerCase().includes('inactive'));
 
   return (
     <>
@@ -96,9 +118,15 @@ export function DeleteButton({
             <Button variant="outline" onClick={() => setOpen(false)}>
               {refusal ? 'Close' : 'Keep it'}
             </Button>
-            <Button variant="destructive" onClick={() => run.mutate()} disabled={run.isPending}>
-              {refusal ? 'Try again' : 'Delete'}
-            </Button>
+            {offerInactive ? (
+              <Button onClick={() => deactivate.mutate()} disabled={deactivate.isPending}>
+                Set inactive
+              </Button>
+            ) : (
+              <Button variant="destructive" onClick={() => run.mutate()} disabled={run.isPending}>
+                {refusal ? 'Try again' : 'Delete'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

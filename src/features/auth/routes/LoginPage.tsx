@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Field } from '@/components/Field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/Spinner';
+import { errorMessage } from '@/lib/errors';
 import { clearConnection, isBuiltIn } from '@/lib/config';
 import { signIn } from '../api';
 import { useSession } from '../hooks';
@@ -28,8 +29,8 @@ export function LoginPage() {
     onSuccess: () => navigate(from, { replace: true }),
     onError: (err) => {
       // Do not reveal whether the email exists.
-      const msg = err instanceof Error && /invalid login/i.test(err.message) ? 'Incorrect email or password.' : null;
-      form.setError('root', { message: msg ?? (err instanceof Error ? err.message : 'Sign-in failed') });
+      const raw = errorMessage(err);
+      form.setError('root', { message: /invalid login/i.test(raw) ? 'Incorrect email or password.' : raw });
     },
   });
 

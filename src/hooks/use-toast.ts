@@ -2,6 +2,7 @@
 // so `toastError(err)` below is the one path every api.ts failure should take.
 import * as React from 'react';
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
+import { errorCode, errorDetail, errorMessage } from '@/lib/errors';
 import { OfflineQueuedError } from '@/lib/offline';
 
 const TOAST_LIMIT = 3;
@@ -91,22 +92,15 @@ function toast({ ...props }: Toast) {
 }
 
 /** Shape of a PostgREST / Supabase error. Logged with its code so support can find it. */
-interface PgLikeError {
-  message?: string;
-  code?: string;
-  details?: string;
-  hint?: string;
-}
-
 /** Surface any failure to the user and log the Postgres error code. Never swallow. */
 function toastError(err: unknown, title = 'Something went wrong') {
   if (err instanceof OfflineQueuedError) {
     return toast({ title: 'Saved to the outbox', description: `${err.label} will be sent as soon as the connection is back.` });
   }
-  const e = (typeof err === 'object' && err !== null ? err : {}) as PgLikeError;
-  const message = e.message ?? (err instanceof Error ? err.message : String(err));
-  console.error('[erp]', e.code ?? '', message, e.details ?? '', e.hint ?? '');
-  return toast({ variant: 'destructive', title, description: e.code ? `${message} (${e.code})` : message });
+  const message = errorMessage(err);
+  const code = errorCode(err);
+  console.error('[erp]', code ?? '', message, errorDetail(err));
+  return toast({ variant: 'destructive', title, description: code ? `${message} (${code})` : message });
 }
 
 function useToast() {

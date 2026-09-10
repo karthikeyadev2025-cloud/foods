@@ -65,7 +65,9 @@ with expected(ord, file, kind, obj, detail) as (
     (34, '34_search_any_detail.sql','fixed','search_documents#invoice_items', 'search by phone, amount, item, vehicle, cheque or note'),
     (35, '35_search_masters.sql','fixed',   'search_documents#v_supplier_list', 'the search finds people and products, not only their bills'),
     (36, '36_delete_and_void.sql','function','delete_master',              'delete and cancel on every screen'),
-    (37, '37_data_health.sql',  'function', 'negative_stock',              'Stock > Problems: negative stock, unusable products, duplicate rows')
+    (37, '37_data_health.sql',  'function', 'negative_stock',              'Stock > Problems: negative stock, unusable products, duplicate rows'),
+    (38, '38_import_create_lookups.sql', 'fixed', 'import_rows#create_lookups',
+                                                                           'an unknown pack type or section no longer throws the whole product away')
 ),
 
 -- Did each file's own object actually make it?

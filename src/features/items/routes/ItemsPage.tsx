@@ -21,7 +21,7 @@ import { toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
 import { amount, int, qty } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
-import { listAllItems, listItems, type ItemType } from '../api';
+import { listAllItems, listItems, NONE, type ItemType } from '../api';
 import { ITEM_TYPES } from '../schema';
 
 export function ItemsPage() {
@@ -110,6 +110,8 @@ export function ItemsPage() {
         />
         <NativeSelect aria-label="Section" className="h-8 w-48" value={sectionId} onChange={(e) => reset(setSectionId)(e.target.value)}>
           <option value="">All sections</option>
+          {/* Sorts to the last page, so it needs a way to be asked for. */}
+          <option value={NONE}>— No section —</option>
           {(sections.data ?? []).map((s) => (
             <option key={s.id} value={s.id}>
               {s.code ? `${s.code} ` : ''}
@@ -119,6 +121,7 @@ export function ItemsPage() {
         </NativeSelect>
         <NativeSelect aria-label="Pack type" className="h-8 w-32" value={packTypeId} onChange={(e) => reset(setPackTypeId)(e.target.value)}>
           <option value="">All packs</option>
+          <option value={NONE}>— No pack —</option>
           {(packTypes.data ?? []).map((p) => (
             <option key={p.id} value={p.id}>
               {p.code}

@@ -10,8 +10,13 @@ export type ItemRow = Database['public']['Views']['v_item_list']['Row'] & { scan
 export type Item = Tables['items']['Row'];
 export type ItemType = Database['public']['Enums']['item_type'];
 
+/** The section and pack filters take an id, or NONE for "not set on the product". */
+export const NONE = 'none';
+
 export interface ItemListQuery extends PageQuery {
+  /** A section id, or NONE. */
   sectionId?: string;
+  /** A pack type id, or NONE. */
   packTypeId?: string;
   type?: ItemType | '';
   includeInactive?: boolean;
@@ -20,8 +25,18 @@ export interface ItemListQuery extends PageQuery {
 function applyFilters(q: ItemListQuery) {
   let query = supabase.from('v_item_list').select('*', { count: 'exact' });
   query = orIlike(query, ['item_code', 'name'], q.search);
-  if (q.sectionId) query = query.eq('section_id', q.sectionId);
-  if (q.packTypeId) query = query.eq('pack_type_id', q.packTypeId);
+  /*
+    A product with no section sorts last: section_sort is coalesce(sort_order,
+    999). On a 250-product master that put freshly imported products on the
+    final page, which reads as "the import did nothing" — and there was no way
+    to ask for them, because the filter listed the sections that exist and
+    nothing else. Now there is, and it is the quickest way to see exactly what
+    an import brought in.
+  */
+  if (q.sectionId === NONE) query = query.is('section_id', null);
+  else if (q.sectionId) query = query.eq('section_id', q.sectionId);
+  if (q.packTypeId === NONE) query = query.is('pack_type_id', null);
+  else if (q.packTypeId) query = query.eq('pack_type_id', q.packTypeId);
   if (q.type) query = query.eq('type', q.type);
   if (!q.includeInactive) query = query.eq('is_active', true);
   return query.order('section_sort').order('item_code');

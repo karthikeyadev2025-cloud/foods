@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Upload } from 'lucide-react';
 import { useMemo, useState, type ChangeEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { Field } from '@/components/Field';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,15 @@ import { IMPORT_TARGETS, findTarget, type ImportTarget } from '../import/targets
 type Step = 'source' | 'map' | 'preview' | 'done';
 
 const JOBS_KEY = ['setup', 'import_jobs'] as const;
+
+/** Where the rows of each target end up, so "Done" can point at them. */
+const LANDED: Partial<Record<ImportTarget['key'], { to: string; label: string }>> = {
+  items: { to: '/items', label: 'See the item master' },
+  customers: { to: '/customers', label: 'See the customers' },
+  opening_stock: { to: '/stock', label: 'See the stock' },
+  rates: { to: '/items', label: 'See the item master' },
+  sections: { to: '/setup/sections', label: 'See the sections' },
+};
 
 /**
  * Upload → map columns → dry run → commit. The server function does the work
@@ -127,7 +137,23 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
     onSuccess: async (r) => {
       setResult(r);
       setStep('done');
-      await queryClient.invalidateQueries({ queryKey: ['setup'] });
+      /*
+        Everything, not just ['setup'].
+
+        This used to refresh the setup queries alone, and the item list lives
+        under ['items'], customers under ['customers'], stock under ['stock'].
+        So an import of 250 products finished, said "Imported 250 rows", and the
+        Items screen went on showing the list it already had — and because the
+        query cache is kept in IndexedDB, a reload brought the same stale list
+        back rather than fixing it. It reads exactly like an import that did
+        nothing.
+
+        An import is a rare, deliberate act that can touch products, sections,
+        pack types, customers, stock and rates at once. Refetching every cached
+        query afterwards costs one round of requests and cannot be got wrong by
+        forgetting a key, which is how this happened in the first place.
+      */
+      await queryClient.invalidateQueries();
       toast({ title: `Imported ${int(r.ok)} rows`, description: r.errors ? `${int(r.errors)} rows had errors — download them below.` : undefined });
     },
     onError: (err) => toastError(err, 'Import failed'),
@@ -386,8 +412,18 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
           </div>
 
           {step === 'done' && (
-            <p className="flex items-center gap-2 text-sm">
+            <p className="flex flex-wrap items-center gap-2 text-sm">
               <CheckCircle2 className="h-4 w-4 text-green-700" aria-hidden /> Import committed.
+              {/*
+                Straight to where the rows landed. Products with no section sort
+                to the last page of the master, so "it imported and I cannot see
+                it" is the normal experience without this link.
+              */}
+              {LANDED[target.key] && (
+                <Link className="underline underline-offset-2" to={LANDED[target.key]!.to}>
+                  {LANDED[target.key]!.label}
+                </Link>
+              )}
             </p>
           )}
 

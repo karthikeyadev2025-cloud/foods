@@ -33,7 +33,20 @@ with expected(ord, file, kind, obj, detail) as (
     (20, '20_voice.sql',        'column',   'messaging_settings.voice_enabled', 'voice calls'),
     (21, '21_plans.sql',        'function', 'plan_features',               'the three licence plans'),
     (22, '22_attendance.sql',   'table',    'punchly_settings',            'attendance and Punchly'),
-    (23, '23_extension_fix.sql','fixed',    'issue_license',               'the pgcrypto fix — only needed on a database built before it')
+    (23, '23_extension_fix.sql','fixed',    'issue_license',               'the pgcrypto fix — only needed on a database built before it'),
+    (24, '24_plan_trial.sql',   'column',   'orgs.plan_full_until',        'the 10-day everything-open trial'),
+    (25, '25_daily_cap.sql',    'function', 'claim_queued_messages',       'the message cap counts a real day, not 05:30 to 05:30'),
+    (26, '26_repair.sql',       'function', 'module_feature',              'the one-file repair — 20 through 28 in order'),
+    (27, '27_attendance_in_starter.sql', 'function', 'plan_features',      'attendance included in Starter'),
+    (28, '28_product_images.sql','column',  'items.image_url',             'product photos and the rate card'),
+    (29, '29_line_measure.sql', 'function', 'items_needing_measure',       'a unit with no weight names itself instead of failing on qty_base'),
+    (30, '30_invoice_edit.sql', 'function', 'reopen_invoice',              'edit a confirmed sale invoice'),
+    (31, '31_item_code_serial.sql','function','next_item_code',            'the next item code, filled in for you'),
+    (32, '32_purchase_auto_no.sql','fixed', 'save_purchase#next_doc_no',   'a purchase with no supplier bill number numbers itself'),
+    (33, '33_document_search.sql','function','search_documents',           'one search across every kind of bill'),
+    (34, '34_search_any_detail.sql','fixed','search_documents#invoice_items', 'search by phone, amount, item, vehicle, cheque or note'),
+    (35, '35_search_masters.sql','fixed',   'search_documents#v_supplier_list', 'the search finds people and products, not only their bills'),
+    (36, '36_delete_and_void.sql','function','delete_master',              'delete and cancel on every screen')
 )
 select
   e.ord                                          as "#",
@@ -62,10 +75,13 @@ cross join lateral (
     --   • Read prosrc, not pg_get_functiondef(). The planner is free to evaluate that
     --     call before the schema filter, and it throws on the aggregates in
     --     pg_catalog: "array_agg is an aggregate function". prosrc is a plain column.
+    -- A file that only REPLACES an existing function proves itself by a phrase
+    -- its new body contains: 'name#phrase', or just 'name' for the original
+    -- pgcrypto fix. prosrc, not pg_get_functiondef(), which throws on aggregates.
     when 'fixed'    then exists (
       select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-       where n.nspname = 'public' and p.proname = e.obj and p.prokind = 'f'
-         and p.prosrc like '%gen_random_uuid%')
+       where n.nspname = 'public' and p.proname = split_part(e.obj, '#', 1) and p.prokind = 'f'
+         and p.prosrc like '%' || coalesce(nullif(split_part(e.obj, '#', 2), ''), 'gen_random_uuid') || '%')
   end as found
 ) f
 order by e.ord;

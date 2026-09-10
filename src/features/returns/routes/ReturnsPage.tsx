@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { Download, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { DeleteButton } from '@/components/DeleteButton';
 import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
 import { PageHeader } from '@/components/PageHeader';
@@ -20,6 +21,7 @@ import { searchItems, type ItemRow } from '@/features/items/api';
 import { stockLocationsApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
+import { deleteDocument } from '@/features/search/deletes';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, qty, round, toISODate, toNumber } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
@@ -80,7 +82,7 @@ export function ReturnsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Kind</TableHead><TableHead>Customer</TableHead><TableHead>Invoice</TableHead><TableHead>Location</TableHead><TableHead className="text-right">Credit</TableHead>
+                <TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Kind</TableHead><TableHead>Customer</TableHead><TableHead>Invoice</TableHead><TableHead>Location</TableHead><TableHead className="text-right">Credit</TableHead>{perms.canDelete('returns') && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -92,6 +94,16 @@ export function ReturnsPage() {
                   <TableCell>{r.customer_name}</TableCell>
                   <TableCell className="text-muted-foreground">{r.invoice_no ?? '—'}</TableCell>
                   <TableCell className="text-muted-foreground">{r.location_name ?? '—'}</TableCell>
+                  {perms.canDelete('returns') && (
+                    <TableCell onClick={(ev) => ev.stopPropagation()}>
+                      <DeleteButton
+                        label={`return ${r.return_no}`}
+                        detail="The goods that came back go out of stock again and the credit is reversed. If they have since been sold on, the screen will refuse and name the product."
+                        invalidate={['returns']}
+                        onDelete={() => deleteDocument('return', r.id ?? '')}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="num">{amount(r.total)}</TableCell>
                 </TableRow>
               ))}

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { DeleteButton } from '@/components/DeleteButton';
 import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
 import { PageHeader } from '@/components/PageHeader';
@@ -16,6 +17,7 @@ import { listPurchases, searchSuppliers, type SupplierRow } from '@/features/pur
 import { stockLocationsApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
+import { deleteDocument } from '@/features/search/deletes';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, qty, round, toISODate, toNumber } from '@/lib/format';
 import { getPurchaseReturnLines, listPurchaseReturns, savePurchaseReturn, type PurchaseReturnRow } from '../api';
@@ -40,8 +42,8 @@ export function PurchaseReturnsPage() {
       ) : (
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Supplier</TableHead><TableHead>Against bill</TableHead><TableHead>From</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Notes</TableHead></TableRow></TableHeader>
-            <TableBody>{list.map((r) => <TableRow key={r.id ?? ''} className="cursor-pointer" tabIndex={0} onClick={() => setOpen(r)} onKeyDown={(ev) => ev.key === 'Enter' && setOpen(r)}><TableCell className="font-medium">{r.return_no}</TableCell><TableCell>{dateDMY(r.return_date)}</TableCell><TableCell>{r.supplier_name}</TableCell><TableCell className="text-muted-foreground">{r.bill_no ?? '—'}</TableCell><TableCell className="text-muted-foreground">{r.location_name}</TableCell><TableCell className="num">{amount(r.total)}</TableCell><TableCell className="text-muted-foreground">{r.notes}</TableCell></TableRow>)}</TableBody>
+            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Supplier</TableHead><TableHead>Against bill</TableHead><TableHead>From</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Notes</TableHead>{perms.canDelete('purchases') && <TableHead className="w-10" />}</TableRow></TableHeader>
+            <TableBody>{list.map((r) => <TableRow key={r.id ?? ''} className="cursor-pointer" tabIndex={0} onClick={() => setOpen(r)} onKeyDown={(ev) => ev.key === 'Enter' && setOpen(r)}><TableCell className="font-medium">{r.return_no}</TableCell><TableCell>{dateDMY(r.return_date)}</TableCell><TableCell>{r.supplier_name}</TableCell><TableCell className="text-muted-foreground">{r.bill_no ?? '—'}</TableCell><TableCell className="text-muted-foreground">{r.location_name}</TableCell><TableCell className="num">{amount(r.total)}</TableCell><TableCell className="text-muted-foreground">{r.notes}</TableCell>{perms.canDelete('purchases') && (<TableCell onClick={(ev) => ev.stopPropagation()}><DeleteButton label={`purchase return ${r.return_no}`} detail="The goods go back into stock and the ledger entry is reversed." invalidate={['purchase_returns']} onDelete={() => deleteDocument('purchase_return', r.id ?? '')} /></TableCell>)}</TableRow>)}</TableBody>
           </Table>
         </div>
       )}

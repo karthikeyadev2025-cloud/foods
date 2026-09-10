@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Download, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
+import { DeleteButton } from '@/components/DeleteButton';
 import { MasterCrud, type MasterConfig } from '@/components/MasterCrud';
 import { PageHeader } from '@/components/PageHeader';
 import { Pager } from '@/components/Pager';
@@ -12,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { usePermissions } from '@/features/auth/hooks';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toastError } from '@/hooks/use-toast';
+import { deleteDocument } from '@/features/search/deletes';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, int } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
@@ -57,6 +59,7 @@ export function PurchasesPage({ tab = 'purchases' }: { tab?: 'purchases' | 'supp
 
 function PurchaseList() {
   const navigate = useNavigate();
+  const perms = usePermissions();
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -111,6 +114,7 @@ function PurchaseList() {
                 <TableHead className="text-right">Lines</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Paid</TableHead>
+                {perms.canDelete('purchases') && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -123,6 +127,16 @@ function PurchaseList() {
                   <TableCell className="num">{int(r.line_count)}</TableCell>
                   <TableCell className="num">{amount(r.total)}</TableCell>
                   <TableCell className="num">{amount(r.paid_amount)}</TableCell>
+                  {perms.canDelete('purchases') && (
+                    <TableCell onClick={(ev) => ev.stopPropagation()}>
+                      <DeleteButton
+                        label={`purchase ${r.bill_no ?? ''}`.trim()}
+                        detail="The goods come back out of stock and the ledger entry is reversed. If any of them have already been sold on, the screen will refuse and name the product."
+                        invalidate={['purchases']}
+                        onDelete={() => deleteDocument('purchase', r.id ?? '')}
+                      />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

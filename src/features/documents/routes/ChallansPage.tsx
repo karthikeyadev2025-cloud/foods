@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, FileCheck, Plus, Printer } from 'lucide-react';
+import { DeleteButton } from '@/components/DeleteButton';
 import { SalesDocPrint } from '@/components/print/SalesDocPrint';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -20,6 +21,7 @@ import { getPrintTemplate, stockLocationsApi } from '@/features/setup/api';
 import { listVehicles } from '@/features/vehicles/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
+import { deleteDocument } from '@/features/search/deletes';
 import { exportToExcel } from '@/lib/export';
 import { dateDMY, qty, toISODate, toNumber } from '@/lib/format';
 import { cancelChallan, convertChallan, getChallan, getChallanLines, listChallans, nextLineKey, saveChallan, stateTone, type ChallanRow, type DocLine, type DocState } from '../api';
@@ -46,8 +48,8 @@ export function ChallansPage() {
       ) : (
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>From</TableHead><TableHead>Vehicle</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead>State</TableHead></TableRow></TableHeader>
-            <TableBody>{list.map((r) => <TableRow key={r.id ?? ''} className="cursor-pointer" tabIndex={0} onClick={() => navigate(`/challans/${r.id}`)} onKeyDown={(ev) => ev.key === 'Enter' && navigate(`/challans/${r.id}`)}><TableCell className="font-medium">{r.challan_no}</TableCell><TableCell>{dateDMY(r.challan_date)}</TableCell><TableCell>{r.customer_name}<div className="text-xs text-muted-foreground">{r.customer_town}</div></TableCell><TableCell className="text-muted-foreground">{r.location_name}</TableCell><TableCell className="text-muted-foreground">{r.vehicle_number ?? '—'}</TableCell><TableCell className="num">{qty(r.total_boxes)}</TableCell><TableCell><Badge variant={stateTone[r.state ?? 'open']}>{r.state === 'converted' ? 'billed' : r.state}</Badge>{r.invoice_no && <div className="text-xs text-muted-foreground">{r.invoice_no}</div>}</TableCell></TableRow>)}</TableBody>
+            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>From</TableHead><TableHead>Vehicle</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead>State</TableHead>{perms.canDelete('invoices') && <TableHead className="w-10" />}</TableRow></TableHeader>
+            <TableBody>{list.map((r) => <TableRow key={r.id ?? ''} className="cursor-pointer" tabIndex={0} onClick={() => navigate(`/challans/${r.id}`)} onKeyDown={(ev) => ev.key === 'Enter' && navigate(`/challans/${r.id}`)}><TableCell className="font-medium">{r.challan_no}</TableCell><TableCell>{dateDMY(r.challan_date)}</TableCell><TableCell>{r.customer_name}<div className="text-xs text-muted-foreground">{r.customer_town}</div></TableCell><TableCell className="text-muted-foreground">{r.location_name}</TableCell><TableCell className="text-muted-foreground">{r.vehicle_number ?? '—'}</TableCell><TableCell className="num">{qty(r.total_boxes)}</TableCell><TableCell><Badge variant={stateTone[r.state ?? 'open']}>{r.state === 'converted' ? 'billed' : r.state}</Badge>{r.invoice_no && <div className="text-xs text-muted-foreground">{r.invoice_no}</div>}</TableCell>{perms.canDelete('invoices') && (<TableCell onClick={(ev) => ev.stopPropagation()}><DeleteButton label={`challan ${r.challan_no}`} detail="The challan is marked cancelled and the goods it sent out come back into stock." invalidate={['challans']} onDelete={() => deleteDocument('challan', r.id ?? '')} /></TableCell>)}</TableRow>)}</TableBody>
           </Table>
         </div>
       )}

@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Download, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { DeleteButton } from '@/components/DeleteButton';
 import { PageHeader } from '@/components/PageHeader';
 import { Pager } from '@/components/Pager';
 import { Spinner } from '@/components/Spinner';
@@ -13,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { usePermissions } from '@/features/auth/hooks';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toastError } from '@/hooks/use-toast';
+import { deleteDocument } from '@/features/search/deletes';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, qty } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
@@ -137,6 +139,7 @@ export function InvoicesPage() {
                 <TableHead className="text-right">Balance</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Vehicle</TableHead>
+                {perms.canDelete('invoices') && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -161,6 +164,16 @@ export function InvoicesPage() {
                     <Badge variant={tone[(r.status ?? 'draft') as InvoiceStatus]}>{r.status}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{r.vehicle_number ?? '—'}</TableCell>
+                  {perms.canDelete('invoices') && (
+                    <TableCell onClick={(ev) => ev.stopPropagation()}>
+                      <DeleteButton
+                        label={`invoice ${r.invoice_no}`}
+                        detail="The bill is marked cancelled rather than removed — the customer has a copy of that number. Its goods go back into stock and the ledger entry is reversed."
+                        invalidate={['invoices']}
+                        onDelete={() => deleteDocument('invoice', r.id ?? '')}
+                      />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

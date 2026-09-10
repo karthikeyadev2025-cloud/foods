@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, PackageCheck, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
+import { DeleteButton } from '@/components/DeleteButton';
 import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
 import { PageHeader } from '@/components/PageHeader';
@@ -19,6 +20,7 @@ import { searchSuppliers, type SupplierRow } from '@/features/purchases/api';
 import { stockLocationsApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
+import { deleteDocument } from '@/features/search/deletes';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, qty, toISODate, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -53,7 +55,7 @@ export function OrdersPage({ kind = 'sale' }: { kind?: OrderKind }) {
       ) : (
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Due</TableHead><TableHead>{kind === 'sale' ? 'Customer' : 'Supplier'}</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">Delivered</TableHead><TableHead className="text-right">Total</TableHead><TableHead>State</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Due</TableHead><TableHead>{kind === 'sale' ? 'Customer' : 'Supplier'}</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">Delivered</TableHead><TableHead className="text-right">Total</TableHead><TableHead>State</TableHead>{perms.canDelete('invoices') && <TableHead className="w-10" />}</TableRow></TableHeader>
             <TableBody>
               {list.map((r) => (
                 <TableRow key={r.id ?? ''} className={cn('cursor-pointer', r.is_overdue && 'bg-amber-50/60')} tabIndex={0} onClick={() => navigate(`/orders/${r.id}`)} onKeyDown={(ev) => ev.key === 'Enter' && navigate(`/orders/${r.id}`)}>
@@ -62,6 +64,16 @@ export function OrdersPage({ kind = 'sale' }: { kind?: OrderKind }) {
                   <TableCell>{r.party_name}<div className="text-xs text-muted-foreground">{r.party_town}</div></TableCell>
                   <TableCell className="num">{qty(r.total_boxes)}</TableCell><TableCell className="num">{qty(r.delivered_boxes)}</TableCell><TableCell className="num">{amount(r.total)}</TableCell>
                   <TableCell><Badge variant={stateTone[r.state ?? 'open']}>{r.state}</Badge>{r.source_inbound_id && <div className="text-xs text-muted-foreground">from WhatsApp / call</div>}</TableCell>
+                  {perms.canDelete('invoices') && (
+                    <TableCell onClick={(ev) => ev.stopPropagation()}>
+                      <DeleteButton
+                        label={`order ${r.order_no}`}
+                        detail="The order is marked cancelled. It has posted no stock and no ledger entry, so nothing else changes."
+                        invalidate={['orders']}
+                        onDelete={() => deleteDocument('order', r.id ?? '')}
+                      />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

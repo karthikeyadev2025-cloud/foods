@@ -74,12 +74,19 @@ function readCsv(path) {
 }
 
 /**
- * What the ERP holds today. Read from the seed files that were imported into
- * it — so if products have been added or renamed in the app since, re-export
- * the item list over these before trusting the answer.
+ * What the ERP holds TODAY, exported from the Items screen (its Excel button).
+ *
+ * Pass one with --master. Without it this falls back to the seed files, and
+ * that fallback is a guess, not an answer: run end to end against a real
+ * database, the seed turned out to describe 251 products where only 187 ever
+ * loaded — 64 rows of unmatched_items.csv carry no units-per-box and the
+ * importer refuses them, exactly as that file's own note warns. Matching
+ * against products that do not exist produced an opening-stock sheet with 62
+ * rows that could not import. Hence --master, and hence the warning when it is
+ * missing.
  */
-export function erpMaster() {
-  const rows = [
+export function erpMaster(masterFile) {
+  const rows = masterFile ? readMasterExport(masterFile) : [
     ...readCsv(join(ROOT, 'public/seed/items.csv')),
     ...readCsv(join(ROOT, 'public/seed/unmatched_items.csv')),
   ];
@@ -90,7 +97,45 @@ export function erpMaster() {
     if (!byName.has(k)) byName.set(k, []);
     byName.get(k).push(r);
   }
-  return { rows, byCode, byName };
+  return { rows, byCode, byName, guessed: !masterFile };
+}
+
+/**
+ * The Items screen's Excel export: Code, Name, Pack, Section, Units/box,
+ * Pieces/unit … Read by heading, so a column moving or being added does not
+ * silently shift the data across by one.
+ */
+export function readMasterExport(file) {
+  const wb = XLSX.read(readFileSync(file));
+  const grid = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: '' });
+  const head = (grid[0] ?? []).map((h) => nameKey(h));
+  const at = (...names) => {
+    for (const n of names) {
+      const i = head.indexOf(nameKey(n));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
+  const cCode = at('Code', 'Item code');
+  const cName = at('Name', 'Item name', 'Product');
+  if (cCode < 0 || cName < 0) {
+    throw new Error(`${basename(file)} has no Code and Name columns — export it from the Items screen with its Excel button`);
+  }
+  const cUpb = at('Units/box', 'Units per box');
+  const cPpu = at('Pieces/unit', 'Pieces per unit');
+  const cPack = at('Pack', 'Pack type');
+  const cSection = at('Section');
+  return grid
+    .slice(1)
+    .filter((r) => clean(r[cCode]) || clean(r[cName]))
+    .map((r) => ({
+      item_code: clean(r[cCode]),
+      name: clean(r[cName]),
+      units_per_box: cUpb < 0 ? '' : clean(r[cUpb]),
+      pieces_per_unit: cPpu < 0 ? '' : clean(r[cPpu]),
+      pack_type: cPack < 0 ? '' : clean(r[cPack]),
+      section_code: cSection < 0 ? '' : clean(r[cSection]),
+    }));
 }
 
 export function readReport(file) {
@@ -158,8 +203,8 @@ function sheet(rows) {
   return ws;
 }
 
-function build(reportFile, outDir) {
-  const m = erpMaster();
+function build(reportFile, outDir, masterFile) {
+  const m = erpMaster(masterFile);
   const report = readReport(reportFile);
   const reportNames = new Map(report.rows.map((r) => [nameKey(r.name), r]));
 
@@ -271,13 +316,41 @@ function build(reportFile, outDir) {
   checks.push([
     'The "Pack" column was not used', '', '',
     'Your report says BOX / BAG / TRY / PACK — the outer carton. The ERP\'s pack type is the packing unit: JAR, L.B, PACK, KG.',
-    'Left blank so 110 JARs are not overwritten with "BOX". Set the pack type on the new products by hand, or send a list.',
+    'Left blank so the real packing is not overwritten with "BOX". Set the pack type on the new products by hand, or send a list.',
   ]);
+
+  // Impossible to miss, and first in the list, because everything below it is
+  // only as good as the master it was matched against.
+  if (m.guessed) {
+    checks.unshift([
+      'THIS FILE WAS MATCHED AGAINST A GUESS', '', '',
+      'No item export was supplied, so the products were matched against the setup files rather than against what the ERP actually holds today.',
+      'Open Items, press Excel, and re-run: npm run stock:convert -- <report.xlsx> out --master <items.xlsx>. Until then, treat every "Item code" in this file as unconfirmed.',
+    ]);
+  }
 
   const readme = [
     ['Stock report, ready to import'],
     [report.title || basename(reportFile)],
     [''],
+    ...(m.guessed
+      ? [
+          ['*** READ THIS BEFORE IMPORTING ANYTHING ***'],
+          ['No item export was given, so the products below were matched against the setup files,'],
+          ['not against what the ERP holds today. Those two are known to differ: 64 products in'],
+          ['the setup files never loaded, because they carry no units-per-box and the importer'],
+          ['refuses a product without one. Matching against products that do not exist puts item'],
+          ['codes in this file that the import will reject.'],
+          ['To fix it in one minute: open Items, press Excel, then run'],
+          ['  npm run stock:convert -- <this report.xlsx> out --master <the items file.xlsx>'],
+          [''],
+        ]
+      : [
+          [`Matched against an item list of ${m.rows.length} products.`],
+          ['If the Items screen shows a different number, that list is out of date — export it'],
+          ['again (Items > Excel) and re-run, or this file names products that are not there.'],
+          [''],
+        ]),
     ['THE ONE THING TO KNOW'],
     ['Your report numbers the products differently from the ERP. From about 141 upward the'],
     ['same product sits under a different number in each, and a few numbers have been given to'],
@@ -345,7 +418,18 @@ function build(reportFile, outDir) {
 }
 
 // ── run ────────────────────────────────────────────────────────────────────
-const [, , input, outDir = join(ROOT, 'out')] = process.argv;
+const argv = process.argv.slice(2);
+const masterAt = argv.indexOf('--master');
+const masterFile = masterAt >= 0 ? argv[masterAt + 1] : undefined;
+// Guarded: with no --master, masterAt is -1 and masterAt + 1 is 0, which would
+// silently eat the report filename.
+const positional = masterAt < 0 ? argv : argv.filter((_, i) => i !== masterAt && i !== masterAt + 1);
+const [input, outDir = join(ROOT, 'out')] = positional;
+
+if (masterAt >= 0 && !masterFile) {
+  console.error('--master needs a file: the item list exported from the Items screen');
+  process.exit(1);
+}
 
 if (input === 'verify') {
   // The name decoder is only trustworthy if it reproduces what the ERP already
@@ -363,10 +447,15 @@ if (input === 'verify') {
     throw new Error('the name decoder no longer reproduces the ERP’s own items');
   }
 } else if (!input) {
-  console.error('usage: node scripts/convert-stock-report.mjs <report.xlsx> [outDir]');
+  console.error('usage: node scripts/convert-stock-report.mjs <report.xlsx> [outDir] [--master <items export.xlsx>]');
   process.exit(1);
 } else {
-  const r = build(input, outDir);
+  const r = build(input, outDir, masterFile);
+  if (!masterFile) {
+    console.warn('WARNING: no --master given. Matched against the setup files, which describe');
+    console.warn('         products that never loaded. Export the item list from Items > Excel');
+    console.warn('         and pass it with --master before importing anything from this file.');
+  }
   console.log(JSON.stringify(r.tally), `absent ${r.absent}`);
   console.log(`opening rows ${r.opening}, new items ${r.newItems}, checks ${r.checks}`);
   console.log(r.xlsxOut);

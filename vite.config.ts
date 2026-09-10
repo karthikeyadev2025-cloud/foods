@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { execSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 /**
@@ -34,7 +35,25 @@ export default defineConfig({
     __BUILD_SHA__: JSON.stringify(buildSha()),
     __BUILT_AT__: JSON.stringify(new Date().toISOString()),
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      // public/ is copied verbatim, so the placeholder is replaced afterwards on
+      // the built file rather than by a define, which never sees static assets.
+      name: 'stamp-service-worker',
+      apply: 'build',
+      closeBundle() {
+        const out = path.resolve(__dirname, 'dist/sw.js');
+        if (!existsSync(out)) return;
+        // Falls back to the clock rather than to buildSha()'s 'unknown': a
+        // constant name is the whole bug, so the one thing this must never
+        // produce is the same name twice.
+        const sha = buildSha();
+        const id = sha === 'unknown' ? `t${Date.now()}` : sha;
+        writeFileSync(out, readFileSync(out, 'utf8').replaceAll('__BUILD_SHA__', id));
+      },
+    },
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

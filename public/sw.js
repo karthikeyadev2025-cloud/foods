@@ -1,7 +1,12 @@
 // Service worker: keeps the app shell and its hashed assets so the phone screens open
 // without a connection (data comes from the persisted query cache and the outbox).
 // Registered by src/main.tsx on the web build only; the desktop shell loads from disk.
-const CACHE = 'erp-shell-v1';
+// Replaced at build time with the commit (see vite.config.ts). It MUST change
+// every deploy: the browser only installs a new worker when sw.js itself differs
+// in bytes, and `activate` below only clears caches whose name is not this one.
+// While this was the constant 'erp-shell-v1', neither ever happened — a deployed
+// fix could sit there unused behind a worker nobody had a reason to replace.
+const CACHE = 'erp-shell-__BUILD_SHA__';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
+import { DeleteButton } from '@/components/DeleteButton';
 import { PageHeader } from '@/components/PageHeader';
 import { Pager } from '@/components/Pager';
 import { Spinner } from '@/components/Spinner';
@@ -19,6 +20,7 @@ import { receiptModesApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
+import { deleteDocument } from '@/features/search/deletes';
 import { amount, dateDMY, money, round, toISODate, toNumber, type Numeric } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { getReceipt, getReceiptAllocations, getReceiptLines, listAllReceipts, listReceipts, saveReceipt } from '../api';
@@ -60,7 +62,7 @@ export function ReceiptsPage() {
       ) : (
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>Town</TableHead><TableHead>Modes</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">On account</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>Town</TableHead><TableHead>Modes</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">On account</TableHead>{perms.canDelete('receipts') && <TableHead className="w-10" />}</TableRow></TableHeader>
             <TableBody>
               {receipts.data?.rows.map((r) => {
                 const onAcc = round(toNumber(r.total_amount) - toNumber(r.allocated), 2);
@@ -69,6 +71,11 @@ export function ReceiptsPage() {
                     <TableCell className="font-medium">{r.receipt_no}</TableCell><TableCell>{dateDMY(r.receipt_date)}</TableCell><TableCell>{r.customer_name}</TableCell>
                     <TableCell className="text-muted-foreground">{r.customer_town ?? '—'}</TableCell><TableCell className="text-muted-foreground">{r.modes}</TableCell>
                     <TableCell className="num">{amount(r.total_amount)}</TableCell><TableCell className="num text-muted-foreground">{onAcc > 0 ? amount(onAcc) : '—'}</TableCell>
+                  {perms.canDelete('receipts') && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DeleteButton label={`receipt ${r.receipt_no}`} detail="The money comes back off the customer's account and the ledger entry is reversed, so what they owe goes back up." invalidate={['receipts']} onDelete={() => deleteDocument('receipt', r.id ?? '')} />
+                    </TableCell>
+                  )}
                   </TableRow>
                 );
               })}

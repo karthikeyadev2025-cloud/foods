@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Field } from '@/components/Field';
+import { DeleteButton } from '@/components/DeleteButton';
 import { PageHeader } from '@/components/PageHeader';
 import { Pager } from '@/components/Pager';
 import { Spinner } from '@/components/Spinner';
@@ -20,6 +21,7 @@ import { expenseHeadsApi, listStaff, receiptModesApi } from '@/features/setup/ap
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
+import { deleteDocument } from '@/features/search/deletes';
 import { amount, dateDMY, toISODate } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { listAllPayments, listPayments, savePayment } from '../api';
@@ -86,7 +88,7 @@ export function PaymentsPage() {
       ) : (
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>To</TableHead><TableHead>Party</TableHead><TableHead>Mode</TableHead><TableHead>Reference</TableHead><TableHead>Narration</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>To</TableHead><TableHead>Party</TableHead><TableHead>Mode</TableHead><TableHead>Reference</TableHead><TableHead>Narration</TableHead><TableHead className="text-right">Amount</TableHead>{perms.canDelete('payments') && <TableHead className="w-10" />}</TableRow></TableHeader>
             <TableBody>
               {payments.data?.rows.map((r) => (
                 <TableRow key={r.id}>
@@ -94,7 +96,12 @@ export function PaymentsPage() {
                   <TableCell><Badge variant="secondary">{KINDS.find((k) => k.value === r.party_kind)?.label ?? r.party_kind}</Badge></TableCell>
                   <TableCell>{r.party_name}</TableCell><TableCell>{r.mode_code}</TableCell><TableCell className="text-muted-foreground">{r.reference ?? '—'}</TableCell><TableCell className="text-muted-foreground">{r.narration ?? '—'}</TableCell>
                   <TableCell className="num">{amount(r.amount)}</TableCell>
-                </TableRow>
+                {perms.canDelete('payments') && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DeleteButton label={`payment ${r.payment_no}`} detail="The ledger entry is reversed, so the cash or bank balance goes back up." invalidate={['payments']} onDelete={() => deleteDocument('payment', r.id ?? '')} />
+                    </TableCell>
+                  )}
+                  </TableRow>
               ))}
             </TableBody>
           </Table>

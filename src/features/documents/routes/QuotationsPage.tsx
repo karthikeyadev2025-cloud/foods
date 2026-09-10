@@ -7,6 +7,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
+import { DeleteButton } from '@/components/DeleteButton';
 import { PageHeader } from '@/components/PageHeader';
 import { Pager } from '@/components/Pager';
 import { Spinner } from '@/components/Spinner';
@@ -24,6 +25,7 @@ import { SalesDocPrint } from '@/components/print/SalesDocPrint';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
+import { deleteDocument } from '@/features/search/deletes';
 import { amount, dateDMY, qty, round, toISODate, toNumber } from '@/lib/format';
 import { amountInWords } from '@/lib/money';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
@@ -63,7 +65,7 @@ export function QuotationsPage() {
       ) : (
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Valid till</TableHead><TableHead>Customer</TableHead><TableHead>Town</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">Total</TableHead><TableHead>State</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Valid till</TableHead><TableHead>Customer</TableHead><TableHead>Town</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">Total</TableHead><TableHead>State</TableHead>{perms.canDelete('invoices') && <TableHead className="w-10" />}</TableRow></TableHeader>
             <TableBody>
               {rows.data.rows.map((r) => (
                 <TableRow key={r.id ?? ''} className="cursor-pointer" tabIndex={0} onClick={() => navigate(`/quotations/${r.id}`)} onKeyDown={(ev) => ev.key === 'Enter' && navigate(`/quotations/${r.id}`)}>
@@ -72,7 +74,12 @@ export function QuotationsPage() {
                   <TableCell>{r.customer_name}</TableCell><TableCell className="text-muted-foreground">{r.customer_town}</TableCell>
                   <TableCell className="num">{qty(r.total_boxes)}</TableCell><TableCell className="num">{amount(r.total)}</TableCell>
                   <TableCell><Badge variant={stateTone[r.state ?? 'open']}>{r.state}</Badge>{r.invoice_no && <div className="text-xs text-muted-foreground">{r.invoice_no}</div>}</TableCell>
-                </TableRow>
+                {perms.canDelete('invoices') && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DeleteButton label={`quotation ${r.quote_no}`} detail="A quotation is only an offer, so nothing is undone. One that has already become a bill cannot be deleted — cancel the bill instead." invalidate={['quotations']} onDelete={() => deleteDocument('quotation', r.id ?? '')} />
+                    </TableCell>
+                  )}
+                  </TableRow>
               ))}
             </TableBody>
           </Table>

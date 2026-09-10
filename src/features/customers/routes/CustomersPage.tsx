@@ -2,9 +2,11 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Download, Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { DeleteButton } from '@/components/DeleteButton';
 import { PageHeader } from '@/components/PageHeader';
 import { Pager } from '@/components/Pager';
 import { Spinner } from '@/components/Spinner';
+import { deleteMaster } from '@/features/search/deletes';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -158,6 +160,7 @@ export function CustomersPage() {
                 <TableHead>Price group</TableHead>
                 <TableHead className="text-right">Credit limit</TableHead>
                 <TableHead className="text-right">Outstanding</TableHead>
+                {perms.canDelete('customers') && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -184,6 +187,17 @@ export function CustomersPage() {
                   <TableCell>{r.price_group}</TableCell>
                   <TableCell className="num">{amount(r.credit_limit)}</TableCell>
                   <TableCell className={Number(r.outstanding ?? 0) > 0 ? 'num font-medium' : 'num'}>{money(r.outstanding)}</TableCell>
+                  {perms.canDelete('customers') && (
+                    // stopPropagation, or the row's own click opens the edit dialog behind this one.
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DeleteButton
+                        label={r.name ?? 'customer'}
+                        detail="A customer who has ever been billed cannot be deleted — the screen will say so and you can set them inactive instead."
+                        invalidate={['customers']}
+                        onDelete={() => deleteMaster('customer', r.id ?? '')}
+                      />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

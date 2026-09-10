@@ -11,6 +11,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DeleteButton } from '@/components/DeleteButton';
+import { deleteMaster } from '@/features/search/deletes';
 import { usePermissions } from '@/features/auth/hooks';
 import { packTypesApi, sectionsApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
@@ -161,6 +163,7 @@ export function ItemsPage() {
                 <TableHead className="text-right">Unit rate</TableHead>
                 <TableHead className="text-right">Box rate</TableHead>
                 <TableHead className="text-right">Stock (boxes)</TableHead>
+                {perms.canDelete('items') && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -191,6 +194,17 @@ export function ItemsPage() {
                     <TableCell className="num">{amount(r.unit_rate)}</TableCell>
                     <TableCell className="num">{amount(r.box_rate)}</TableCell>
                     <TableCell className={boxes < 0 ? 'num font-medium text-destructive' : 'num'}>{qty(boxes)}</TableCell>
+                    {perms.canDelete('items') && (
+                      // stopPropagation, or the row's own click opens the item behind the dialog.
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DeleteButton
+                          label={r.name ?? r.item_code ?? 'product'}
+                          detail="A product that has ever been bought, sold or counted cannot be deleted — the screen will say so and you can set it inactive instead."
+                          invalidate={['items']}
+                          onDelete={() => deleteMaster('item', r.id ?? '')}
+                        />
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}

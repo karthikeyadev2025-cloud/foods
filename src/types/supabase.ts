@@ -10443,6 +10443,11 @@ export type Database = {
           party: string
         }[]
       }
+      delete_document: {
+        Args: { p_id: string; p_kind: string }
+        Returns: string
+      }
+      delete_master: { Args: { p_id: string; p_kind: string }; Returns: string }
       deposit_cheque: {
         Args: { p_account: string; p_cheque: string; p_date?: string }
         Returns: undefined
@@ -10471,6 +10476,10 @@ export type Database = {
           units_per_box: number
           uom_id: string
         }[]
+      }
+      doc_stock_shortfall: {
+        Args: { p_ref_id: string; p_ref_table: string }
+        Returns: string
       }
       ean13_check: { Args: { p_body: string }; Returns: string }
       effective_unit_rate: {
@@ -10971,6 +10980,10 @@ export type Database = {
       recompute_invoice_totals: {
         Args: { p_invoice: string }
         Returns: undefined
+      }
+      ref_count: {
+        Args: { p_col: string; p_id: string; p_table: string }
+        Returns: number
       }
       reject_inbound_order: {
         Args: { p_order: string; p_reason?: string }

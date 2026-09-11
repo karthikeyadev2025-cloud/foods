@@ -73,6 +73,23 @@ const SHEETS = [
     ],
   },
   {
+    /*
+      One row per ingredient, product code repeated. The blank "Pieces per
+      plate" cells are the point of the example: it belongs to the recipe, not
+      to each ingredient, so it is written once and the rest of the group takes
+      it — which is how anybody fills this in by hand.
+    */
+    name: 'Recipes',
+    rows: [
+      ['Product code', 'Pieces per plate', 'Ingredient code', 'Qty per plate', 'Unit', 'Recipe name'],
+      ['8',  320, 'RM-BESAN', 12,  'KG', 'MYSORE PAK PLATE'],
+      ['8',  '',  'RM-SUGAR', 8,   'KG', ''],
+      ['8',  '',  'RM-GHEE',  500, 'G',  ''],
+      ['12', 480, 'RM-BESAN', 10,  'KG', 'BOONDI LADDU PLATE'],
+      ['12', '',  'RM-SUGAR', 9,   'KG', ''],
+    ],
+  },
+  {
     name: 'Rates',
     rows: [
       ['Item code', 'Unit rate', 'Purchase rate'],

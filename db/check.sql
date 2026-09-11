@@ -67,7 +67,8 @@ with expected(ord, file, kind, obj, detail) as (
     (36, '36_delete_and_void.sql','function','delete_master',              'delete and cancel on every screen'),
     (37, '37_data_health.sql',  'function', 'negative_stock',              'Stock > Problems: negative stock, unusable products, duplicate rows'),
     (38, '38_import_create_lookups.sql', 'fixed', 'import_rows#create_lookups',
-                                                                           'an unknown pack type or section no longer throws the whole product away')
+                                                                           'an unknown pack type or section no longer throws the whole product away'),
+    (39, '39_import_recipes.sql', 'fixed', 'import_rows#save_recipe',       'recipes can be imported from a spreadsheet, one row per ingredient')
 ),
 
 -- Did each file's own object actually make it?

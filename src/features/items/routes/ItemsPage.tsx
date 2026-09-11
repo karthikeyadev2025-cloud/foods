@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { BulkDeleteBar } from '@/components/BulkDeleteBar';
 import { DeleteButton } from '@/components/DeleteButton';
 import { deleteMaster } from '@/features/search/deletes';
 import { updateItem } from '@/features/items/api';
@@ -35,6 +36,9 @@ export function ItemsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const debounced = useDebounced(search);
+  // Ticked rows, by id. Cleared whenever the list underneath changes, so a
+  // tick can never survive onto a row the person is no longer looking at.
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
 
   const filters = { search: debounced, sectionId, packTypeId, type: type as ItemType | '', includeInactive };
   const items = useQuery({
@@ -76,7 +80,16 @@ export function ItemsPage() {
   const reset = <T,>(setter: (v: T) => void) => (v: T) => {
     setter(v);
     setPage(1);
+    setPicked(new Set());
   };
+
+  const canDelete = perms.canDelete('items');
+  const pageRows = items.data?.rows ?? [];
+  const rowsById = new Map(pageRows.map((r) => [r.id ?? '', r]));
+  const pageIds = pageRows.map((r) => r.id ?? '').filter(Boolean);
+  // Only what is ticked AND on screen: paging away and back must never carry an
+  // unseen selection into a delete.
+  const pickedOnPage = pageIds.filter((id) => picked.has(id));
 
   return (
     <div className="space-y-3">
@@ -142,6 +155,18 @@ export function ItemsPage() {
         </label>
       </div>
 
+      {canDelete && (
+        <BulkDeleteBar
+          ids={pickedOnPage}
+          noun="product"
+          labelFor={(id) => rowsById.get(id)?.name ?? rowsById.get(id)?.item_code ?? 'product'}
+          onDelete={(id) => deleteMaster('item', id)}
+          onClear={() => setPicked(new Set())}
+          invalidate={['items']}
+          detail="Each product is checked on its own. One that has ever been bought, sold or counted is refused and stays exactly as it is — the others still go."
+        />
+      )}
+
       {items.isLoading ? (
         <Spinner />
       ) : items.error ? (
@@ -157,6 +182,15 @@ export function ItemsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                {canDelete && (
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Select every product on this page"
+                      checked={pickedOnPage.length > 0 && pickedOnPage.length === pageIds.length}
+                      onChange={(e) => setPicked(e.target.checked ? new Set(pageIds) : new Set())}
+                    />
+                  </TableHead>
+                )}
                 <TableHead>Code</TableHead>
                 <TableHead>Item name</TableHead>
                 <TableHead>Pack</TableHead>
@@ -181,6 +215,21 @@ export function ItemsPage() {
                     onClick={() => navigate(`/items/${r.id}`)}
                     onKeyDown={(e) => e.key === 'Enter' && navigate(`/items/${r.id}`)}
                   >
+                    {canDelete && (
+                      // stopPropagation, or ticking a box opens the product.
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          aria-label={`Select ${r.name ?? r.item_code}`}
+                          checked={picked.has(r.id ?? '')}
+                          onChange={(e) => {
+                            const next = new Set(picked);
+                            if (e.target.checked) next.add(r.id ?? '');
+                            else next.delete(r.id ?? '');
+                            setPicked(next);
+                          }}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">
                       {r.item_code}
                       {!r.is_active && (

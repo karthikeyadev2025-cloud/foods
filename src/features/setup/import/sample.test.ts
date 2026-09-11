@@ -21,6 +21,7 @@ const SHEET_FOR_TARGET: Record<string, string> = {
   customers: 'Customers',
   opening_stock: 'Opening stock',
   rates: 'Rates',
+  recipes: 'Recipes',
 };
 
 describe('the sample import workbook', () => {
@@ -65,6 +66,17 @@ describe('the sample import workbook', () => {
     const p = parseSpreadsheet(book(), 'x.xlsx', 'No Such Sheet');
     expect(p.sheet).toBe('Sections');
     expect(p.rows.length).toBeGreaterThan(0);
+  });
+
+  it('shows a recipe as several rows for one product, with the plate size written once', () => {
+    const r = parseSpreadsheet(book(), 'x.xlsx', 'Recipes');
+    const product = r.headers.indexOf('Product code');
+    const plate = r.headers.indexOf('Pieces per plate');
+    const eights = r.rows.filter((x) => x[product] === '8');
+    expect(eights.length, 'a recipe of one ingredient teaches the wrong shape').toBeGreaterThan(1);
+    // Exactly one line of the group states the plate size; the rest inherit it.
+    expect(eights.filter((x) => (x[plate] ?? '') !== '')).toHaveLength(1);
+    expect(eights[0]?.[plate]).toBe('320');
   });
 
   it('keeps a text item code as text, so 27A does not become a number', () => {

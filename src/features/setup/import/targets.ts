@@ -1,4 +1,4 @@
-export type ImportTargetKey = 'sections' | 'items' | 'customers' | 'opening_stock' | 'rates';
+export type ImportTargetKey = 'sections' | 'items' | 'customers' | 'opening_stock' | 'rates' | 'recipes';
 
 export interface ImportField {
   key: string;
@@ -98,6 +98,26 @@ export const IMPORT_TARGETS: ImportTarget[] = [
       { key: 'opening_boxes', label: 'Opening (boxes)', required: true, aliases: ['opening', 'boxes', 'qty', 'quantity', 'closing', 'stock'] },
     ],
     bundled: [{ label: 'Opening stock as on 06-09-2026 (237 rows)', path: '/seed/opening_stock.csv', note: 'From STOCK_REPORT.xlsx, including the 7 negative rows.' }],
+  },
+  {
+    /*
+      The only target whose rows are not records. A recipe is a product and
+      everything that goes into it, so the sheet holds one row per INGREDIENT
+      with the product code repeated, and every row naming the same product
+      becomes one recipe — wherever those rows sit in the file.
+    */
+    key: 'recipes',
+    label: 'Recipes (production)',
+    description:
+      'One row per ingredient, repeating the product code. Rows naming the same product become one recipe and replace whatever that product had before. Both the product and the ingredients must already be in the item master.',
+    fields: [
+      { key: 'item_code', label: 'Product code', required: true, hint: 'the finished good this recipe makes', aliases: ['code', 'itemcode', 'productcode', 'product', 'finishedgood'] },
+      { key: 'pieces_per_plate', label: 'Pieces per plate', required: true, hint: 'write it once, on the first line of each recipe', aliases: ['piecesperplate', 'plate', 'platesize', 'output', 'outputpieces'] },
+      { key: 'ingredient_code', label: 'Ingredient code', required: true, hint: 'a raw or packing material, not a finished good', aliases: ['ingredient', 'ingredientcode', 'rawcode', 'rawmaterial', 'material'] },
+      { key: 'qty_per_plate', label: 'Qty per plate', required: true, aliases: ['qty', 'quantity', 'qtyperplate', 'usage'] },
+      { key: 'uom', label: 'Unit', hint: 'KG, G, L… defaults to the ingredient’s own unit', aliases: ['unit', 'uomcode', 'units'] },
+      { key: 'name', label: 'Recipe name', hint: 'optional; defaults to the product name', aliases: ['recipename', 'recipe'] },
+    ],
   },
   {
     key: 'rates',

@@ -49,9 +49,9 @@ export function money(v: Numeric): string {
 /**
  * Quantity, with the zeros that mean nothing left off: 32, 14.5, 13.88.
  *
- * `dp` is the MOST decimals shown, not a fixed width. "32.00 boxes" on a stock
- * screen is noise a shopkeeper has to read past on every line; "32" is the
- * answer. What it must never do is round a real part-box away — 13.88 boxes of
+ * `dp` is the MOST decimals shown, not a fixed width. "32.00 boxes" is noise a
+ * shopkeeper has to read past on every line of every screen and every printed
+ * sheet; "32" is the answer. What it must never do is round a real part-box away — 13.88 boxes of
  * a 48-jar box is 666 jars, and calling that 14 would misstate the shelf by
  * half a dozen. So the fraction survives whenever there is one.
  */
@@ -60,16 +60,6 @@ export function qty(v: Numeric, dp = 2): string {
   return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: dp }).format(n);
 }
 
-/**
- * The same number with its decimals always shown: "32.00".
- *
- * For a printed document, where a column of figures has to line up on the
- * decimal point and the client's own quotation has always read 32.00.
- */
-export function qtyFixed(v: Numeric, dp = 2): string {
-  const n = round(v, dp);
-  return new Intl.NumberFormat('en-IN', { minimumFractionDigits: dp, maximumFractionDigits: dp }).format(n);
-}
 
 /** Whole-number count with grouping: 1,234. */
 export function int(v: Numeric): string {

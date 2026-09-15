@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Spinner } from '@/components/Spinner';
 import { Button } from '@/components/ui/button';
 import { useMe } from '@/features/auth/hooks';
-import { dateDMY, int, qtyFixed, toNumber } from '@/lib/format';
+import { dateDMY, int, qty, toNumber } from '@/lib/format';
 import { getTransferLines, listTransfers } from '../inventory-api';
 
 /** T9.3 — the transfer note that travels with the goods. */
@@ -32,8 +32,8 @@ export function TransferPrintPage() {
         </div>
         <table className="mt-2 w-full border-collapse border border-black">
           <thead><tr className="border-b border-black"><th className="w-10 border-r border-black p-1 text-left">S.No</th><th className="w-16 border-r border-black p-1 text-left">CODE</th><th className="border-r border-black p-1 text-left">Item Name</th><th className="w-14 border-r border-black p-1 text-left">Pack</th><th className="w-16 border-r border-black p-1 text-right">Jars</th><th className="w-16 border-r border-black p-1 text-right">Boxes</th><th className="w-16 p-1 text-right">Units</th></tr></thead>
-          <tbody>{lines.data.map((l, i) => <tr key={l.id ?? i}><td className="border-r border-black px-1 text-center">{i + 1}</td><td className="border-r border-black px-1">{l.item_code}</td><td className="border-r border-black px-1">{l.item_name}</td><td className="border-r border-black px-1">{l.pack_code}</td><td className="border-r border-black px-1 text-right tabular-nums">{int(l.units_per_box)}</td><td className="border-r border-black px-1 text-right tabular-nums">{qtyFixed(l.boxes)}</td><td className="px-1 text-right tabular-nums">{qtyFixed(l.qty_base)}</td></tr>)}</tbody>
-          <tfoot><tr className="border-t border-black font-bold"><td colSpan={5} className="border-r border-black px-1 text-right">Total</td><td className="border-r border-black px-1 text-right tabular-nums">{qtyFixed(lines.data.reduce((s, l) => s + toNumber(l.boxes), 0))}</td><td className="px-1 text-right tabular-nums">{qtyFixed(lines.data.reduce((s, l) => s + toNumber(l.qty_base), 0))}</td></tr></tfoot>
+          <tbody>{lines.data.map((l, i) => <tr key={l.id ?? i}><td className="border-r border-black px-1 text-center">{i + 1}</td><td className="border-r border-black px-1">{l.item_code}</td><td className="border-r border-black px-1">{l.item_name}</td><td className="border-r border-black px-1">{l.pack_code}</td><td className="border-r border-black px-1 text-right tabular-nums">{int(l.units_per_box)}</td><td className="border-r border-black px-1 text-right tabular-nums">{qty(l.boxes)}</td><td className="px-1 text-right tabular-nums">{qty(l.qty_base)}</td></tr>)}</tbody>
+          <tfoot><tr className="border-t border-black font-bold"><td colSpan={5} className="border-r border-black px-1 text-right">Total</td><td className="border-r border-black px-1 text-right tabular-nums">{qty(lines.data.reduce((s, l) => s + toNumber(l.boxes), 0))}</td><td className="px-1 text-right tabular-nums">{qty(lines.data.reduce((s, l) => s + toNumber(l.qty_base), 0))}</td></tr></tfoot>
         </table>
         <div className="mt-10 grid grid-cols-3 gap-8 text-center"><div className="border-t border-black pt-1">Sent by</div><div className="border-t border-black pt-1">Driver</div><div className="border-t border-black pt-1">Received by</div></div>
       </div>

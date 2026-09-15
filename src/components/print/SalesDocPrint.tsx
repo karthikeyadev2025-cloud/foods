@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { amount, qty } from '@/lib/format';
+import { amount, qtyFixed } from '@/lib/format';
 import { amountInWords } from '@/lib/money';
 import { fillTerms, showField, type PrintOrg, type PrintTemplateLike } from './template';
 
@@ -128,9 +128,9 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
               <td className={`${cell} text-center`}>{i + 1}</td>
               {cols.code && <td className={cell}>{l.code}</td>}
               <td className={cell}>{l.name}</td>
-              {cols.jars && <td className={`${cell} text-right tabular-nums`}>{qty(l.units_per_box)}</td>}
-              <td className={`${cell} text-right tabular-nums`}>{qty(l.boxes)}</td>
-              {cols.qty && <td className={`${cell} text-right tabular-nums`}>{qty(l.qty)}</td>}
+              {cols.jars && <td className={`${cell} text-right tabular-nums`}>{qtyFixed(l.units_per_box)}</td>}
+              <td className={`${cell} text-right tabular-nums`}>{qtyFixed(l.boxes)}</td>
+              {cols.qty && <td className={`${cell} text-right tabular-nums`}>{qtyFixed(l.qty)}</td>}
               {cols.rate && <td className={`${cell} text-right tabular-nums`}>{amount(l.rate)}</td>}
               {cols.amount && <td className="px-1 text-right tabular-nums">{amount(l.amount)}</td>}
             </tr>
@@ -146,7 +146,7 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
         <tfoot>
           <tr className="border-t border-black font-bold">
             <td colSpan={2 + Number(cols.code) + Number(cols.jars)} className={`${cell} text-right`}>Total:</td>
-            <td className={`${cell} text-right tabular-nums`}>{qty(totalBoxes)}</td>
+            <td className={`${cell} text-right tabular-nums`}>{qtyFixed(totalBoxes)}</td>
             {/* No quantity total: it would add pieces of one item to jars of another. */}
             {cols.qty && <td className={cell} />}
             {cols.rate && <td className={cell} />}

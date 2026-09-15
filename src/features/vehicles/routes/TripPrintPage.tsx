@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Spinner } from '@/components/Spinner';
 import { Button } from '@/components/ui/button';
 import { useMe } from '@/features/auth/hooks';
-import { dateDMY, int, qty, toNumber } from '@/lib/format';
+import { dateDMY, int, qtyFixed, toNumber } from '@/lib/format';
 import { getTrip, tripLoadingSheet } from '../trips-api';
 
 /** Van loading sheet — what the driver signs for before leaving. */
@@ -55,8 +55,8 @@ export function TripPrintPage() {
                 <td className="border-r border-black px-1">{r.item_name}</td>
                 <td className="border-r border-black px-1">{r.pack ?? ''}</td>
                 <td className="border-r border-black px-1 text-right tabular-nums">{int(r.units_per_box)}</td>
-                <td className="border-r border-black px-1 text-right tabular-nums">{qty(r.boxes)}</td>
-                <td className="border-r border-black px-1 text-right tabular-nums">{qty(r.units)}</td>
+                <td className="border-r border-black px-1 text-right tabular-nums">{qtyFixed(r.boxes)}</td>
+                <td className="border-r border-black px-1 text-right tabular-nums">{qtyFixed(r.units)}</td>
                 <td className="px-1" />
               </tr>
             ))}
@@ -67,7 +67,7 @@ export function TripPrintPage() {
           <tfoot>
             <tr className="border-t border-black font-bold">
               <td colSpan={5} className="border-r border-black px-1 text-right">Total boxes:</td>
-              <td className="border-r border-black px-1 text-right tabular-nums">{qty(totalBoxes)}</td>
+              <td className="border-r border-black px-1 text-right tabular-nums">{qtyFixed(totalBoxes)}</td>
               <td className="border-r border-black" /><td />
             </tr>
           </tfoot>

@@ -71,3 +71,16 @@ export async function removeDuplicateStockRows(apply = false): Promise<number> {
   if (error) throw error;
   return Number(data ?? 0);
 }
+
+/**
+ * Remove one stock movement (db/41).
+ *
+ * The ledger is append-only for everyone else, so this goes through a
+ * security-definer function that refuses any row a document posted — those come
+ * back by cancelling the document, not by cutting the record out from under it.
+ */
+export async function deleteStockRow(id: number): Promise<string> {
+  const { data, error } = await supabase.rpc('delete_stock_row', { p_id: id });
+  if (error) throw error;
+  return String(data ?? 'deleted');
+}

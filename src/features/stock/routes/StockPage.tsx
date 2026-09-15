@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FeatureLocked } from '@/features/auth/components/RequireFeature';
+import { DeleteButton } from '@/components/DeleteButton';
 import { useMe, usePermissions } from '@/features/auth/hooks';
 import { getItem, searchItems, type ItemRow } from '@/features/items/api';
 import type { FeatureKey } from '@/lib/permissions';
@@ -20,7 +21,7 @@ import { sectionsApi, stockLocationsApi } from '@/features/setup/api';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, dateTimeDMY, qty, toISODate, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { closingStock, listItemStock, stockMovements, type ClosingStockRow } from '../api';
+import { closingStock, deleteStockRow, listItemStock, stockMovements, type ClosingStockRow } from '../api';
 import { DataHealth } from '../components/health';
 import { BarcodesPanel, BatchesPanel, CountsPanel, TransfersPanel } from '../components/inventory';
 
@@ -212,6 +213,7 @@ function Movements() {
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list });
   const moves = useQuery({ queryKey: ['stock', 'movements', item?.id, from, to, locationId], queryFn: () => stockMovements(item?.id ?? '', from, to, locationId), enabled: Boolean(item?.id) });
   const upb = item?.units_per_box ?? 0;
+  const canDelete = usePermissions().canDelete('stock');
 
   const onExport = () =>
     exportToExcel(`movements-${item?.item_code ?? ''}`, (moves.data ?? []).map((m) => ({ Date: dateDMY(m.txn_date), Type: m.txn_type, Location: m.location_name, Reference: m.ref_no, 'Qty (units)': toNumber(m.qty_base), 'Qty (boxes)': toNumber(m.boxes), 'Balance (units)': toNumber(m.balance_base), 'Balance (boxes)': toNumber(m.balance_boxes), Rate: toNumber(m.rate) })), 'Movements');
@@ -239,7 +241,7 @@ function Movements() {
       ) : (
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Location</TableHead><TableHead>Reference</TableHead><TableHead className="text-right">In</TableHead><TableHead className="text-right">Out</TableHead><TableHead className="text-right">Balance (boxes)</TableHead><TableHead className="text-right">Balance (units)</TableHead><TableHead>Entered</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Location</TableHead><TableHead>Reference</TableHead><TableHead className="text-right">In</TableHead><TableHead className="text-right">Out</TableHead><TableHead className="text-right">Balance (boxes)</TableHead><TableHead className="text-right">Balance (units)</TableHead><TableHead>Entered</TableHead>{canDelete && <TableHead className="w-10" />}</TableRow></TableHeader>
             <TableBody>
               {moves.data.map((m) => {
                 const q = toNumber(m.qty_base);
@@ -254,6 +256,24 @@ function Movements() {
                     <TableCell className={cn('num font-medium', toNumber(m.balance_base) < 0 && 'text-destructive')}>{qty(m.balance_boxes)}</TableCell>
                     <TableCell className="num text-muted-foreground">{qty(m.balance_base, 3)}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{dateTimeDMY(m.created_at)}</TableCell>
+                    {canDelete && (
+                      <TableCell>
+                        {/*
+                          Only rows nobody billed. A movement a document posted
+                          is refused by the database and the dialog says which
+                          document — so the button is offered on every row and
+                          the refusal does the teaching, rather than the screen
+                          guessing at rules the database already holds.
+                        */}
+                        <DeleteButton
+                          variant="icon"
+                          label={`this ${m.txn_type?.replace('_', ' ')} of ${qty(Math.abs(q) / (upb || 1))} boxes`}
+                          detail="The stock figure for this product changes by exactly this much. A movement that came from a bill, purchase or batch cannot be removed here — cancel that document instead."
+                          invalidate={['stock']}
+                          onDelete={() => deleteStockRow(Number(m.id))}
+                        />
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}

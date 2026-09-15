@@ -69,7 +69,8 @@ with expected(ord, file, kind, obj, detail) as (
     (38, '38_import_create_lookups.sql', 'fixed', 'import_rows#create_lookups',
                                                                            'an unknown pack type or section no longer throws the whole product away'),
     (39, '39_import_recipes.sql', 'fixed', 'import_rows#save_recipe',       'recipes can be imported from a spreadsheet, one row per ingredient'),
-    (40, '40_count_reason.sql', 'fixed', 'open_stock_count#no products yet',  '"No items to count" now says which nothing — usually the section dropdown')
+    (40, '40_count_reason.sql', 'fixed', 'open_stock_count#no products yet',  '"No items to count" now says which nothing — usually the section dropdown'),
+    (41, '41_delete_stock_row.sql','function','delete_stock_row',              'remove a typed or imported stock movement; a document''s own rows are refused')
 ),
 
 -- Did each file's own object actually make it?

@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { Field } from '@/components/Field';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/ui/badge';
+import { DeleteButton } from '@/components/DeleteButton';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -16,6 +17,7 @@ import { useMe, usePermissions } from '@/features/auth/hooks';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
 import { money } from '@/lib/format';
+import { deleteStaff } from '@/features/search/deletes';
 import { ROLES, roleLabel } from '@/lib/permissions';
 import { createUser, listStaff, resetPassword, updateStaff, type Staff } from '../api';
 import { editUserSchema, newUserSchema, orNull, resetPasswordSchema, type EditUserInput, type NewUserInput, type ResetPasswordInput } from '../schema';
@@ -115,6 +117,26 @@ export function UsersPanel({ compact }: { compact?: boolean }) {
                       <Button variant="ghost" size="icon" aria-label={`Edit ${s.full_name}`} onClick={() => setEditing(s)}>
                         <Pencil />
                       </Button>
+                      {/*
+                        Not on your own row. The database refuses it too — that
+                        is where the rule lives — but there is no reason to offer
+                        somebody a button whose only outcome is being told they
+                        have just tried to lock themselves out.
+                      */}
+                      {s.id !== me.data?.staff_id && (
+                        <DeleteButton
+                          label={s.full_name ?? 'this user'}
+                          detail="Anyone who has entered a bill, taken a receipt or driven a trip cannot be deleted — their name has to keep reading correctly on that paperwork. The screen will say so, and Set inactive is there instead."
+                          invalidate={['setup']}
+                          onDelete={() => deleteStaff(s.id)}
+                          onDeactivate={() => updateStaff(s.id, { is_active: false })}
+                          deactivateWarning={
+                            s.auth_uid
+                              ? 'Inactive stops them signing in and takes them off every list. Their sign-in account still exists in Supabase and should be removed there too.'
+                              : 'Inactive takes them off every list. Nothing they have already entered changes.'
+                          }
+                        />
+                      )}
                     </TableCell>
                   )}
                 </TableRow>

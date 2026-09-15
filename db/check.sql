@@ -71,7 +71,8 @@ with expected(ord, file, kind, obj, detail) as (
     (39, '39_import_recipes.sql', 'fixed', 'import_rows#save_recipe',       'recipes can be imported from a spreadsheet, one row per ingredient'),
     (40, '40_count_reason.sql', 'fixed', 'open_stock_count#no products yet',  '"No items to count" now says which nothing — usually the section dropdown'),
     (41, '41_delete_stock_row.sql','function','delete_stock_row',              'remove a typed or imported stock movement; a document''s own rows are refused'),
-    (42, '42_purge_item.sql',   'function', 'purge_item',                  'remove a product outright with its unbilled stock; any document still refuses it')
+    (42, '42_purge_item.sql',   'function', 'purge_item',                  'remove a product outright with its unbilled stock; any document still refuses it'),
+    (43, '43_delete_staff.sql', 'function', 'delete_staff',                'delete a user, but never yourself and never the last owner')
 ),
 
 -- Did each file's own object actually make it?

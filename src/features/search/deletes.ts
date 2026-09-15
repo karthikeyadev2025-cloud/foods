@@ -41,3 +41,13 @@ export async function purgeItem(id: string): Promise<string> {
   if (error) throw error;
   return String(data ?? 'removed');
 }
+
+/**
+ * Remove a user (db/43). Refuses your own login and the last owner — both lock
+ * the shop out of its own settings with no way back from inside the app.
+ */
+export async function deleteStaff(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc('delete_staff', { p_id: id });
+  if (error) throw error;
+  return String(data ?? 'deleted');
+}

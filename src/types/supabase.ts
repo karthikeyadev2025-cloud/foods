@@ -10448,6 +10448,7 @@ export type Database = {
         Returns: string
       }
       delete_master: { Args: { p_id: string; p_kind: string }; Returns: string }
+      delete_staff: { Args: { p_id: string }; Returns: string }
       delete_stock_row: { Args: { p_id: number }; Returns: string }
       deposit_cheque: {
         Args: { p_account: string; p_cheque: string; p_date?: string }

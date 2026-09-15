@@ -1,5 +1,6 @@
 import { currentOrgId } from '@/features/auth/api';
-import { expectOk, expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
+import { deleteMaster } from '@/features/search/deletes';
+import { expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
 import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
 import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
@@ -93,6 +94,6 @@ export function updateSupplier(id: string, values: Tables['suppliers']['Update']
   return expectOne(supabase.from('suppliers').update(values).eq('id', id).select('*').single());
 }
 
-export function removeSupplier(id: string): Promise<void> {
-  return expectOk(supabase.from('suppliers').delete().eq('id', id));
+export function removeSupplier(id: string): Promise<string> {
+  return deleteMaster('supplier', id);
 }

@@ -30,3 +30,14 @@ export async function deleteDocument(kind: DocumentDeleteKind, id: string): Prom
   if (error) throw error;
   return data ?? 'deleted';
 }
+
+/**
+ * Remove a product outright, taking the stock movements nobody billed with it
+ * (db/42). Refused the moment any document names it, so this is only ever the
+ * answer for something typed or imported by mistake.
+ */
+export async function purgeItem(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc('purge_item', { p_id: id });
+  if (error) throw error;
+  return String(data ?? 'removed');
+}

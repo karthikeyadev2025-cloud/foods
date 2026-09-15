@@ -13,7 +13,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BulkDeleteBar } from '@/components/BulkDeleteBar';
 import { DeleteButton } from '@/components/DeleteButton';
-import { deleteMaster } from '@/features/search/deletes';
+import { deleteMaster, purgeItem } from '@/features/search/deletes';
 import { updateItem } from '@/features/items/api';
 import { usePermissions } from '@/features/auth/hooks';
 import { packTypesApi, sectionsApi } from '@/features/setup/api';
@@ -255,6 +255,14 @@ export function ItemsPage() {
                           detail="A product that has ever been bought, sold or counted cannot be deleted — the screen will say so and you can set it inactive instead."
                           invalidate={['items']}
                           onDelete={() => deleteMaster('item', r.id ?? '')}
+                          onPurge={() => purgeItem(r.id ?? '')}
+                          purgeWarning={
+                            <>
+                              <span className="font-medium">This cannot be undone.</span> The product goes, and so do its
+                              stock movements — the opening figure and any adjustment. It is only offered because nothing
+                              has ever been billed, quoted or produced against it.
+                            </>
+                          }
                           onDeactivate={() => updateItem(r.id ?? '', { is_active: false })}
                           deactivateWarning={
                             boxes !== 0

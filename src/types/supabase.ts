@@ -10987,6 +10987,7 @@ export type Database = {
           role: Database["public"]["Enums"]["staff_role"]
         }[]
       }
+      purge_item: { Args: { p_id: string }; Returns: string }
       qty_to_pieces: {
         Args: { p_item: string; p_qty: number; p_uom: string }
         Returns: number

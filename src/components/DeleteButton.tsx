@@ -32,6 +32,15 @@ export interface DeleteButtonProps {
    * nothing, and a balance nobody can see any more is worse than one they can.
    */
   deactivateWarning?: ReactNode;
+  /**
+   * Removes the record AND the rows that only ever described it — for an item,
+   * its own stock movements. Offered only after an ordinary delete has been
+   * refused, and only when the database said the thing in the way was stock
+   * rather than a bill.
+   */
+  onPurge?: () => Promise<string>;
+  /** What `onPurge` will take with it, in plain words. */
+  purgeWarning?: ReactNode;
 }
 
 /**
@@ -53,6 +62,8 @@ export function DeleteButton({
   onDone,
   onDeactivate,
   deactivateWarning,
+  onPurge,
+  purgeWarning,
 }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -85,6 +96,25 @@ export function DeleteButton({
 
   // Only when the database itself said so — never guessed at from the error code.
   const offerInactive = Boolean(onDeactivate) && Boolean(refusal?.toLowerCase().includes('inactive'));
+
+  /*
+    Offered only when what stands in the way is STOCK. A refusal naming a bill,
+    a quotation or a recipe is history, and purge would be refused too — putting
+    the button there would teach people to press it and be told no.
+  */
+  const offerPurge = Boolean(onPurge) && Boolean(refusal?.toLowerCase().includes('stock movement'));
+
+  const purge = useMutation({
+    mutationFn: () => onPurge!(),
+    onSuccess: async (message) => {
+      await Promise.all(invalidate.map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
+      setOpen(false);
+      setRefusal(null);
+      toast({ title: message });
+      onDone?.('deleted');
+    },
+    onError: (err) => setRefusal(errorMessage(err)),
+  });
 
   return (
     <>
@@ -124,15 +154,23 @@ export function DeleteButton({
           {offerInactive && deactivateWarning && (
             <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{deactivateWarning}</p>
           )}
+          {offerPurge && purgeWarning && (
+            <p className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">{purgeWarning}</p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               {refusal ? 'Close' : 'Keep it'}
             </Button>
+            {offerPurge && (
+              <Button variant="destructive" onClick={() => purge.mutate()} disabled={purge.isPending}>
+                Remove it and its stock
+              </Button>
+            )}
             {offerInactive ? (
               <Button onClick={() => deactivate.mutate()} disabled={deactivate.isPending}>
                 Set inactive
               </Button>
-            ) : (
+            ) : offerPurge ? null : (
               <Button variant="destructive" onClick={() => run.mutate()} disabled={run.isPending}>
                 {refusal ? 'Try again' : 'Delete'}
               </Button>

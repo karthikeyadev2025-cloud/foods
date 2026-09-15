@@ -91,14 +91,29 @@ export function CountSheetPage() {
               <Fragment key={g.name}>
                 <TableRow className="bg-muted/50 hover:bg-muted/50"><TableCell colSpan={7} className="font-semibold">{g.name}</TableCell></TableRow>
                 {g.rows.map((l) => {
-                  const diff = l.counted_boxes === null ? null : toNumber(l.variance_boxes);
+                  /*
+                    While a line is being typed, the difference has to come from
+                    what is IN THE BOX, not from the server's copy: the saved
+                    figure only catches up on blur, so the counter used to type
+                    26 against a system 31 and see an empty Difference column
+                    until they tabbed away. The number they are working out is
+                    the whole reason they are standing there.
+                  */
+                  const draft = drafts[l.item_id ?? ''];
+                  const typing = draft !== undefined && draft !== '';
+                  const diff = typing
+                    ? toNumber(draft) - toNumber(l.system_boxes)
+                    : l.counted_boxes === null ? null : toNumber(l.variance_boxes);
+                  // The rupee value is left to the saved line. Pricing a half-typed
+                  // figure would mean inventing a rate on the spot, and the number
+                  // somebody standing at a shelf needs is boxes, not rupees.
                   return (
                     <TableRow key={l.id ?? ''} className={cn(diff !== null && diff !== 0 && 'bg-amber-50/60')}>
                       <TableCell className="font-medium">{l.item_code}</TableCell><TableCell>{l.item_name}</TableCell><TableCell className="text-muted-foreground">{l.pack_code}</TableCell>
                       <TableCell className="num">{blank ? '' : qty(l.system_boxes)}</TableCell>
                       <TableCell className="num">{blank ? <span className="inline-block h-5 w-24 border-b border-black print:inline-block" /> : editable ? <Input type="number" step="0.001" min={0} className="num h-8" aria-label={`Counted boxes for ${l.item_code}`} placeholder="—" value={drafts[l.item_id ?? ''] ?? (l.counted_boxes === null ? '' : String(toNumber(l.counted_boxes)))} onChange={(e) => setDrafts((d) => ({ ...d, [l.item_id ?? '']: e.target.value }))} onBlur={() => commit(l)} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} /> : l.counted_boxes === null ? <span className="text-muted-foreground">—</span> : qty(l.counted_boxes)}</TableCell>
                       <TableCell className={cn('num font-medium', diff !== null && diff < 0 && 'text-destructive', diff !== null && diff > 0 && 'text-green-700')}>{blank || diff === null ? '' : diff > 0 ? `+${qty(diff)}` : qty(diff)}</TableCell>
-                      <TableCell className="num text-muted-foreground">{blank || diff === null ? '' : amount(l.variance_value)}</TableCell>
+                      <TableCell className="num text-muted-foreground">{blank || typing || l.counted_boxes === null ? '' : amount(l.variance_value)}</TableCell>
                     </TableRow>
                   );
                 })}

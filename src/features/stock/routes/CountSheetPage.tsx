@@ -16,6 +16,18 @@ import { amount, dateDMY, dateTimeDMY, qty, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { getCount, getCountLines, postStockCount, updateStockCount, type CountLineRow } from '../inventory-api';
 
+/**
+ * The header and the lines are two queries, and saving a line has to refresh
+ * BOTH. Written out by hand they drifted: the save invalidated ['stock','count']
+ * which matches the header and not ['stock','count-lines'], so a saved figure
+ * never came back and the only way to see it was to leave and return. Naming
+ * them once is what stops that happening again.
+ */
+const countKeys = {
+  header: (id: string) => ['stock', 'count', id] as const,
+  lines: (id: string) => ['stock', 'count-lines', id] as const,
+};
+
 /** T9.4 — the count sheet: print blank, type counted boxes (saved as you go), post the variance. */
 export function CountSheetPage() {
   const { id = '' } = useParams();
@@ -23,8 +35,8 @@ export function CountSheetPage() {
   const qc = useQueryClient();
   const me = useMe();
   const perms = usePermissions();
-  const count = useQuery({ queryKey: ['stock', 'count', id], queryFn: () => getCount(id) });
-  const lines = useQuery({ queryKey: ['stock', 'count-lines', id], queryFn: () => getCountLines(id) });
+  const count = useQuery({ queryKey: countKeys.header(id), queryFn: () => getCount(id) });
+  const lines = useQuery({ queryKey: countKeys.lines(id), queryFn: () => getCountLines(id) });
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [onlyDiff, setOnlyDiff] = useState(false);
   const [blank, setBlank] = useState(false);
@@ -33,7 +45,25 @@ export function CountSheetPage() {
 
   const save = useMutation({
     mutationFn: (l: { item_id: string; counted_boxes: number | null }[]) => updateStockCount(id, l),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['stock', 'count'] }),
+    onSuccess: async (_data, saved) => {
+      // Both queries, through countKeys — see the note on it.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: countKeys.header(id) }),
+        qc.invalidateQueries({ queryKey: countKeys.lines(id) }),
+      ]);
+      // Only now does the row itself carry the number, so the typed text can go.
+      // A line typed again while this was in flight keeps its newer draft.
+      setDrafts((d) => {
+        const rest = { ...d };
+        for (const v of saved) {
+          const still = rest[v.item_id];
+          if (still === undefined) continue;
+          const same = still.trim() === '' ? v.counted_boxes === null : toNumber(still) === v.counted_boxes;
+          if (same) delete rest[v.item_id];
+        }
+        return rest;
+      });
+    },
     onError: (e) => toastError(e, 'Could not save the count'),
   });
   const post = useMutation({
@@ -42,12 +72,20 @@ export function CountSheetPage() {
     onError: (e) => toastError(e, 'Could not post'),
   });
   const commit = (l: CountLineRow) => {
-    const raw = drafts[l.item_id ?? ''];
+    const key = l.item_id ?? '';
+    const raw = drafts[key];
     if (raw === undefined) return;
-    setDrafts((d) => { const { [l.item_id ?? '']: _x, ...rest } = d; void _x; return rest; });
     const next = raw.trim() === '' ? null : toNumber(raw);
-    if (next === (l.counted_boxes === null ? null : toNumber(l.counted_boxes))) return;
-    save.mutate([{ item_id: l.item_id ?? '', counted_boxes: next }]);
+    const onRow = l.counted_boxes === null ? null : toNumber(l.counted_boxes);
+    if (next === onRow) {
+      // Nothing to send. The row already reads this, so the draft is spare.
+      setDrafts((d) => { const { [key]: _x, ...rest } = d; void _x; return rest; });
+      return;
+    }
+    // The draft stays until the save lands. Dropping it here was the second half
+    // of the bug: the box fell back to a row that had not been refetched, so the
+    // number a person had just typed vanished in front of them.
+    save.mutate([{ item_id: key, counted_boxes: next }]);
   };
 
   const groups = useMemo(() => {

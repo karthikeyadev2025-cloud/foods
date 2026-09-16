@@ -26,6 +26,7 @@ import {
   receiptModeSchema,
   routeSchema,
   sectionSchema,
+  stampDate,
   stockLocationSchema,
   uomSchema,
   type ExpenseHeadInput,
@@ -432,8 +433,11 @@ const SERIES_STANDARD: NumberSeriesInput[] = DOC_TYPES.map((d) => ({
   reset_period: 'never',
 }));
 
+// Shown with today's date already filled in, because that is what will be
+// printed on the bill. A preview reading '{YY}{MM}{DD}/01' teaches nobody
+// whether the tokens are right.
 function preview(v: NumberSeriesInput): string {
-  return `${v.prefix}${String(v.next_number).padStart(v.width, '0')}${v.suffix}`;
+  return `${stampDate(v.prefix)}${String(v.next_number).padStart(v.width, '0')}${stampDate(v.suffix)}`;
 }
 
 export function NumberSeriesPanel({ compact }: { compact?: boolean }) {
@@ -445,7 +449,8 @@ export function NumberSeriesPanel({ compact }: { compact?: boolean }) {
     singular: 'Number series',
     exportName: 'number-series',
     description:
-      'One series per document type: prefix, digits, suffix and when the counter resets. A series is created automatically the first time a document type is used if none exists.',
+      'One series per document type: prefix, digits, suffix and when the counter resets. A series is created automatically the first time a document type is used if none exists. ' +
+      'A prefix or suffix may carry {YYYY} {YY} {MM} {DD}, filled in with the date when the number is given out — and it must, if the counter resets, or the new period lands on numbers already used.',
     columns: [
       { key: 'doc_type', label: 'Document', render: (r) => docLabel(r.doc_type), exportValue: (r) => docLabel(r.doc_type) },
       { key: 'prefix', label: 'Prefix' },
@@ -474,7 +479,7 @@ export function NumberSeriesPanel({ compact }: { compact?: boolean }) {
     ],
     fields: [
       { name: 'doc_type', label: 'Document type', type: 'select', options: DOC_TYPES, lockOnEdit: true },
-      { name: 'prefix', label: 'Prefix', half: true, placeholder: 'INV/' },
+      { name: 'prefix', label: 'Prefix', half: true, placeholder: 'INV/ or {YY}{MM}{DD}/' },
       { name: 'suffix', label: 'Suffix', half: true, placeholder: '/26-27' },
       { name: 'width', label: 'Digits', type: 'number', half: true },
       { name: 'next_number', label: 'Next number', type: 'number', half: true },

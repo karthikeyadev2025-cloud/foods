@@ -75,7 +75,8 @@ with expected(ord, file, kind, obj, detail) as (
     (43, '43_delete_staff.sql', 'function', 'delete_staff',                'delete a user, but never yourself and never the last owner'),
     (44, '44_doc_no_collision.sql','fixed','next_doc_no#doc_no_home',       'a bill number already in use is never handed out again (23505 on save_invoice)'),
     (45, '45_resync_from_editor.sql','fixed','resync_doc_numbers#Which organisation',
-                                                                           'the numbering repair can actually be run from the SQL Editor')
+                                                                           'the numbering repair can actually be run from the SQL Editor'),
+    (46, '46_numbering_dates.sql','function','doc_no_stamp',                '{YYYY} {YY} {MM} {DD} in a prefix, so a counter that resets has a date to reset into')
 ),
 
 -- Did each file's own object actually make it?

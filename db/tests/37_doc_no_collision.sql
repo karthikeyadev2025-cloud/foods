@@ -71,16 +71,20 @@ begin
 
   -- 4. resync_doc_numbers() moves a stranded counter in one step.
   update number_series set next_number = 1 where org_id = v_org and doc_type = 'invoice';
-  select count(*) into n from resync_doc_numbers() where doc_type = 'invoice';
-  assert n = 1, '37.4 resync did not report the invoice series';
+  select count(*) into n from resync_doc_numbers()
+   where doc_type = 'invoice' and action like 'MOVED%';
+  assert n = 1, '37.4 resync did not move the invoice series';
   -- 0001, 0003 and 0004 exist (0002 was deleted), so the counter belongs at 5.
   assert (select next_number from number_series where org_id = v_org and doc_type = 'invoice') = 5,
     format('37.4 counter left at %s',
       (select next_number from number_series where org_id = v_org and doc_type = 'invoice'));
 
-  -- Run twice and the second says there was nothing to do.
-  select count(*) into n from resync_doc_numbers();
+  -- Run twice and the second moves nothing — but it still REPORTS every series,
+  -- so an empty result can only ever mean "this org has no numbering at all".
+  select count(*) into n from resync_doc_numbers() where action like 'MOVED%';
   assert n = 0, format('37.5 a second resync moved %s series that were already right', n);
+  select count(*) into n from resync_doc_numbers();
+  assert n > 0, '37.5 the report went silent on series it had nothing to do to';
 
   -- 4b. THE ONE THAT SHIPPED UNRUNNABLE. The repair has to work from the SQL
   --     Editor too, where there is no signed-in user at all — that is where a
@@ -89,7 +93,8 @@ begin
   update number_series set next_number = 1 where org_id = v_org and doc_type = 'invoice';
   perform set_config('request.jwt.claim.sub', '', true);      -- no JWT, as in the editor
   assert my_org_id() is null, '37.8 the test did not actually clear the session';
-  select count(*) into n from resync_doc_numbers(v_org);
+  select count(*) into n from resync_doc_numbers(v_org)
+   where doc_type = 'invoice' and action like 'MOVED%';
   assert n = 1, '37.8 the repair still cannot be run from the SQL Editor';
 
   -- With nobody signed in and no org named, it says which is missing rather

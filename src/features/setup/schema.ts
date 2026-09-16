@@ -116,14 +116,67 @@ export const RESET_PERIODS = [
   { value: 'daily', label: 'Every day' },
 ] as const;
 
-export const numberSeriesSchema = z.object({
-  doc_type: z.string().trim().min(1, 'Document type is required'),
-  prefix: z.string().trim().max(20),
-  suffix: z.string().trim().max(20),
-  width: z.coerce.number().int().min(1, 'At least 1 digit').max(10),
-  next_number: z.coerce.number().int().min(1),
-  reset_period: z.enum(['never', 'yearly', 'monthly', 'daily']),
-});
+/** Date pieces that may be written into a prefix or a suffix. */
+export const DATE_TOKENS = ['{YYYY}', '{YY}', '{MM}', '{DD}'] as const;
+
+/** Fill the date tokens in. {YYYY} goes first, or '{YYYY}' becomes '26YY}'. */
+export function stampDate(text: string, on = new Date()): string {
+  const yyyy = String(on.getFullYear());
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return text
+    .replaceAll('{YYYY}', yyyy)
+    .replaceAll('{YY}', yyyy.slice(-2))
+    .replaceAll('{MM}', pad(on.getMonth() + 1))
+    .replaceAll('{DD}', pad(on.getDate()));
+}
+
+/**
+ * Why a series cannot reset the way it is set, or null when there is nothing
+ * wrong with it.
+ *
+ * The shop's invoice series was "reset every day" with no prefix at all, which
+ * cannot mean anything: tomorrow's 01 is last week's 01, and the bill would not
+ * save — that is the 23505 the till reported. A reset is only safe when the
+ * number carries every date part that has to change, and monthly needs the year
+ * too or January 2027 lands straight back on January 2026's numbers. This is
+ * numbering_warning() in the database, in the same words.
+ */
+export function numberingProblem(v: {
+  reset_period: string;
+  prefix: string;
+  suffix: string;
+}): string | null {
+  if (v.reset_period === 'never') return null;
+  const spec = {
+    yearly: { needs: '{YYYY}', every: 'year' },
+    monthly: { needs: '{YYYY}{MM}', every: 'month' },
+    daily: { needs: '{YYYY}{MM}{DD}', every: 'day' },
+  }[v.reset_period];
+  if (!spec) return null;
+
+  const t = `${v.prefix}${v.suffix}`;
+  const dated =
+    (t.includes('{YYYY}') || t.includes('{YY}')) &&
+    (v.reset_period === 'yearly' || t.includes('{MM}')) &&
+    (v.reset_period !== 'daily' || t.includes('{DD}'));
+  if (dated) return null;
+
+  return `The counter goes back to 1 every ${spec.every}, but the number carries no date — so it lands on numbers already used and the bill will not save. Put ${spec.needs} in the prefix, or set Reset to Never.`;
+}
+
+export const numberSeriesSchema = z
+  .object({
+    doc_type: z.string().trim().min(1, 'Document type is required'),
+    prefix: z.string().trim().max(20),
+    suffix: z.string().trim().max(20),
+    width: z.coerce.number().int().min(1, 'At least 1 digit').max(10),
+    next_number: z.coerce.number().int().min(1),
+    reset_period: z.enum(['never', 'yearly', 'monthly', 'daily']),
+  })
+  .superRefine((v, ctx) => {
+    const problem = numberingProblem(v);
+    if (problem) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['prefix'], message: problem });
+  });
 export type NumberSeriesInput = z.infer<typeof numberSeriesSchema>;
 
 export const orgSchema = z.object({

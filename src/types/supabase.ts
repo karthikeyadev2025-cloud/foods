@@ -10479,6 +10479,14 @@ export type Database = {
           uom_id: string
         }[]
       }
+      doc_no_home: {
+        Args: { p_doc_type: string }
+        Returns: {
+          col: string
+          tbl: string
+        }[]
+      }
+      doc_no_stamp: { Args: { p_on?: string; p_text: string }; Returns: string }
       doc_stock_shortfall: {
         Args: { p_ref_id: string; p_ref_table: string }
         Returns: string
@@ -10812,6 +10820,10 @@ export type Database = {
       normalize_code: { Args: { p: string }; Returns: string }
       normalize_item_code: { Args: { p: string }; Returns: string }
       normalize_mobile: { Args: { p: string }; Returns: string }
+      numbering_warning: {
+        Args: { p_prefix: string; p_reset: string; p_suffix: string }
+        Returns: string
+      }
       open_production_batch: { Args: { p: Json }; Returns: string }
       open_stock_count: {
         Args: {
@@ -11030,6 +11042,7 @@ export type Database = {
         Args: { p_col: string; p_id: string; p_table: string }
         Returns: number
       }
+      regex_literal: { Args: { p_text: string }; Returns: string }
       reject_inbound_order: {
         Args: { p_order: string; p_reason?: string }
         Returns: undefined
@@ -11068,6 +11081,18 @@ export type Database = {
       reorder_sections: { Args: { p_ids: string[] }; Returns: undefined }
       require_feature: { Args: { p_feature: string }; Returns: undefined }
       restore_org_snapshot: { Args: { p: Json }; Returns: Json }
+      resync_doc_numbers: {
+        Args: { p_org?: string }
+        Returns: {
+          action: string
+          counter_now: number
+          counter_was: number
+          doc_type: string
+          highest_document: number
+          next_number_is: string
+          warning: string
+        }[]
+      }
       reverse_journal: {
         Args: {
           p_date: string

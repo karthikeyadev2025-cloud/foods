@@ -16,7 +16,7 @@ grant execute on all functions in schema public to authenticated;
 do $$
 declare
   v_org uuid; v_uom uuid; v_loc uuid; v_cust uuid; v_item uuid;
-  v_inv uuid; v_no text; n bigint; r record;
+  v_inv uuid; v_no text; n bigint; r record; v_msg text;
   uid_owner uuid := gen_random_uuid();
 begin
   perform set_config('request.jwt.claim.sub', uid_owner::text, true);
@@ -81,6 +81,37 @@ begin
   -- Run twice and the second says there was nothing to do.
   select count(*) into n from resync_doc_numbers();
   assert n = 0, format('37.5 a second resync moved %s series that were already right', n);
+
+  -- 4b. THE ONE THAT SHIPPED UNRUNNABLE. The repair has to work from the SQL
+  --     Editor too, where there is no signed-in user at all — that is where a
+  --     database this broken actually gets repaired, and asking my_org_id()
+  --     there returns null and refuses.
+  update number_series set next_number = 1 where org_id = v_org and doc_type = 'invoice';
+  perform set_config('request.jwt.claim.sub', '', true);      -- no JWT, as in the editor
+  assert my_org_id() is null, '37.8 the test did not actually clear the session';
+  select count(*) into n from resync_doc_numbers(v_org);
+  assert n = 1, '37.8 the repair still cannot be run from the SQL Editor';
+
+  -- With nobody signed in and no org named, it says which is missing rather
+  -- than the old "Not signed in", which sent somebody looking at their login.
+  begin
+    perform resync_doc_numbers();
+    raise exception '37.9 renumbered with no organisation at all';
+  exception when sqlstate 'P0001' then
+    get stacked diagnostics v_msg = message_text;
+    assert v_msg like '%Which organisation%', format('37.9 unhelpful message: %s', v_msg);
+    assert v_msg like '%select * from resync_doc_numbers%', format('37.9 does not show the way: %s', v_msg);
+  end;
+
+  perform set_config('request.jwt.claim.sub', uid_owner::text, true);   -- back to signed in
+  -- Checked only now it is signed in again. Reading the counter while signed
+  -- OUT returns null however well the repair worked: the test runs as
+  -- `authenticated`, and with no session RLS hides every row from it. That cost
+  -- a while — the function said "moved invoice : 1 -> 5" and the assertion
+  -- straight after it still failed.
+  assert (select next_number from number_series where org_id = v_org and doc_type = 'invoice') = 5,
+    format('37.8 the editor run did not move the counter: %s',
+      (select next_number from number_series where org_id = v_org and doc_type = 'invoice'));
 
   -- 5. A series with nowhere to look keeps the old behaviour rather than
   --    guessing at a table that may not exist.

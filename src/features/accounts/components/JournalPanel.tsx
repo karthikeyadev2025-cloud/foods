@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, Plus, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MasterCrud, type MasterConfig } from '@/components/MasterCrud';
+import { DeleteButton } from '@/components/DeleteButton';
 import { Field } from '@/components/Field';
+import { MasterCrud, type MasterConfig } from '@/components/MasterCrud';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/features/auth/hooks';
+import { deleteDocument } from '@/features/search/deletes';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
@@ -36,6 +38,7 @@ const docLink = (e: JournalEntryRow): string | null => {
 export function JournalPanel() {
   const perms = usePermissions();
   const canEdit = perms.canEdit('payments');
+  const canDelete = perms.canDelete('payments');
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -64,7 +67,7 @@ export function JournalPanel() {
       ) : (
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>Entry</TableHead><TableHead>Date</TableHead><TableHead>Narration</TableHead><TableHead>Document</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Kind</TableHead><TableHead>By</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Entry</TableHead><TableHead>Date</TableHead><TableHead>Narration</TableHead><TableHead>Document</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Kind</TableHead><TableHead>By</TableHead>{canDelete && <TableHead className="w-12" />}</TableRow></TableHeader>
             <TableBody>
               {rows.map((e) => {
                 const link = docLink(e);
@@ -77,6 +80,20 @@ export function JournalPanel() {
                     <TableCell className="num">{amount(e.amount)}</TableCell>
                     <TableCell>{e.reverses_entry_id ? <Badge variant="outline">reversal</Badge> : e.is_manual ? <Badge variant="secondary">manual</Badge> : <Badge variant="outline">{e.ref_table?.replace('_', ' ')}</Badge>}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{e.created_by_name}</TableCell>
+                    {canDelete && (
+                      // Only a hand-typed entry. One raised by a bill or a
+                      // receipt is that document's own record of itself and is
+                      // refused by name, so the button is shown either way and
+                      // the database does the explaining.
+                      <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
+                        <DeleteButton
+                          label={`entry ${e.entry_no}`}
+                          detail="Only a hand-typed entry. Any money it moved through the cash or bank book comes back out with it."
+                          invalidate={['accounts']}
+                          onDelete={() => deleteDocument('journal', e.id ?? '')}
+                        />
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}

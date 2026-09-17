@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { DeleteButton } from '@/components/DeleteButton';
 import { Field } from '@/components/Field';
 import { PageHeader } from '@/components/PageHeader';
 import { Spinner } from '@/components/Spinner';
@@ -12,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/features/auth/hooks';
+import { deleteDocument } from '@/features/search/deletes';
 import { listStaff, routesApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { amount, dateDMY, qty, toISODate, toNumber } from '@/lib/format';
@@ -39,6 +41,7 @@ export function TripsPage() {
   const [to, setTo] = useState('');
   const [creating, setCreating] = useState(false);
   const trips = useQuery({ queryKey: ['trips', 'list', status, from, to], queryFn: () => listTrips({ status, from, to }) });
+  const canDelete = perms.canDelete('vehicles');
 
   return (
     <div className="space-y-3">
@@ -60,13 +63,25 @@ export function TripsPage() {
       ) : (
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Vehicle</TableHead><TableHead>Driver</TableHead><TableHead>Route</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Loaded (boxes)</TableHead><TableHead className="text-right">Sold</TableHead><TableHead className="text-right">Collected</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Vehicle</TableHead><TableHead>Driver</TableHead><TableHead>Route</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Loaded (boxes)</TableHead><TableHead className="text-right">Sold</TableHead><TableHead className="text-right">Collected</TableHead>{canDelete && <TableHead className="w-12" />}</TableRow></TableHeader>
             <TableBody>
               {trips.data.map((t) => (
                 <TableRow key={t.id ?? ''} className="cursor-pointer" tabIndex={0} onClick={() => navigate(`/vehicles/trips/${t.id}`)} onKeyDown={(e) => e.key === 'Enter' && navigate(`/vehicles/trips/${t.id}`)}>
                   <TableCell>{dateDMY(t.trip_date)}</TableCell><TableCell className="font-medium">{t.vehicle_number}</TableCell><TableCell>{t.driver_name ?? '—'}</TableCell><TableCell className="text-muted-foreground">{t.route_name ?? '—'}</TableCell>
                   <TableCell><Badge variant={tripTone[(t.status ?? 'planned') as TripStatus]}>{TRIP_STATUSES.find((s) => s.value === t.status)?.label}</Badge></TableCell>
                   <TableCell className="num">{qty(t.loaded_boxes)}</TableCell><TableCell className="num">{amount(t.sold_value)}</TableCell><TableCell className="num">{amount(t.collected)}</TableCell>
+                  {canDelete && (
+                    // The row opens the trip; the delete must not, or confirming
+                    // it leaves you looking at the trip you just removed.
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <DeleteButton
+                        label={`the trip on ${dateDMY(t.trip_date)}`}
+                        detail="Whatever is still loaded on the van goes back to the godown it came from. A bill, a receipt or a challan raised on this trip holds it back until that is dealt with first."
+                        invalidate={['trips', 'stock']}
+                        onDelete={() => deleteDocument('trip', t.id ?? '')}
+                      />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

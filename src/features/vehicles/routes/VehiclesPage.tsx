@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { DeleteButton } from '@/components/DeleteButton';
 import { Field } from '@/components/Field';
 import { PageHeader } from '@/components/PageHeader';
 import { Spinner } from '@/components/Spinner';
@@ -14,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/features/auth/hooks';
+import { deleteMaster } from '@/features/search/deletes';
 import { listStaff, routesApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
@@ -29,6 +31,7 @@ export function VehiclesPage() {
   const vehicles = useQuery({ queryKey: KEY, queryFn: listVehicles });
   const [editing, setEditing] = useState<{ mode: 'new' } | { mode: 'edit'; row: VehicleRow } | null>(null);
   const canEdit = perms.canEdit('vehicles');
+  const canDelete = perms.canDelete('vehicles');
 
   const onExport = () =>
     exportToExcel(
@@ -84,7 +87,7 @@ export function VehiclesPage() {
                 <TableHead>Route</TableHead>
                 <TableHead className="text-right">Capacity (boxes)</TableHead>
                 <TableHead>Stock location</TableHead>
-                {canEdit && <TableHead className="w-16 text-right">Edit</TableHead>}
+                {canEdit && <TableHead className="w-24 text-right">Edit</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -108,6 +111,16 @@ export function VehiclesPage() {
                       <Button variant="ghost" size="icon" aria-label={`Edit ${v.vehicle_number}`} onClick={() => setEditing({ mode: 'edit', row: v })}>
                         <Pencil />
                       </Button>
+                      {canDelete && (
+                        <DeleteButton
+                          label={v.vehicle_number ?? 'this vehicle'}
+                          detail="Only a van nothing points at. A trip, a bill or a receipt that names it holds it back — even a cancelled bill, because it is still the record of which van carried the goods."
+                          deactivateWarning="Inactive keeps every old trip and bill reading correctly and takes the van out of new work."
+                          invalidate={['vehicles']}
+                          onDelete={() => deleteMaster('vehicle', v.id ?? '')}
+                          onDeactivate={() => updateVehicle(v.id ?? '', { is_active: false })}
+                        />
+                      )}
                     </TableCell>
                   )}
                 </TableRow>

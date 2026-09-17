@@ -3,6 +3,7 @@ import { Barcode, Download, Plus, Printer, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Combobox } from '@/components/Combobox';
+import { DeleteButton } from '@/components/DeleteButton';
 import { Field } from '@/components/Field';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMe, usePermissions } from '@/features/auth/hooks';
 import { searchItems, type ItemRow } from '@/features/items/api';
+import { deleteDocument } from '@/features/search/deletes';
 import { sectionsApi, stockLocationsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { ean13Svg } from '@/lib/barcode';
@@ -160,7 +162,7 @@ export function TransfersPanel() {
         <div className="rounded-md border">
           <Table>
             <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>From</TableHead><TableHead>To</TableHead><TableHead className="text-right">Lines</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead>Notes</TableHead><TableHead>By</TableHead><TableHead /></TableRow></TableHeader>
-            <TableBody>{list.map((t) => <TableRow key={t.id ?? ''}><TableCell className="font-medium">{t.transfer_no}</TableCell><TableCell>{dateDMY(t.txn_date)}</TableCell><TableCell>{t.from_name}</TableCell><TableCell>{t.to_name}</TableCell><TableCell className="num">{int(t.line_count)}</TableCell><TableCell className="num">{qty(t.total_boxes)}</TableCell><TableCell className="text-muted-foreground">{t.notes}</TableCell><TableCell className="text-xs text-muted-foreground">{t.created_by_name}</TableCell><TableCell className="text-right"><Button asChild size="sm" variant="outline"><Link to={`/stock/transfers/${t.id}/print`}><Printer /> Note</Link></Button></TableCell></TableRow>)}</TableBody>
+            <TableBody>{list.map((t) => <TableRow key={t.id ?? ''}><TableCell className="font-medium">{t.transfer_no}</TableCell><TableCell>{dateDMY(t.txn_date)}</TableCell><TableCell>{t.from_name}</TableCell><TableCell>{t.to_name}</TableCell><TableCell className="num">{int(t.line_count)}</TableCell><TableCell className="num">{qty(t.total_boxes)}</TableCell><TableCell className="text-muted-foreground">{t.notes}</TableCell><TableCell className="text-xs text-muted-foreground">{t.created_by_name}</TableCell><TableCell className="text-right"><Button asChild size="sm" variant="outline"><Link to={`/stock/transfers/${t.id}/print`}><Printer /> Note</Link></Button>{perms.canDelete('stock') && <DeleteButton label={`transfer ${t.transfer_no}`} detail="Both halves come out of the ledger — the goods go back to the godown they left. Refused if they have since been sold from where they went." invalidate={['stock']} onDelete={() => deleteDocument('stock_transfer', t.id ?? '')} />}</TableCell></TableRow>)}</TableBody>
           </Table>
         </div>
       )}
@@ -234,7 +236,7 @@ export function CountsPanel() {
         <div className="rounded-md border">
           <Table>
             <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Date</TableHead><TableHead>Location</TableHead><TableHead>Section</TableHead><TableHead className="text-right">Items</TableHead><TableHead className="text-right">Counted</TableHead><TableHead className="text-right">Differences</TableHead><TableHead>Status</TableHead><TableHead>By</TableHead><TableHead /></TableRow></TableHeader>
-            <TableBody>{list.map((c) => <TableRow key={c.id ?? ''} className="cursor-pointer" tabIndex={0} onClick={() => navigate(`/stock/counts/${c.id}`)} onKeyDown={(ev) => ev.key === 'Enter' && navigate(`/stock/counts/${c.id}`)}><TableCell className="font-medium">{c.count_no}</TableCell><TableCell>{dateDMY(c.count_date)}</TableCell><TableCell>{c.location_name}</TableCell><TableCell className="text-muted-foreground">{c.section_name ?? 'All'}</TableCell><TableCell className="num">{int(c.line_count)}</TableCell><TableCell className="num">{int(c.counted_count)}</TableCell><TableCell className="num">{int(c.variance_count)}</TableCell><TableCell><Badge variant={c.status === 'open' ? 'default' : c.status === 'posted' ? 'secondary' : 'destructive'}>{c.status}</Badge></TableCell><TableCell className="text-xs text-muted-foreground">{c.status === 'posted' ? c.posted_by_name : c.created_by_name}</TableCell><TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>{perms.canEdit('stock') && c.status === 'open' && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => cancel.mutate(c.id ?? '')}>Cancel</Button>}</TableCell></TableRow>)}</TableBody>
+            <TableBody>{list.map((c) => <TableRow key={c.id ?? ''} className="cursor-pointer" tabIndex={0} onClick={() => navigate(`/stock/counts/${c.id}`)} onKeyDown={(ev) => ev.key === 'Enter' && navigate(`/stock/counts/${c.id}`)}><TableCell className="font-medium">{c.count_no}</TableCell><TableCell>{dateDMY(c.count_date)}</TableCell><TableCell>{c.location_name}</TableCell><TableCell className="text-muted-foreground">{c.section_name ?? 'All'}</TableCell><TableCell className="num">{int(c.line_count)}</TableCell><TableCell className="num">{int(c.counted_count)}</TableCell><TableCell className="num">{int(c.variance_count)}</TableCell><TableCell><Badge variant={c.status === 'open' ? 'default' : c.status === 'posted' ? 'secondary' : 'destructive'}>{c.status}</Badge></TableCell><TableCell className="text-xs text-muted-foreground">{c.status === 'posted' ? c.posted_by_name : c.created_by_name}</TableCell><TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>{perms.canEdit('stock') && c.status === 'open' && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => cancel.mutate(c.id ?? '')}>Cancel</Button>}{perms.canDelete('stock') && <DeleteButton label={`count ${c.count_no}`} detail="A count that was never posted moved nothing and simply goes. A posted one has its adjustments taken back out, so the book figure returns to what it was before anybody counted." invalidate={['stock']} onDelete={() => deleteDocument('stock_count', c.id ?? '')} />}</TableCell></TableRow>)}</TableBody>
           </Table>
         </div>
       )}

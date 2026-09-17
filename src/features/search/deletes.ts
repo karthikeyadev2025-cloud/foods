@@ -1,12 +1,14 @@
 import { supabase } from '@/lib/supabase';
 
 /** The record kinds that can be deleted outright when nothing points at them. */
-export type MasterKind = 'item' | 'customer' | 'supplier' | 'staff';
+export type MasterKind = 'item' | 'customer' | 'supplier' | 'staff' | 'vehicle';
 
 /** The document kinds. Some cancel rather than delete; the result says which. */
 export type DocumentDeleteKind =
   | 'invoice' | 'quotation' | 'order' | 'challan'
-  | 'receipt' | 'payment' | 'purchase' | 'return' | 'purchase_return';
+  | 'receipt' | 'payment' | 'purchase' | 'return' | 'purchase_return'
+  // db/47 — the six screens that had no way to remove anything at all.
+  | 'stock_transfer' | 'stock_count' | 'trip' | 'journal' | 'cheque';
 
 /**
  * Delete a product, customer, supplier or member of staff.

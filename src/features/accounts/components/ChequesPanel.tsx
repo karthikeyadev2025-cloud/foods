@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { DeleteButton } from '@/components/DeleteButton';
 import { Field } from '@/components/Field';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/features/auth/hooks';
+import { deleteDocument } from '@/features/search/deletes';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, int, toISODate, toNumber } from '@/lib/format';
@@ -24,6 +26,7 @@ type Action = { kind: 'deposit' | 'clear' | 'bounce' | 'cancel'; cheque: ChequeR
 export function ChequesPanel() {
   const perms = usePermissions();
   const canEdit = perms.canEdit('payments');
+  const canDelete = perms.canDelete('payments');
   const [state, setState] = useState<ChequeState | ''>('');
   const [direction, setDirection] = useState<'received' | 'issued' | ''>('');
   const [dueOnly, setDueOnly] = useState(false);
@@ -65,6 +68,13 @@ export function ChequesPanel() {
                     {canEdit && c.direction === 'received' && c.state === 'in_hand' && <Button size="sm" onClick={() => setAction({ kind: 'deposit', cheque: c })}>Deposit</Button>}
                     {canEdit && ((c.direction === 'received' && c.state === 'deposited') || (c.direction === 'issued' && (c.state === 'in_hand' || c.state === 'deposited'))) && <Button size="sm" className="ml-1" onClick={() => setAction({ kind: 'clear', cheque: c })}>Cleared</Button>}
                     {canEdit && (c.state === 'in_hand' || c.state === 'deposited') && <Button size="sm" variant="ghost" className="ml-1 text-destructive" onClick={() => setAction({ kind: c.state === 'in_hand' ? 'cancel' : 'bounce', cheque: c })}>{c.state === 'in_hand' ? 'Cancel' : 'Bounced'}</Button>}
+                    {/*
+                      For a cheque number keyed in wrong. One that came in on a
+                      receipt or went out on a payment belongs to that document
+                      and is refused by name — Cancel is the answer there, and
+                      it leaves the record standing.
+                    */}
+                    {canDelete && <DeleteButton label={`cheque ${c.cheque_no}`} detail="Only a cheque entered by hand. If it has cleared, the bank entry and the ledger entry come back out with it." invalidate={['accounts']} onDelete={() => deleteDocument('cheque', c.id ?? '')} />}
                   </TableCell>
                 </TableRow>
               ))}

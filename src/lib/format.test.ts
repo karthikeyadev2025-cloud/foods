@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { amount, dateDMY, int, money, qty, round, toISODate, toNumber } from './format';
+import { amount, dateDMY, int, money, qty, round, toISODate, toNumber, whole } from './format';
 
 describe('format', () => {
   it('groups the Indian way with two decimals', () => {
@@ -44,6 +44,28 @@ describe('format', () => {
     expect(toNumber('42.00')).toBe(42);
     expect(toNumber(null)).toBe(0);
     expect(toNumber('abc')).toBe(0);
+  });
+
+  // The production sheet read "Expected boxes 46.18 · 369.47 jars". Nobody
+  // ever filled forty-seven hundredths of a jar.
+  it('shows a count of whole things without a decimal point', () => {
+    expect(whole(46.18)).toBe('46');
+    expect(whole(369.47)).toBe('369');
+    expect(whole(-2.18)).toBe('-2');
+    expect(whole(44)).toBe('44');
+  });
+
+  it('rounds a count rather than cutting it, unlike int()', () => {
+    expect(whole(46.9)).toBe('47');
+    expect(int(46.9)).toBe('46');
+  });
+
+  it('groups a large count the Indian way', () => {
+    expect(whole(1234567)).toBe('12,34,567');
+  });
+
+  it('leaves a part box alone where a shelf can really hold one', () => {
+    expect(qty(13.88)).toBe('13.88');
   });
 
   it('formats dates as DD-MM-YYYY', () => {

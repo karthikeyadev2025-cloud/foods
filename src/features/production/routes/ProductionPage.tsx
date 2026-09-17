@@ -17,7 +17,7 @@ import { searchItems, type ItemRow } from '@/features/items/api';
 import { listStaff, stockLocationsApi, uomsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
-import { amount, dateDMY, int, qty, toISODate, toNumber } from '@/lib/format';
+import { amount, dateDMY, int, qty, toISODate, toNumber, whole } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
   batchTone,
@@ -110,9 +110,9 @@ function Batches() {
                   <TableCell className="font-medium">{b.batch_no}</TableCell><TableCell>{dateDMY(b.production_date)}</TableCell>
                   <TableCell><span className="font-medium">{b.item_code}</span> {b.item_name}</TableCell>
                   <TableCell className="text-muted-foreground">{b.mestri_name ?? b.section_name ?? '—'}</TableCell><TableCell className="text-muted-foreground">{b.chief_name ?? '—'}</TableCell>
-                  <TableCell className="num">{qty(b.no_of_plates, 0)}</TableCell><TableCell className="num">{qty(b.expected_boxes)}</TableCell>
-                  <TableCell className="num">{b.status === 'open' && toNumber(b.actual_boxes) === 0 ? '—' : qty(b.actual_boxes)}</TableCell>
-                  <TableCell className={cn('num', toNumber(b.box_difference) < 0 && b.status === 'closed' && 'text-destructive')}>{b.status === 'closed' ? qty(b.box_difference) : '—'}</TableCell>
+                  <TableCell className="num">{whole(b.no_of_plates)}</TableCell><TableCell className="num">{whole(b.expected_boxes)}</TableCell>
+                  <TableCell className="num">{b.status === 'open' && toNumber(b.actual_boxes) === 0 ? '—' : whole(b.actual_boxes)}</TableCell>
+                  <TableCell className={cn('num', toNumber(b.box_difference) < 0 && b.status === 'closed' && 'text-destructive')}>{b.status === 'closed' ? whole(b.box_difference) : '—'}</TableCell>
                   <TableCell className="num">{b.cost_per_box === null ? '—' : amount(b.cost_per_box)}</TableCell>
                   <TableCell><Badge variant={batchTone[(b.status ?? 'open') as BatchStatus]}>{b.status}</Badge></TableCell>
                 </TableRow>
@@ -173,7 +173,7 @@ function OpenBatchDialog({ onClose }: { onClose: () => void }) {
               {active.map((r) => <option key={r.id ?? ''} value={r.item_id ?? ''}>{r.item_code} — {r.item_name}</option>)}
             </NativeSelect>
           </Field>
-          <Field label="No. of plates" htmlFor="ob-plates" help={recipe ? `${qty(recipe.boxes_per_plate)} boxes per plate → ${qty(expectedBoxes)} expected boxes` : undefined}>
+          <Field label="No. of plates" htmlFor="ob-plates" help={recipe ? `${qty(recipe.boxes_per_plate, 3)} boxes per plate → ${whole(expectedBoxes)} expected boxes` : undefined}>
             <Input id="ob-plates" type="number" step="1" className="num" value={plates} onChange={(e) => setPlates(e.target.value)} />
           </Field>
           <Field label="Date" htmlFor="ob-date"><Input id="ob-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
@@ -380,10 +380,10 @@ function Variance() {
               {rows.data.map((r) => (
                 <TableRow key={r.group_key ?? ''}>
                   <TableCell className="font-medium">{r.group_label}</TableCell>
-                  <TableCell className="num">{int(r.batches)}</TableCell><TableCell className="num">{qty(r.plates, 0)}</TableCell>
-                  <TableCell className="num">{qty(r.expected_boxes)}</TableCell><TableCell className="num">{qty(r.actual_boxes)}</TableCell>
-                  <TableCell className={cn('num font-medium', toNumber(r.box_variance) < 0 && 'text-destructive')}>{qty(r.box_variance)}</TableCell>
-                  <TableCell className={cn('num', toNumber(r.box_variance_pct) < 0 && 'text-destructive')}>{r.box_variance_pct === null ? '—' : `${qty(r.box_variance_pct)}%`}</TableCell>
+                  <TableCell className="num">{int(r.batches)}</TableCell><TableCell className="num">{whole(r.plates)}</TableCell>
+                  <TableCell className="num">{whole(r.expected_boxes)}</TableCell><TableCell className="num">{whole(r.actual_boxes)}</TableCell>
+                  <TableCell className={cn('num font-medium', toNumber(r.box_variance) < 0 && 'text-destructive')}>{whole(r.box_variance)}</TableCell>
+                  <TableCell className={cn('num', toNumber(r.box_variance_pct) < 0 && 'text-destructive')}>{r.box_variance_pct === null ? '—' : `${whole(r.box_variance_pct)}%`}</TableCell>
                   <TableCell className="num">{amount(r.expected_ingredient_cost)}</TableCell><TableCell className="num">{amount(r.actual_ingredient_cost)}</TableCell>
                   <TableCell className={cn('num font-medium', toNumber(r.ingredient_variance) > 0 && 'text-destructive')}>{amount(r.ingredient_variance)}</TableCell>
                   <TableCell className="num">{amount(r.labour_cost)}</TableCell><TableCell className="num">{r.cost_per_box === null ? '—' : amount(r.cost_per_box)}</TableCell>

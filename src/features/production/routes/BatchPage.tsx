@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { useMe, usePermissions } from '@/features/auth/hooks';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
-import { amount, dateDMY, int, qty, toNumber } from '@/lib/format';
+import { amount, dateDMY, int, qty, round, toNumber, whole } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { batchTone, cancelBatch, closeBatch, getBatch, getBatchIngredients, updateBatchActuals, type BatchStatus } from '../api';
 
@@ -105,7 +105,13 @@ export function BatchPage() {
   const canClose = canEnter && !isChief;
   const expected = toNumber(b.expected_boxes);
   const actual = st === 'open' ? toNumber(actualBoxes) : toNumber(b.actual_boxes);
-  const diff = actual - expected;
+  // Shown as whole boxes, and the variance worked out from what is SHOWN — so
+  // 46 less 44 on the screen is the 2 the screen reports. Taking the variance
+  // from the raw 46.18 would print "46, 44, -2.18" and invite somebody to
+  // check the arithmetic and find it wrong.
+  const expectedWhole = round(expected, 0);
+  const actualWhole = round(actual, 0);
+  const diff = actualWhole - expectedWhole;
   const usedOf = (lId: string, fallback: unknown) => (st === 'open' ? toNumber(used[lId]) : toNumber(fallback as number | string | null));
 
   const onExport = () =>
@@ -127,10 +133,10 @@ export function BatchPage() {
       />
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <Tile label="No. of plates" value={qty(b.no_of_plates, 0)} />
-        <Tile label="Expected boxes" value={qty(expected)} sub={`${qty(b.expected_jars)} jars · ${qty(b.expected_pieces, 0)} pieces`} />
-        <Tile label="Actual boxes" value={actual ? qty(actual) : '—'} sub={actual ? `${qty(actual * toNumber(b.units_per_box))} jars` : 'not entered yet'} />
-        <Tile label="Variance" value={actual ? qty(diff) : '—'} tone={actual && diff < 0 ? 'bad' : actual && diff >= 0 ? 'good' : undefined} sub={actual && expected ? `${qty((diff * 100) / expected)}%` : undefined} />
+        <Tile label="No. of plates" value={whole(b.no_of_plates)} />
+        <Tile label="Expected boxes" value={whole(expectedWhole)} sub={`${whole(b.expected_jars)} jars · ${whole(b.expected_pieces)} pieces`} />
+        <Tile label="Actual boxes" value={actual ? whole(actualWhole) : '—'} sub={actual ? `${whole(actualWhole * toNumber(b.units_per_box))} jars` : 'not entered yet'} />
+        <Tile label="Variance" value={actual ? whole(diff) : '—'} tone={actual && diff < 0 ? 'bad' : actual && diff >= 0 ? 'good' : undefined} sub={actual && expectedWhole ? `${whole((diff * 100) / expectedWhole)}%` : undefined} />
       </div>
 
       <div className="rounded-md border">
@@ -173,9 +179,9 @@ export function BatchPage() {
           <TableFooter>
             <TableRow>
               <TableCell colSpan={3} className="text-right font-semibold">Expected vs Actual Boxes</TableCell>
-              <TableCell className="num font-semibold">{qty(expected)}</TableCell>
-              <TableCell className="num">{canEnter ? <Input type="number" step="0.001" className="num h-8 font-semibold" aria-label="Actual boxes" value={actualBoxes} onChange={(e) => setActualBoxes(e.target.value)} /> : qty(b.actual_boxes)}</TableCell>
-              <TableCell className={cn('num font-semibold', actual && diff < 0 && 'text-destructive')}>{actual ? qty(diff) : '—'}</TableCell>
+              <TableCell className="num font-semibold">{whole(expectedWhole)}</TableCell>
+              <TableCell className="num">{canEnter ? <Input type="number" step="0.001" className="num h-8 font-semibold" aria-label="Actual boxes" value={actualBoxes} onChange={(e) => setActualBoxes(e.target.value)} /> : whole(b.actual_boxes)}</TableCell>
+              <TableCell className={cn('num font-semibold', actual && diff < 0 && 'text-destructive')}>{actual ? whole(diff) : '—'}</TableCell>
               <TableCell colSpan={3} />
             </TableRow>
           </TableFooter>
@@ -213,7 +219,7 @@ export function BatchPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Close batch {b.batch_no}?</DialogTitle>
-            <DialogDescription>Raw material is consumed at the chief&apos;s actual figures, {qty(toNumber(actualBoxes))} boxes of {b.item_name} go into {b.location_name}, and the batch is costed. This cannot be reopened.</DialogDescription>
+            <DialogDescription>Raw material is consumed at the chief&apos;s actual figures, {whole(actualBoxes)} boxes of {b.item_name} go into {b.location_name}, and the batch is costed. This cannot be reopened.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCloseOpen(false)}>Not yet</Button>

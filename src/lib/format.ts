@@ -61,6 +61,19 @@ export function qty(v: Numeric, dp = 2): string {
 }
 
 
+/**
+ * A count of things that cannot be part of themselves: boxes off the line,
+ * jars filled, pieces made, plates put up.
+ *
+ * Rounded, not cut — 46.9 boxes is 47 boxes, not 46. This is the opposite end
+ * from qty(): a shelf really can hold 13.88 boxes and saying 14 would misstate
+ * it, but nobody ever filled 369.47 jars, and printing that on the production
+ * sheet only makes the chief read past it.
+ */
+export function whole(v: Numeric): string {
+  return INR_0.format(round(v, 0));
+}
+
 /** Whole-number count with grouping: 1,234. */
 export function int(v: Numeric): string {
   return INR_0.format(Math.trunc(toNumber(v)));

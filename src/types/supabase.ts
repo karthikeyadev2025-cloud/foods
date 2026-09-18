@@ -10401,6 +10401,20 @@ export type Database = {
       create_broadcast: { Args: { p: Json }; Returns: string }
       create_inbound_order: { Args: { p: Json }; Returns: string }
       create_trip: { Args: { p: Json }; Returns: string }
+      customer_last_rates: {
+        Args: { p_customer: string }
+        Returns: {
+          boxes: number
+          invoice_date: string
+          invoice_id: string
+          invoice_no: string
+          item_code: string
+          item_id: string
+          item_name: string
+          rate: number
+          times_billed: number
+        }[]
+      }
       customer_ledger: {
         Args: { p_customer: string; p_from?: string; p_to?: string }
         Returns: {
@@ -10412,6 +10426,18 @@ export type Database = {
           doc_no: string
           entry_date: string
           particulars: string
+        }[]
+      }
+      customer_recent_bills: {
+        Args: { p_customer: string; p_limit?: number }
+        Returns: {
+          boxes: number
+          id: string
+          invoice_date: string
+          invoice_no: string
+          lines: number
+          status: string
+          total: number
         }[]
       }
       dashboard_activity: {
@@ -10625,6 +10651,16 @@ export type Database = {
           scheme_name: string
           staff_id: string
           staff_name: string
+        }[]
+      }
+      invoice_lines_for_reading: {
+        Args: { p_invoice: string }
+        Returns: {
+          amount: number
+          boxes: number
+          item_code: string
+          item_name: string
+          rate: number
         }[]
       }
       invoice_message_vars: { Args: { p_invoice: string }; Returns: Json }

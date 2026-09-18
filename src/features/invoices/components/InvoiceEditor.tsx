@@ -14,9 +14,10 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/features/auth/hooks';
+import { CustomerHistoryDialog } from '@/features/customers/components/CustomerHistoryDialog';
 import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
 import { applyDiscountSchemes } from '@/features/documents/api';
-import { effectiveUnitRate, searchItems, type ItemRow } from '@/features/items/api';
+import { effectiveUnitRate, getItem, searchItems, type ItemRow } from '@/features/items/api';
 import { stockLocationsApi } from '@/features/setup/api';
 import { listVehicles } from '@/features/vehicles/api';
 import { listOpenTrips } from '@/features/vehicles/trips-api';
@@ -88,6 +89,9 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
   const e = formState.errors;
 
   const [customer, setCustomer] = useState<CustomerRow | null>(null);
+  // "whenever they double click on the customer name … old rates will recheck
+  // while new bill" — the counter's own words for what this is.
+  const [historyOpen, setHistoryOpen] = useState(false);
   useEffect(() => {
     if (invoice?.customer_id && !customer) {
       getCustomer(invoice.customer_id).then(setCustomer).catch(() => undefined);
@@ -182,11 +186,48 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
     setTimeout(focusCode, 0);
   };
 
+  /**
+   * "Use" on a rate the customer paid before. Three cases, because the product
+   * may already be on this bill, may be the one half-typed in the entry row, or
+   * may not be here at all — and a button that silently does nothing on two of
+   * the three would be worse than no button.
+   */
+  const applyOldRate = async (itemId: string, rate: number) => {
+    const onBill = lines.filter((l) => l.item_id === itemId);
+    if (onBill.length) {
+      setLines((prev) => prev.map((l) => (l.item_id === itemId ? { ...l, rate } : l)));
+      toast({ title: `Rate set to ${amount(rate)}`, description: onBill.length > 1 ? `${onBill.length} lines updated.` : undefined });
+      return;
+    }
+    if (entryItem?.id === itemId) {
+      setEntryRate(String(rate));
+      boxesRef.current?.focus();
+      return;
+    }
+    // Not on the bill yet: bring the product in at that rate, ready for boxes.
+    try {
+      const item = await getItem(itemId);
+      setEntryItem(item);
+      setEntryRate(String(rate));
+      setEntryBoxes('');
+      setTimeout(() => boxesRef.current?.focus(), 0);
+    } catch (err) {
+      toastError(err, 'Could not load that product');
+    }
+  };
+
   const updateLine = (key: string, patch: Partial<Pick<DraftLine, 'boxes' | 'rate'>>) =>
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const removeLine = (key: string) => setLines((prev) => prev.filter((l) => l.key !== key));
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['invoices'] });
+  // The bill just written IS this customer's newest history, and the cache is
+  // persisted to disk for a day — without this, "last rate" would keep quoting
+  // the bill before the one on screen.
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    if (customer?.id) await queryClient.invalidateQueries({ queryKey: ['customers', 'last-rates', customer.id] });
+    if (customer?.id) await queryClient.invalidateQueries({ queryKey: ['customers', 'past-bills', customer.id] });
+  };
 
   const save = useMutation({
     mutationFn: async ({ header, confirm }: { header: InvoiceHeaderForm; confirm: boolean }) => {
@@ -312,6 +353,13 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
         <Card>
           <CardContent className="grid grid-cols-2 gap-3 pt-4 md:grid-cols-4">
             <Field label="Customer" htmlFor="inv-customer" error={e.customer_id?.message} className="col-span-2">
+              {/*
+                Double-click opens the history, because that is what the counter
+                asked for in those words. A double-click teaches nobody it is
+                there, though, so the same thing hangs off a visible button
+                below as soon as a customer is chosen.
+              */}
+              <div onDoubleClick={() => customer?.id && setHistoryOpen(true)}>
               <Combobox<CustomerRow>
                 id="inv-customer"
                 value={customer}
@@ -338,6 +386,16 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
                 eager
                 onPicked={focusCode}
               />
+              </div>
+              {customer?.id && (
+                <button
+                  type="button"
+                  className="mt-1 text-xs text-primary underline-offset-2 hover:underline"
+                  onClick={() => setHistoryOpen(true)}
+                >
+                  Past bills &amp; last rates for {customer.name}
+                </button>
+              )}
             </Field>
             <Field label="Invoice date" htmlFor="inv-date" error={e.invoice_date?.message}>
               <Input id="inv-date" type="date" disabled={!canEdit} {...register('invoice_date')} />
@@ -623,6 +681,15 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
           </div>
         )}
       </form>
+
+      {historyOpen && customer?.id && (
+        <CustomerHistoryDialog
+          customerId={customer.id}
+          customerName={customer.name ?? 'this customer'}
+          onClose={() => setHistoryOpen(false)}
+          onUseRate={canEdit ? (itemId, rate) => { setHistoryOpen(false); void applyOldRate(itemId, rate); } : undefined}
+        />
+      )}
 
       <Dialog open={reopenOpen} onOpenChange={setReopenOpen}>
         <DialogContent className="max-w-sm">

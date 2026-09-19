@@ -79,7 +79,8 @@ with expected(ord, file, kind, obj, detail) as (
     (46, '46_numbering_dates.sql','function','doc_no_stamp',                '{YYYY} {YY} {MM} {DD} in a prefix, so a counter that resets has a date to reset into'),
     (47, '47_delete_the_rest.sql','fixed','delete_document#stock_transfer', 'delete on the last six screens: transfers, counts, trips, vehicles, ledger entries, cheques'),
     (48, '48_customer_rate_history.sql','function','customer_last_rates',    'what this customer actually paid last time, while a new bill is being written'),
-    (49, '49_stock_delete_window.sql','function','set_stock_delete_window',   'stock rows deletable only while the opening figures go in — the owner closes it, no new build')
+    (49, '49_stock_delete_window.sql','function','set_stock_delete_window',   'stock rows deletable only while the opening figures go in — the owner closes it, no new build'),
+    (50, '50_purchase_in_boxes.sql','function','supplier_last_rates',         'a purchase is typed in BOXES like a bill — 51 boxes stopped meaning 4.25')
 ),
 
 -- Did each file's own object actually make it?

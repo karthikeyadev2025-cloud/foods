@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Combobox } from '@/components/Combobox';
@@ -11,12 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { searchItems, type ItemRow } from '@/features/items/api';
-import { stockLocationsApi, uomsApi } from '@/features/setup/api';
+import { getItem, searchItems, type ItemRow } from '@/features/items/api';
+import { stockLocationsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
-import { amount, qty, toISODate, toNumber } from '@/lib/format';
-import { round } from '@/lib/format';
+import { amount, qty, round, toISODate, toNumber, whole } from '@/lib/format';
 import { savePurchase, searchSuppliers, type SupplierRow } from '../api';
+import { SupplierHistoryDialog } from './SupplierHistoryDialog';
 import { purchaseHeaderSchema, type PurchaseDraftLine, type PurchaseHeaderForm } from '../schema';
 
 let seq = 0;
@@ -25,14 +25,15 @@ export function PurchaseEditor() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list });
-  const uoms = useQuery({ queryKey: ['setup', 'uoms'], queryFn: uomsApi.list });
   const [supplier, setSupplier] = useState<SupplierRow | null>(null);
   const [lines, setLines] = useState<PurchaseDraftLine[]>([]);
   const [entryItem, setEntryItem] = useState<ItemRow | null>(null);
-  const [entryQty, setEntryQty] = useState('');
-  const [entryUom, setEntryUom] = useState('');
+  // BOXES, as on a bill. This used to be a quantity plus a unit picker that
+  // defaulted to the item's base unit, so "51" meant fifty-one jars.
+  const [entryBoxes, setEntryBoxes] = useState('');
   const [entryRate, setEntryRate] = useState('');
-  const qtyRef = useRef<HTMLInputElement>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const boxesRef = useRef<HTMLInputElement>(null);
   const rateRef = useRef<HTMLInputElement>(null);
   const codeWrapRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +51,9 @@ export function PurchaseEditor() {
     }
   }, [locations.data, form, setValue]);
 
-  const subtotal = useMemo(() => round(lines.reduce((s, l) => s + round(l.qty * l.rate, 2), 0), 2), [lines]);
+  const lineQty = (l: PurchaseDraftLine) => round(l.boxes * l.units_per_box, 3);
+  const lineAmount = (l: PurchaseDraftLine) => round(lineQty(l) * l.rate, 2);
+  const subtotal = round(lines.reduce((s, l) => s + lineAmount(l), 0), 2);
   const other = toNumber(watch('other_charges'));
   const total = round(subtotal + other, 2);
 
@@ -58,26 +61,56 @@ export function PurchaseEditor() {
 
   const onItemPicked = (item: ItemRow) => {
     setEntryItem(item);
-    setEntryUom(item.base_uom_id ?? '');
     setEntryRate(toNumber(item.purchase_rate) ? String(toNumber(item.purchase_rate)) : '');
-    setEntryQty('');
-    setTimeout(() => qtyRef.current?.focus(), 0);
+    setEntryBoxes('');
+    setTimeout(() => boxesRef.current?.focus(), 0);
   };
 
   const addEntry = () => {
-    const q = toNumber(entryQty);
-    if (!entryItem?.id || q <= 0 || !entryUom) {
-      qtyRef.current?.focus();
+    const b = toNumber(entryBoxes);
+    if (!entryItem?.id || b <= 0) {
+      boxesRef.current?.focus();
       return;
     }
     setLines((prev) => [
       ...prev,
-      { key: `p${++seq}`, item_id: entryItem.id ?? '', item_code: entryItem.item_code ?? '', item_name: entryItem.name ?? '', uom_id: entryUom, qty: q, rate: toNumber(entryRate) },
+      {
+        key: `p${++seq}`,
+        item_id: entryItem.id ?? '',
+        item_code: entryItem.item_code ?? '',
+        item_name: entryItem.name ?? '',
+        units_per_box: entryItem.units_per_box ?? 1,
+        boxes: b,
+        rate: toNumber(entryRate),
+      },
     ]);
     setEntryItem(null);
-    setEntryQty('');
+    setEntryBoxes('');
     setEntryRate('');
     setTimeout(focusCode, 0);
+  };
+
+  /** "Use" on a rate this supplier charged before — the bill screen's behaviour. */
+  const applyOldRate = (itemId: string, rate: number) => {
+    const onBill = lines.filter((l) => l.item_id === itemId);
+    if (onBill.length) {
+      setLines((prev) => prev.map((l) => (l.item_id === itemId ? { ...l, rate } : l)));
+      toast({ title: `Rate set to ${amount(rate)}` });
+      return;
+    }
+    if (entryItem?.id === itemId) {
+      setEntryRate(String(rate));
+      boxesRef.current?.focus();
+      return;
+    }
+    getItem(itemId)
+      .then((item) => {
+        setEntryItem(item);
+        setEntryRate(String(rate));
+        setEntryBoxes('');
+        setTimeout(() => boxesRef.current?.focus(), 0);
+      })
+      .catch((err) => toastError(err, 'Could not load that product'));
   };
 
   const save = useMutation({
@@ -94,7 +127,7 @@ export function PurchaseEditor() {
           paid_amount: h.paid_amount,
           notes: h.notes || null,
         },
-        lines.map((l) => ({ item_id: l.item_id, qty: l.qty, uom_id: l.uom_id, rate: l.rate })),
+        lines.map((l) => ({ item_id: l.item_id, boxes: l.boxes, rate: l.rate })),
       );
     },
     onSuccess: async (id) => {
@@ -106,7 +139,7 @@ export function PurchaseEditor() {
     onError: (err) => toastError(err, 'Could not save the purchase'),
   });
 
-  const uomCode = (id: string) => uoms.data?.find((u) => u.id === id)?.code ?? '';
+
 
   return (
     <form className="space-y-4" onSubmit={form.handleSubmit((h) => save.mutate(h))} noValidate>
@@ -135,6 +168,15 @@ export function PurchaseEditor() {
               eager
               onPicked={focusCode}
             />
+            {supplier?.id && (
+              <button
+                type="button"
+                className="mt-1 text-xs text-primary underline-offset-2 hover:underline"
+                onClick={() => setHistoryOpen(true)}
+              >
+                Last rates from {supplier.name}
+              </button>
+            )}
           </Field>
           <Field label="Bill no." htmlFor="pu-bill" error={e.bill_no?.message} help="Leave blank and it is numbered for you. Type the supplier's own number when their bill has one.">
             <Input id="pu-bill" placeholder="Numbered automatically" {...register('bill_no')} />
@@ -176,8 +218,9 @@ export function PurchaseEditor() {
                   <TableHead className="w-10">#</TableHead>
                   <TableHead className="w-40">Item</TableHead>
                   <TableHead>Name</TableHead>
+                  <TableHead className="w-24 text-right">Units / box</TableHead>
+                  <TableHead className="w-28 text-right">Boxes</TableHead>
                   <TableHead className="w-28 text-right">Qty</TableHead>
-                  <TableHead className="w-28">Unit</TableHead>
                   <TableHead className="w-28 text-right">Rate</TableHead>
                   <TableHead className="w-32 text-right">Amount</TableHead>
                   <TableHead className="w-10" />
@@ -189,10 +232,11 @@ export function PurchaseEditor() {
                     <TableCell className="num">{i + 1}</TableCell>
                     <TableCell className="font-medium">{l.item_code}</TableCell>
                     <TableCell>{l.item_name}</TableCell>
-                    <TableCell className="num">{qty(l.qty, 3)}</TableCell>
-                    <TableCell>{uomCode(l.uom_id)}</TableCell>
+                    <TableCell className="num text-muted-foreground">{whole(l.units_per_box)}</TableCell>
+                    <TableCell className="num font-medium">{qty(l.boxes)}</TableCell>
+                    <TableCell className="num text-muted-foreground">{qty(lineQty(l))}</TableCell>
                     <TableCell className="num">{amount(l.rate)}</TableCell>
-                    <TableCell className="num font-medium">{amount(l.qty * l.rate)}</TableCell>
+                    <TableCell className="num font-medium">{amount(lineAmount(l))}</TableCell>
                     <TableCell>
                       <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${l.item_code}`} onClick={() => setLines((p) => p.filter((x) => x.key !== l.key))}>
                         <Trash2 className="text-destructive" />
@@ -224,24 +268,20 @@ export function PurchaseEditor() {
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{entryItem?.name ?? ''}</TableCell>
+                  <TableCell className="num text-muted-foreground">{entryItem ? whole(entryItem.units_per_box) : ''}</TableCell>
                   <TableCell>
-                    <Input ref={qtyRef} type="number" step="0.001" inputMode="decimal" className="num h-8" aria-label="Quantity" value={entryQty} onChange={(ev) => setEntryQty(ev.target.value)} disabled={!entryItem}
+                    <Input ref={boxesRef} type="number" step="0.001" inputMode="decimal" className="num h-8" aria-label="Boxes" value={entryBoxes} onChange={(ev) => setEntryBoxes(ev.target.value)} disabled={!entryItem}
                       onKeyDown={(ev) => { if (ev.key === 'Enter') { ev.preventDefault(); rateRef.current?.focus(); } }} />
                   </TableCell>
-                  <TableCell>
-                    <NativeSelect aria-label="Unit" className="h-8" value={entryUom} onChange={(ev) => setEntryUom(ev.target.value)} disabled={!entryItem}>
-                      {(uoms.data ?? []).filter((u) => u.is_active).map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.code}
-                        </option>
-                      ))}
-                    </NativeSelect>
+                  {/* Worked out, never typed — so the person can see what the boxes came to before saving. */}
+                  <TableCell className="num text-muted-foreground">
+                    {entryItem && entryBoxes ? qty(toNumber(entryBoxes) * (entryItem.units_per_box ?? 1)) : ''}
                   </TableCell>
                   <TableCell>
                     <Input ref={rateRef} type="number" step="0.01" inputMode="decimal" className="num h-8" aria-label="Rate" value={entryRate} onChange={(ev) => setEntryRate(ev.target.value)} disabled={!entryItem}
                       onKeyDown={(ev) => { if (ev.key === 'Enter') { ev.preventDefault(); addEntry(); } }} />
                   </TableCell>
-                  <TableCell className="num text-muted-foreground">{entryItem && entryQty ? amount(toNumber(entryQty) * toNumber(entryRate)) : ''}</TableCell>
+                  <TableCell className="num text-muted-foreground">{entryItem && entryBoxes ? amount(toNumber(entryBoxes) * (entryItem.units_per_box ?? 1) * toNumber(entryRate)) : ''}</TableCell>
                   <TableCell>
                     <Button type="button" size="sm" variant="secondary" onClick={addEntry} disabled={!entryItem}>
                       Add
@@ -251,12 +291,12 @@ export function PurchaseEditor() {
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-right">Subtotal</TableCell>
+                  <TableCell colSpan={7} className="text-right">Subtotal</TableCell>
                   <TableCell className="num">{amount(subtotal)}</TableCell>
                   <TableCell />
                 </TableRow>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-right font-semibold">Total (with other charges)</TableCell>
+                  <TableCell colSpan={7} className="text-right font-semibold">Total (with other charges)</TableCell>
                   <TableCell className="num font-semibold">{amount(total)}</TableCell>
                   <TableCell />
                 </TableRow>
@@ -265,6 +305,15 @@ export function PurchaseEditor() {
           </div>
         </CardContent>
       </Card>
+
+      {historyOpen && supplier?.id && (
+        <SupplierHistoryDialog
+          supplierId={supplier.id}
+          supplierName={supplier.name ?? 'this supplier'}
+          onClose={() => setHistoryOpen(false)}
+          onUseRate={(itemId, rate) => { setHistoryOpen(false); applyOldRate(itemId, rate); }}
+        />
+      )}
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={() => navigate('/purchases')}>

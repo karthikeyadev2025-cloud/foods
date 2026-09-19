@@ -11,13 +11,21 @@ export const purchaseHeaderSchema = z.object({
 });
 export type PurchaseHeaderForm = z.infer<typeof purchaseHeaderSchema>;
 
+/**
+ * A purchase line, the same shape as a bill line (db/50).
+ *
+ * BOXES is what the shop counts and what gets typed; qty follows from
+ * boxes x units_per_box. It used to be a bare qty plus a unit, and the screen
+ * handed it the item's BASE unit — so "51" on a twelve-pack meant fifty-one
+ * jars, four and a quarter boxes, and the godown was understated twelvefold.
+ */
 export interface PurchaseDraftLine {
   key: string;
   item_id: string;
   item_code: string;
   item_name: string;
-  uom_id: string;
-  qty: number;
+  units_per_box: number;
+  boxes: number;
   rate: number;
 }
 

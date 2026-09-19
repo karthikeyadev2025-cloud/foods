@@ -15,7 +15,7 @@ import { useDebounced } from '@/hooks/use-debounced';
 import { toastError } from '@/hooks/use-toast';
 import { deleteDocument } from '@/features/search/deletes';
 import { exportToExcel } from '@/lib/export';
-import { amount, dateDMY, int } from '@/lib/format';
+import { amount, dateDMY, int, qty, whole } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { cn } from '@/lib/utils';
 import { createSupplier, getPurchase, getPurchaseLines, listAllPurchases, listPurchases, listSuppliers, removeSupplier, updateSupplier, type SupplierRow } from '../api';
@@ -210,8 +210,9 @@ export function PurchaseViewPage() {
             <TableRow>
               <TableHead>Item</TableHead>
               <TableHead>Name</TableHead>
+              <TableHead className="text-right">Units / box</TableHead>
+              <TableHead className="text-right">Boxes</TableHead>
               <TableHead className="text-right">Qty</TableHead>
-              <TableHead>Unit</TableHead>
               <TableHead className="text-right">Rate</TableHead>
               <TableHead className="text-right">Amount</TableHead>
             </TableRow>
@@ -221,8 +222,9 @@ export function PurchaseViewPage() {
               <TableRow key={l.id}>
                 <TableCell className="font-medium">{l.item_code}</TableCell>
                 <TableCell>{l.item_name}</TableCell>
-                <TableCell className="num">{Number(l.qty ?? 0)}</TableCell>
-                <TableCell>{l.uom_code}</TableCell>
+                <TableCell className="num text-muted-foreground">{whole(l.units_per_box)}</TableCell>
+                <TableCell className="num font-medium">{qty(l.boxes)}</TableCell>
+                <TableCell className="num text-muted-foreground">{qty(l.qty)} {l.uom_code}</TableCell>
                 <TableCell className="num">{amount(l.rate)}</TableCell>
                 <TableCell className="num">{amount(l.amount)}</TableCell>
               </TableRow>

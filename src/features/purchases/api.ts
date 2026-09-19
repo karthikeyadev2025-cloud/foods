@@ -58,8 +58,8 @@ export interface PurchaseHeaderInput {
 
 export interface PurchaseLineInput {
   item_id: string;
-  qty: number;
-  uom_id: string;
+  /** Boxes, as typed. save_purchase works out the jars and the base quantity. */
+  boxes: number;
   rate: number;
 }
 
@@ -97,3 +97,19 @@ export function updateSupplier(id: string, values: Tables['suppliers']['Update']
 export function removeSupplier(id: string): Promise<string> {
   return deleteMaster('supplier', id);
 }
+
+// ------------------------------------------------------------------
+// What this supplier last charged (db/50)
+// ------------------------------------------------------------------
+export type SupplierLastRate = Database['public']['Functions']['supplier_last_rates']['Returns'][number];
+
+/** The buying side of customer_last_rates: the rate really paid, per product. */
+export async function supplierLastRates(supplierId: string): Promise<SupplierLastRate[]> {
+  const { data, error } = await supabase.rpc('supplier_last_rates', { p_supplier: supplierId });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export const supplierHistoryKeys = {
+  rates: (supplierId: string) => ['suppliers', 'last-rates', supplierId] as const,
+};

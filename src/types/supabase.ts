@@ -3942,32 +3942,38 @@ export type Database = {
       purchase_items: {
         Row: {
           amount: number
+          boxes: number | null
           id: string
           item_id: string
           purchase_id: string
           qty: number
           qty_base: number
           rate: number
+          units_per_box: number | null
           uom_id: string
         }
         Insert: {
           amount?: number
+          boxes?: number | null
           id?: string
           item_id: string
           purchase_id: string
           qty: number
           qty_base: number
           rate?: number
+          units_per_box?: number | null
           uom_id: string
         }
         Update: {
           amount?: number
+          boxes?: number | null
           id?: string
           item_id?: string
           purchase_id?: string
           qty?: number
           qty_base?: number
           rate?: number
+          units_per_box?: number | null
           uom_id?: string
         }
         Relationships: [
@@ -8686,6 +8692,7 @@ export type Database = {
       v_purchase_lines: {
         Row: {
           amount: number | null
+          boxes: number | null
           id: string | null
           item_code: string | null
           item_id: string | null
@@ -8694,6 +8701,7 @@ export type Database = {
           qty: number | null
           qty_base: number | null
           rate: number | null
+          units_per_box: number | null
           uom_code: string | null
           uom_id: string | null
         }
@@ -11325,6 +11333,20 @@ export type Database = {
           ref_table: string
           txn_date: string
           txn_type: Database["public"]["Enums"]["stock_txn_type"]
+        }[]
+      }
+      supplier_last_rates: {
+        Args: { p_supplier: string }
+        Returns: {
+          bill_date: string
+          bill_no: string
+          boxes: number
+          item_code: string
+          item_id: string
+          item_name: string
+          purchase_id: string
+          rate: number
+          times_bought: number
         }[]
       }
       to_base_qty: {

@@ -3297,6 +3297,7 @@ export type Database = {
           phone: string | null
           plan_full_until: string | null
           signature_url: string | null
+          stock_delete_until: string | null
           tagline: string | null
           trial_days: number
         }
@@ -3324,6 +3325,7 @@ export type Database = {
           phone?: string | null
           plan_full_until?: string | null
           signature_url?: string | null
+          stock_delete_until?: string | null
           tagline?: string | null
           trial_days?: number
         }
@@ -3351,6 +3353,7 @@ export type Database = {
           phone?: string | null
           plan_full_until?: string | null
           signature_url?: string | null
+          stock_delete_until?: string | null
           tagline?: string | null
           trial_days?: number
         }
@@ -11276,6 +11279,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_stock_delete_window: { Args: { p_days?: number }; Returns: string }
       set_trip_status: {
         Args: {
           p_status: Database["public"]["Enums"]["trip_status"]
@@ -11298,6 +11302,7 @@ export type Database = {
         Args: { p_days?: number; p_org: string }
         Returns: string
       }
+      stock_delete_open: { Args: { p_org?: string }; Returns: boolean }
       stock_movements: {
         Args: {
           p_from?: string

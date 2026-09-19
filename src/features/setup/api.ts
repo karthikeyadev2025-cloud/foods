@@ -525,3 +525,36 @@ export async function resetRolePermissions(): Promise<void> {
   const { error } = await supabase.rpc('seed_role_permissions', { p_org: orgId });
   if (error) throw error;
 }
+
+// ------------------------------------------------------------------
+// The stock-delete window (db/49)
+// ------------------------------------------------------------------
+/**
+ * Open stock deletion for so many days, or close it now with null.
+ *
+ * The shop asked for the delete to exist "only to enter original data … after
+ * that we will intimate and then remove that option". This is that removal,
+ * in their hands rather than in a release. Owner only. Returns the new
+ * expiry date, or null when it has been stopped.
+ */
+export async function setStockDeleteWindow(days: number | null): Promise<string | null> {
+  // Stopping it means calling with NO argument, not with null: the function's
+  // own default is null, and the generated types make p_days optional rather
+  // than nullable.
+  const { data, error } = await supabase.rpc(
+    'set_stock_delete_window',
+    days === null ? {} : { p_days: days },
+  );
+  if (error) throw error;
+  return (data as string | null) ?? null;
+}
+
+/** Is the stock ledger open for corrections right now? */
+export function stockDeleteOpen(until: string | null | undefined): boolean {
+  if (!until) return false;
+  // Compared as plain YYYY-MM-DD strings so a timezone never moves the boundary
+  // a day either way — the database compares the same two dates.
+  const today = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return until >= `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+}

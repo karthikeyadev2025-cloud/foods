@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/features/auth/hooks';
 import { toast, toastError } from '@/hooks/use-toast';
 import { getOrg, updateOrg, uploadBranding } from '../api';
+import { StockDeleteWindow } from './StockDeleteWindow';
 import { orNull, orgSchema, type OrgInput } from '../schema';
 
 /**
@@ -198,6 +199,10 @@ export function OrgProfileForm({ compact }: { compact?: boolean }) {
           disabled={readOnly || image.isPending}
           onPick={(file) => image.mutate({ kind: 'signature', file })}
         />
+      </div>
+
+      <div className="max-w-3xl">
+        <StockDeleteWindow />
       </div>
     </section>
   );

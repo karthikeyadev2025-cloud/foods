@@ -21,6 +21,7 @@ import { sectionsApi, stockLocationsApi } from '@/features/setup/api';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, dateTimeDMY, qty, toISODate, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { getOrg, stockDeleteOpen } from '@/features/setup/api';
 import { closingStock, deleteStockRow, listItemStock, stockMovements, type ClosingStockRow } from '../api';
 import { DataHealth } from '../components/health';
 import { BarcodesPanel, BatchesPanel, CountsPanel, TransfersPanel } from '../components/inventory';
@@ -213,13 +214,26 @@ function Movements() {
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list });
   const moves = useQuery({ queryKey: ['stock', 'movements', item?.id, from, to, locationId], queryFn: () => stockMovements(item?.id ?? '', from, to, locationId), enabled: Boolean(item?.id) });
   const upb = item?.units_per_box ?? 0;
-  const canDelete = usePermissions().canDelete('stock');
+  // Two separate things, and both have to be true. The RIGHT says this role may
+  // delete stock; the WINDOW says the shop is still entering its opening
+  // figures. The database enforces the window regardless — this only keeps a
+  // button off the screen that would always be refused.
+  const org = useQuery({ queryKey: ['setup', 'org'], queryFn: getOrg });
+  const windowOpen = stockDeleteOpen(org.data?.stock_delete_until);
+  const canDelete = usePermissions().canDelete('stock') && windowOpen;
 
   const onExport = () =>
     exportToExcel(`movements-${item?.item_code ?? ''}`, (moves.data ?? []).map((m) => ({ Date: dateDMY(m.txn_date), Type: m.txn_type, Location: m.location_name, Reference: m.ref_no, 'Qty (units)': toNumber(m.qty_base), 'Qty (boxes)': toNumber(m.boxes), 'Balance (units)': toNumber(m.balance_base), 'Balance (boxes)': toNumber(m.balance_boxes), Rate: toNumber(m.rate) })), 'Movements');
 
   return (
     <div className="space-y-3">
+      {canDelete && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
+          Stock rows can be deleted while the opening figures are going in, until{' '}
+          <span className="font-medium">{dateDMY(org.data?.stock_delete_until)}</span>. An owner stops this in
+          Setup → Business the moment the real figures are in.
+        </p>
+      )}
       <div className="flex flex-wrap items-end gap-2">
         <Field label="Item" htmlFor="mv-item" className="w-80">
           <Combobox<ItemRow> id="mv-item" value={item} onChange={setItem} search={(q) => searchItems(q)} queryKey="items-all" getKey={(i) => i.id ?? ''} getLabel={(i) => `${i.item_code} — ${i.name}`} renderOption={(i) => <span><span className="font-medium">{i.item_code}</span> {i.name}</span>} placeholder="Code or name…" autoFocus eager />

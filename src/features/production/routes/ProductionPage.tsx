@@ -3,6 +3,7 @@ import { Download, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Combobox } from '@/components/Combobox';
+import { DeleteButton } from '@/components/DeleteButton';
 import { Field } from '@/components/Field';
 import { PageHeader } from '@/components/PageHeader';
 import { Spinner } from '@/components/Spinner';
@@ -14,6 +15,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMe, usePermissions } from '@/features/auth/hooks';
 import { searchItems, type ItemRow } from '@/features/items/api';
+import { deleteDocument, deleteMaster } from '@/features/search/deletes';
 import { listStaff, stockLocationsApi, uomsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
@@ -103,7 +105,7 @@ function Batches() {
       ) : (
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>Batch</TableHead><TableHead>Date</TableHead><TableHead>Item</TableHead><TableHead>Mestri</TableHead><TableHead>Chief</TableHead><TableHead className="text-right">Plates</TableHead><TableHead className="text-right">Expected</TableHead><TableHead className="text-right">Actual</TableHead><TableHead className="text-right">Diff</TableHead><TableHead className="text-right">Cost / box</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Batch</TableHead><TableHead>Date</TableHead><TableHead>Item</TableHead><TableHead>Mestri</TableHead><TableHead>Chief</TableHead><TableHead className="text-right">Plates</TableHead><TableHead className="text-right">Expected</TableHead><TableHead className="text-right">Actual</TableHead><TableHead className="text-right">Diff</TableHead><TableHead className="text-right">Cost / box</TableHead><TableHead>Status</TableHead>{perms.canDelete('production') && <TableHead className="w-12" />}</TableRow></TableHeader>
             <TableBody>
               {batches.data.map((b) => (
                 <TableRow key={b.id ?? ''} className="cursor-pointer" tabIndex={0} onClick={() => navigate(`/production/batches/${b.id}`)} onKeyDown={(e) => e.key === 'Enter' && navigate(`/production/batches/${b.id}`)}>
@@ -115,6 +117,17 @@ function Batches() {
                   <TableCell className={cn('num', toNumber(b.box_difference) < 0 && b.status === 'closed' && 'text-destructive')}>{b.status === 'closed' ? whole(b.box_difference) : '—'}</TableCell>
                   <TableCell className="num">{b.cost_per_box === null ? '—' : amount(b.cost_per_box)}</TableCell>
                   <TableCell><Badge variant={batchTone[(b.status ?? 'open') as BatchStatus]}>{b.status}</Badge></TableCell>
+                  {perms.canDelete('production') && (
+                    // The row opens the batch; the delete must not follow it.
+                    <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
+                      <DeleteButton
+                        label={`batch ${b.batch_no}`}
+                        detail="A batch that is still open has made nothing and simply goes. A closed one gives the raw material back to the godown and takes the finished boxes off the shelf. Refused once those boxes have gone out under this batch number."
+                        invalidate={['production', 'stock']}
+                        onDelete={() => deleteDocument('batch', b.id ?? '')}
+                      />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -228,7 +241,19 @@ function Recipes() {
                   <TableCell className="num">{qty(r.pieces_per_plate, 0)}</TableCell><TableCell className="num">{qty(r.boxes_per_plate, 3)}</TableCell>
                   <TableCell className="num">{int(r.ingredient_count)}</TableCell><TableCell className="num">{amount(r.cost_per_plate)}</TableCell>
                   <TableCell>{r.is_active ? 'Yes' : 'retired'}</TableCell>
-                  {perms.canEdit('production') && <TableCell><Button variant="ghost" size="icon" aria-label={`Edit recipe ${r.item_code}`} onClick={() => setEditing({ mode: 'edit', row: r })}><Pencil /></Button></TableCell>}
+                  {perms.canEdit('production') && (
+                    <TableCell className="whitespace-nowrap">
+                      <Button variant="ghost" size="icon" aria-label={`Edit recipe ${r.item_code}`} onClick={() => setEditing({ mode: 'edit', row: r })}><Pencil /></Button>
+                      {perms.canDelete('production') && (
+                        <DeleteButton
+                          label={`the recipe for ${r.item_name}`}
+                          detail="Its ingredient lines go with it. A recipe any batch has been made from is held by that batch — retire it instead and it stays off new work while every old batch still reads correctly."
+                          invalidate={['production']}
+                          onDelete={() => deleteMaster('recipe', r.id ?? '')}
+                        />
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

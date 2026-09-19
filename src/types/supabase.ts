@@ -10372,7 +10372,9 @@ export type Database = {
           item_name: string
           opening: number
           opening_units: number
+          other: number
           pack: string
+          production: number
           purchase: number
           sales: number
           section_code: string

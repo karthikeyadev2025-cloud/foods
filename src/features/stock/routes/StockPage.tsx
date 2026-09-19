@@ -99,7 +99,7 @@ function ClosingStock() {
     return [...map.values()];
   }, [report.data, hideZero]);
 
-  const sum = (rows: ClosingStockRow[], k: 'opening' | 'purchase' | 'sales' | 'closing') => rows.reduce((s, r) => s + toNumber(r[k]), 0);
+  const sum = (rows: ClosingStockRow[], k: 'opening' | 'purchase' | 'production' | 'sales' | 'other' | 'closing') => rows.reduce((s, r) => s + toNumber(r[k]), 0);
   const all = groups.flatMap((g) => g.rows);
   const negatives = all.filter((r) => r.is_negative).length;
 
@@ -107,8 +107,8 @@ function ClosingStock() {
     exportToExcel(
       `stock-report-${date}`,
       groups.flatMap((g) => [
-        ...g.rows.map((r) => ({ Section: `${g.code ? `${g.code} ` : ''}${g.name}`, 'Item Code': r.item_code, Pack: r.pack, 'Group / Item Name': r.item_name, Opening: toNumber(r.opening), Purchase: toNumber(r.purchase), Sales: toNumber(r.sales), Closing: toNumber(r.closing) })),
-        { Section: `${g.name} total`, 'Item Code': '', Pack: '', 'Group / Item Name': '', Opening: sum(g.rows, 'opening'), Purchase: sum(g.rows, 'purchase'), Sales: sum(g.rows, 'sales'), Closing: sum(g.rows, 'closing') },
+        ...g.rows.map((r) => ({ Section: `${g.code ? `${g.code} ` : ''}${g.name}`, 'Item Code': r.item_code, Pack: r.pack, 'Group / Item Name': r.item_name, Opening: toNumber(r.opening), Purchase: toNumber(r.purchase), Made: toNumber(r.production), Sales: toNumber(r.sales), Other: toNumber(r.other), Closing: toNumber(r.closing) })),
+        { Section: `${g.name} total`, 'Item Code': '', Pack: '', 'Group / Item Name': '', Opening: sum(g.rows, 'opening'), Purchase: sum(g.rows, 'purchase'), Made: sum(g.rows, 'production'), Sales: sum(g.rows, 'sales'), Other: sum(g.rows, 'other'), Closing: sum(g.rows, 'closing') },
       ]),
       `Stock ${dateDMY(date)}`,
     );
@@ -145,14 +145,17 @@ function ClosingStock() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-24">Item Code</TableHead><TableHead className="w-16">Pack</TableHead><TableHead>Group / Item Name</TableHead>
-                <TableHead className="w-24 text-right">Opening</TableHead><TableHead className="w-24 text-right">Purchase</TableHead><TableHead className="w-24 text-right">Sales</TableHead><TableHead className="w-24 text-right">Closing</TableHead>
+                <TableHead className="w-24 text-right">Opening</TableHead><TableHead className="w-24 text-right">Purchase</TableHead>
+                <TableHead className="w-24 text-right">Made</TableHead><TableHead className="w-24 text-right">Sales</TableHead>
+                <TableHead className="w-24 text-right" title="Returns, transfers, adjustments, and anything a cancelled bill put back">Other</TableHead>
+                <TableHead className="w-24 text-right">Closing</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {groups.map((g) => (
                 <Fragment key={g.key}>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableCell colSpan={7} className="font-semibold">{g.code ? `${g.code} ` : ''}{g.name}</TableCell>
+                    <TableCell colSpan={9} className="font-semibold">{g.code ? `${g.code} ` : ''}{g.name}</TableCell>
                   </TableRow>
                   {g.rows.map((r) => (
                     <TableRow key={r.item_id ?? r.item_code ?? ''} className={cn(r.is_negative && 'bg-red-50')}>
@@ -161,7 +164,9 @@ function ClosingStock() {
                       <TableCell>{r.item_name}</TableCell>
                       <TableCell className="num">{qty(r.opening)}</TableCell>
                       <TableCell className="num">{toNumber(r.purchase) ? qty(r.purchase) : ''}</TableCell>
+                      <TableCell className="num">{toNumber(r.production) ? qty(r.production) : ''}</TableCell>
                       <TableCell className="num">{toNumber(r.sales) ? qty(r.sales) : ''}</TableCell>
+                      <TableCell className={cn('num', toNumber(r.other) < 0 && 'text-muted-foreground')}>{toNumber(r.other) ? qty(r.other) : ''}</TableCell>
                       <TableCell className={cn('num font-medium', r.is_negative && 'text-destructive')}>{qty(r.closing)}</TableCell>
                     </TableRow>
                   ))}
@@ -169,7 +174,9 @@ function ClosingStock() {
                     <TableCell colSpan={3} className="text-right text-xs uppercase text-muted-foreground">{g.name} total</TableCell>
                     <TableCell className="num font-medium">{qty(sum(g.rows, 'opening'))}</TableCell>
                     <TableCell className="num font-medium">{qty(sum(g.rows, 'purchase'))}</TableCell>
+                    <TableCell className="num font-medium">{qty(sum(g.rows, 'production'))}</TableCell>
                     <TableCell className="num font-medium">{qty(sum(g.rows, 'sales'))}</TableCell>
+                    <TableCell className="num font-medium">{qty(sum(g.rows, 'other'))}</TableCell>
                     <TableCell className="num font-medium">{qty(sum(g.rows, 'closing'))}</TableCell>
                   </TableRow>
                 </Fragment>
@@ -179,7 +186,8 @@ function ClosingStock() {
               <TableRow>
                 <TableCell colSpan={3} className="text-right">Grand total (boxes)</TableCell>
                 <TableCell className="num">{qty(sum(all, 'opening'))}</TableCell><TableCell className="num">{qty(sum(all, 'purchase'))}</TableCell>
-                <TableCell className="num">{qty(sum(all, 'sales'))}</TableCell><TableCell className="num">{qty(sum(all, 'closing'))}</TableCell>
+                <TableCell className="num">{qty(sum(all, 'production'))}</TableCell><TableCell className="num">{qty(sum(all, 'sales'))}</TableCell>
+                <TableCell className="num">{qty(sum(all, 'other'))}</TableCell><TableCell className="num">{qty(sum(all, 'closing'))}</TableCell>
               </TableRow>
             </TableFooter>
           </Table>

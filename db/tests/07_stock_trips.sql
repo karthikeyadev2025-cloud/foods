@@ -61,10 +61,25 @@ begin
   end;
 
   -- ===== T3.1 closing stock on the trip date, per location =====
-  select opening, purchase, sales, closing into r from closing_stock_report(v_org, date '2026-09-02', v_god) where item_code = '8';
-  assert r.opening = 10 and r.purchase = 0 and r.sales = 5 and r.closing = 5, format('godown report: %s/%s/%s/%s', r.opening, r.purchase, r.sales, r.closing);
-  select opening, purchase, sales, closing into r from closing_stock_report(v_org, date '2026-09-02', v_van) where item_code = '8';
-  assert r.opening = 0 and r.purchase = 5 and r.sales = 0 and r.closing = 5, format('van report: %s/%s/%s/%s', r.opening, r.purchase, r.sales, r.closing);
+  -- Loading a van is NOT a sale, and since db/51 the report no longer says it
+  -- is. Five boxes left the godown for the van: that is "other", and the Sales
+  -- column stays empty until a bill is actually raised. This assertion used to
+  -- read sales = 5, which inflated the godown's sales by everything that had
+  -- merely been put on a vehicle.
+  select opening, purchase, sales, other, closing into r
+    from closing_stock_report(v_org, date '2026-09-02', v_god) where item_code = '8';
+  assert r.opening = 10 and r.purchase = 0 and r.sales = 0 and r.other = -5 and r.closing = 5,
+    format('godown report: opening %s, purchase %s, sales %s, other %s, closing %s',
+           r.opening, r.purchase, r.sales, r.other, r.closing);
+  assert r.opening + r.purchase - r.sales + r.other = r.closing, 'godown report does not add up';
+  -- And the mirror image on the van: five boxes ARRIVING from the godown is not
+  -- a purchase. Nothing was bought from anybody; goods moved between two of the
+  -- shop's own locations, so it belongs in "other" at both ends.
+  select opening, purchase, sales, other, closing into r
+    from closing_stock_report(v_org, date '2026-09-02', v_van) where item_code = '8';
+  assert r.opening = 0 and r.purchase = 0 and r.sales = 0 and r.other = 5 and r.closing = 5,
+    format('van report: opening %s, purchase %s, sales %s, other %s, closing %s',
+           r.opening, r.purchase, r.sales, r.other, r.closing);
   select opening, closing into r from closing_stock_report(v_org, date '2026-09-02') where item_code = '8';
   assert r.opening = 10 and r.closing = 10, 'all locations: a transfer changes nothing';
   -- grouped by section in sort order: S-10 (order 1) before S-1 (order 2)

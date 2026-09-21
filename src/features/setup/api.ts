@@ -558,3 +558,21 @@ export function stockDeleteOpen(until: string | null | undefined): boolean {
   const pad = (n: number) => String(n).padStart(2, '0');
   return until >= `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 }
+
+// ------------------------------------------------------------------
+// Master reset (db/52)
+// ------------------------------------------------------------------
+export type ResetScope = 'transactions' | 'masters' | 'everything';
+export type ResetResult = Database['public']['Functions']['master_reset']['Returns'][number];
+
+/**
+ * Wipe this organisation's data and start again. Owner only, and the business
+ * name has to be passed exactly — the database checks it, not the screen.
+ *
+ * There is no undo. Returns what it removed, table by table.
+ */
+export async function masterReset(confirm: string, scope: ResetScope): Promise<ResetResult[]> {
+  const { data, error } = await supabase.rpc('master_reset', { p_confirm: confirm, p_scope: scope });
+  if (error) throw error;
+  return data ?? [];
+}

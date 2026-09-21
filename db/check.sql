@@ -82,7 +82,8 @@ with expected(ord, file, kind, obj, detail) as (
     (49, '49_stock_delete_window.sql','function','set_stock_delete_window',   'stock rows deletable only while the opening figures go in — the owner closes it, no new build'),
     (50, '50_purchase_in_boxes.sql','function','supplier_last_rates',         'a purchase is typed in BOXES like a bill — 51 boxes stopped meaning 4.25'),
     (51, '51_stock_report_columns.sql','fixed','closing_stock_report#production_in',
-                                                                           'the stock report''s Purchase column counts purchases, not everything that came in')
+                                                                           'the stock report''s Purchase column counts purchases, not everything that came in'),
+    (52, '52_master_reset.sql',  'function', 'master_reset',                'Setup → Business: wipe and start fresh, owner only, business name typed to confirm')
 ),
 
 -- Did each file's own object actually make it?

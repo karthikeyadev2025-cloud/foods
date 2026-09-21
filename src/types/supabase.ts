@@ -10793,6 +10793,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      master_reset: {
+        Args: { p_confirm: string; p_scope?: string }
+        Returns: {
+          rows_deleted: number
+          table_name: string
+        }[]
+      }
       module_feature: { Args: { p_module: string }; Returns: string }
       money_account: {
         Args: {
@@ -11129,6 +11136,7 @@ export type Database = {
       }
       reorder_sections: { Args: { p_ids: string[] }; Returns: undefined }
       require_feature: { Args: { p_feature: string }; Returns: undefined }
+      reset_keeps: { Args: { p_scope: string }; Returns: string[] }
       restore_org_snapshot: { Args: { p: Json }; Returns: Json }
       resync_doc_numbers: {
         Args: { p_org?: string }

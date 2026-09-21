@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/features/auth/hooks';
 import { toast, toastError } from '@/hooks/use-toast';
 import { getOrg, updateOrg, uploadBranding } from '../api';
+import { MasterReset } from './MasterReset';
 import { StockDeleteWindow } from './StockDeleteWindow';
 import { orNull, orgSchema, type OrgInput } from '../schema';
 
@@ -201,8 +202,9 @@ export function OrgProfileForm({ compact }: { compact?: boolean }) {
         />
       </div>
 
-      <div className="max-w-3xl">
+      <div className="max-w-3xl space-y-3">
         <StockDeleteWindow />
+        <MasterReset />
       </div>
     </section>
   );

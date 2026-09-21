@@ -19,7 +19,7 @@ import { getItem, searchItems, type ItemRow } from '@/features/items/api';
 import type { FeatureKey } from '@/lib/permissions';
 import { sectionsApi, stockLocationsApi } from '@/features/setup/api';
 import { exportToExcel } from '@/lib/export';
-import { amount, dateDMY, dateTimeDMY, qty, toISODate, toNumber } from '@/lib/format';
+import { amount, boxesAndUnits, dateDMY, dateTimeDMY, qty, toISODate, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { getOrg, stockDeleteOpen } from '@/features/setup/api';
 import { closingStock, deleteStockRow, listItemStock, stockMovements, type ClosingStockRow } from '../api';
@@ -162,12 +162,17 @@ function ClosingStock() {
                       <TableCell className="font-medium">{r.item_code}</TableCell>
                       <TableCell className="text-muted-foreground">{r.pack ?? '—'}</TableCell>
                       <TableCell>{r.item_name}</TableCell>
-                      <TableCell className="num">{qty(r.opening)}</TableCell>
-                      <TableCell className="num">{toNumber(r.purchase) ? qty(r.purchase) : ''}</TableCell>
-                      <TableCell className="num">{toNumber(r.production) ? qty(r.production) : ''}</TableCell>
-                      <TableCell className="num">{toNumber(r.sales) ? qty(r.sales) : ''}</TableCell>
-                      <TableCell className={cn('num', toNumber(r.other) < 0 && 'text-muted-foreground')}>{toNumber(r.other) ? qty(r.other) : ''}</TableCell>
-                      <TableCell className={cn('num font-medium', r.is_negative && 'text-destructive')}>{qty(r.closing)}</TableCell>
+                      {/*
+                        Boxes and the loose jars over, not a decimal. "2.25" is a
+                        true figure nobody in a godown can act on; "2 + 3" is two
+                        boxes and three jars, which is what is on the shelf.
+                      */}
+                      <TableCell className="num">{boxesAndUnits(r.opening, r.units_per_box)}</TableCell>
+                      <TableCell className="num">{toNumber(r.purchase) ? boxesAndUnits(r.purchase, r.units_per_box) : ''}</TableCell>
+                      <TableCell className="num">{toNumber(r.production) ? boxesAndUnits(r.production, r.units_per_box) : ''}</TableCell>
+                      <TableCell className="num">{toNumber(r.sales) ? boxesAndUnits(r.sales, r.units_per_box) : ''}</TableCell>
+                      <TableCell className={cn('num', toNumber(r.other) < 0 && 'text-muted-foreground')}>{toNumber(r.other) ? boxesAndUnits(r.other, r.units_per_box) : ''}</TableCell>
+                      <TableCell className={cn('num font-medium', r.is_negative && 'text-destructive')} title={`${qty(r.closing)} boxes`}>{boxesAndUnits(r.closing, r.units_per_box)}</TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/30 hover:bg-muted/30">

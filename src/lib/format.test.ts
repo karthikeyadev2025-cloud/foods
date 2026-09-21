@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { amount, dateDMY, int, money, qty, round, toISODate, toNumber, whole } from './format';
+import { amount, boxesAndUnits, dateDMY, int, money, qty, round, toISODate, toNumber, whole } from './format';
 
 describe('format', () => {
   it('groups the Indian way with two decimals', () => {
@@ -66,6 +66,39 @@ describe('format', () => {
 
   it('leaves a part box alone where a shelf can really hold one', () => {
     expect(qty(13.88)).toBe('13.88');
+  });
+
+  // The shop asked three times why the stock screen shows a point. It is real:
+  // 27 jars of a twelve-jar pack IS 2.25 boxes. Rounding would hide three jars,
+  // so the fraction is shown as what it is instead.
+  describe('boxesAndUnits', () => {
+    it('splits the shop\'s own figure into boxes and loose jars', () => {
+      expect(boxesAndUnits(2.25, 12)).toBe('2 + 3');
+    });
+
+    it('says nothing extra when the boxes are whole', () => {
+      expect(boxesAndUnits(39, 6)).toBe('39');
+      expect(boxesAndUnits(0, 12)).toBe('0');
+    });
+
+    it('never prints a full box as loose units', () => {
+      // 2.99999 x 12 rounds to 36 jars, which is three boxes and nothing over.
+      expect(boxesAndUnits(2.9999999, 12)).toBe('3');
+    });
+
+    it('brackets a negative, because "-2 + 3" reads as arithmetic', () => {
+      expect(boxesAndUnits(-2.25, 12)).toBe('-(2 + 3)');
+      expect(boxesAndUnits(-3, 12)).toBe('-3');
+    });
+
+    it('leaves a product sold one to a box alone', () => {
+      expect(boxesAndUnits(30, 1)).toBe('30');
+      expect(boxesAndUnits(4.5, 0)).toBe('4.5');
+    });
+
+    it('groups a large figure the Indian way', () => {
+      expect(boxesAndUnits(123456.5, 2)).toBe('1,23,456 + 1');
+    });
   });
 
   it('formats dates as DD-MM-YYYY', () => {

@@ -74,6 +74,34 @@ export function whole(v: Numeric): string {
   return INR_0.format(round(v, 0));
 }
 
+/**
+ * A stock figure as the shop says it out loud: "2 + 3" — two boxes and three
+ * loose jars — rather than "2.25".
+ *
+ * The quarter box is real. Twenty-seven jars of a twelve-jar pack IS two and a
+ * quarter boxes, and rounding it to 2 would hide three jars off the shelf. But
+ * nobody in a godown counts quarters of a box, so the fraction is shown as what
+ * it actually is: the loose units left over.
+ *
+ * Falls back to a plain number when there is nothing to split into — a product
+ * sold one to a box, or a weight.
+ */
+export function boxesAndUnits(boxes: Numeric, unitsPerBox: Numeric): string {
+  const upb = Math.round(toNumber(unitsPerBox));
+  const b = toNumber(boxes);
+  if (upb <= 1) return qty(b);
+
+  // Counted in whole units and split back, so 2.9999 from a division never
+  // prints as "2 + 12" — twelve twelfths is one box.
+  const units = Math.round(Math.abs(b) * upb);
+  const full = Math.trunc(units / upb);
+  const loose = units - full * upb;
+  const body = loose === 0 ? int(full) : `${int(full)} + ${loose}`;
+  // Bracketed when negative: "-2 + 3" reads as arithmetic and would be taken
+  // for 1. Negative stock is a real state and it has to be unmistakable.
+  return b < 0 ? (loose === 0 ? `-${body}` : `-(${body})`) : body;
+}
+
 /** Whole-number count with grouping: 1,234. */
 export function int(v: Numeric): string {
   return INR_0.format(Math.trunc(toNumber(v)));

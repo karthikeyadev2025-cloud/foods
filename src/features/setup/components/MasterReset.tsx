@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,25 @@ const SCOPES: { value: ResetScope; label: string; goes: string; stays: string }[
   },
 ];
 
+/** Where the shop goes next, which is different for each scope. */
+const NEXT_STEP: Record<ResetScope, { say: string; cta: string; to: string }> = {
+  transactions: {
+    say: 'Start with the opening stock. Stock rows can be corrected for the next 30 days.',
+    cta: 'Import opening stock',
+    to: '/setup/import',
+  },
+  masters: {
+    say: 'Setup is intact, but there are no products, customers or suppliers. Import them before billing.',
+    cta: 'Import products',
+    to: '/setup/import',
+  },
+  everything: {
+    say: 'Setup is empty too — units, pack types, godowns. Nothing can be added until those exist, so walk through the setup again.',
+    cta: 'Set up again',
+    to: '/setup/wizard/units',
+  },
+};
+
 /**
  * "I want to reset all data once — master reset — and start doing all fresh
  * from beginning."
@@ -45,7 +65,7 @@ export function MasterReset() {
   const org = useQuery({ queryKey: ['setup', 'org'], queryFn: getOrg });
   const [scope, setScope] = useState<ResetScope>('transactions');
   const [typed, setTyped] = useState('');
-  const [done, setDone] = useState<ResetResult[] | null>(null);
+  const [done, setDone] = useState<{ rows: ResetResult[]; scope: ResetScope } | null>(null);
 
   const name = (org.data?.name ?? '').trim();
   const matches = typed.trim() === name && name.length > 0;
@@ -57,7 +77,7 @@ export function MasterReset() {
       // Everything on screen is now stale — the whole cache goes, not a list of
       // keys somebody has to remember to keep up to date.
       await queryClient.invalidateQueries();
-      setDone(rows);
+      setDone({ rows, scope });
       setTyped('');
     },
     onError: (err) => toastError(err, 'The reset did not run'),
@@ -66,16 +86,17 @@ export function MasterReset() {
   if (me.data?.role !== 'owner') return null;
 
   if (done) {
-    const total = done.reduce((s, r) => s + Number(r.rows_deleted ?? 0), 0);
+    const total = done.rows.reduce((s, r) => s + Number(r.rows_deleted ?? 0), 0);
+    const next = NEXT_STEP[done.scope];
     return (
       <Card className="border-destructive/40">
         <CardHeader className="pb-3"><CardTitle className="text-base">Reset done</CardTitle></CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <p>{int(total)} rows removed across {int(done.length)} tables. Document numbers start again at 1.</p>
+          <p>{int(total)} rows removed across {int(done.rows.length)} tables. Document numbers start again at 1.</p>
           <div className="max-h-56 overflow-auto rounded-md border">
             <table className="w-full text-xs">
               <tbody>
-                {done.map((r) => (
+                {done.rows.map((r) => (
                   <tr key={r.table_name} className="border-b last:border-0">
                     <td className="px-2 py-1">{r.table_name?.replace(/_/g, ' ')}</td>
                     <td className="num px-2 py-1">{int(r.rows_deleted)}</td>
@@ -84,8 +105,16 @@ export function MasterReset() {
               </tbody>
             </table>
           </div>
-          <p className="text-muted-foreground">Start with the opening stock. Stock rows can be corrected for the next 30 days.</p>
-          <Button variant="outline" size="sm" onClick={() => setDone(null)}>Close</Button>
+          {/*
+            A reset that cleared the units and godowns leaves every Add screen
+            with empty dropdowns, which reads as a broken system rather than an
+            empty one. Say where to start before they find that out themselves.
+          */}
+          <p className="text-muted-foreground">{next.say}</p>
+          <div className="flex gap-2">
+            <Button asChild size="sm"><Link to={next.to}>{next.cta}</Link></Button>
+            <Button variant="outline" size="sm" onClick={() => setDone(null)}>Close</Button>
+          </div>
         </CardContent>
       </Card>
     );

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Field } from '@/components/Field';
+import { SetupNeeded } from '@/components/SetupNeeded';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -110,6 +111,8 @@ export function ItemForm({ item }: { item?: ItemRow }) {
   const packTypes = useQuery({ queryKey: ['setup', 'pack_types'], queryFn: packTypesApi.list });
   const sections = useQuery({ queryKey: ['setup', 'sections'], queryFn: sectionsApi.list });
   const uoms = useQuery({ queryKey: ['setup', 'uoms'], queryFn: uomsApi.list });
+  const uomList = (uoms.data ?? []).filter((u) => u.is_active);
+  const packTypeList = (packTypes.data ?? []).filter((p) => p.is_active);
 
   const form = useForm<ItemInput>({
     resolver: zodResolver(itemSchema),
@@ -242,13 +245,14 @@ export function ItemForm({ item }: { item?: ItemRow }) {
             <Field label="Pack type" htmlFor="it-pack" error={e.pack_type_id?.message}>
               <NativeSelect id="it-pack" {...register('pack_type_id')}>
                 <option value="">— choose —</option>
-                {(packTypes.data ?? []).filter((p) => p.is_active).map((p) => (
+                {packTypeList.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.code}
                     {p.name ? ` — ${p.name}` : ''}
                   </option>
                 ))}
               </NativeSelect>
+              <SetupNeeded show={packTypes.isSuccess && packTypeList.length === 0} what="pack types" tab="pack-types" where="Pack types" />
             </Field>
           )}
           <Field label="Section (mestri)" htmlFor="it-section" error={e.section_id?.message}>
@@ -262,15 +266,26 @@ export function ItemForm({ item }: { item?: ItemRow }) {
               ))}
             </NativeSelect>
           </Field>
-          <Field label="Stock kept in" htmlFor="it-uom" error={e.base_uom_id?.message} help="The unit the ledger counts.">
+          {/*
+            Was labelled "Stock kept in", which the shop read as a place — "i mean
+            godown or production floor like that". It is the unit, not the godown;
+            a godown is chosen on the bill that moves the goods, never on the product.
+          */}
+          <Field
+            label="Counted in"
+            htmlFor="it-uom"
+            error={e.base_uom_id?.message}
+            help="Jar, box, packet, kg — the unit the stock ledger counts this product in. Not a godown."
+          >
             <NativeSelect id="it-uom" {...register('base_uom_id')}>
               <option value="">— choose —</option>
-              {(uoms.data ?? []).filter((u) => u.is_active).map((u) => (
+              {uomList.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.code} — {u.name}
                 </option>
               ))}
             </NativeSelect>
+            <SetupNeeded show={uoms.isSuccess && uomList.length === 0} what="units" tab="units" where="Units" />
           </Field>
           <label htmlFor="it-active" className="flex items-center gap-2 pt-5 text-sm">
             <Checkbox id="it-active" {...register('is_active')} />

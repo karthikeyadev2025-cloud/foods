@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
+import { SetupNeeded } from '@/components/SetupNeeded';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,7 @@ export function PurchaseEditor() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list });
+  const godowns = (locations.data ?? []).filter((l) => l.is_active && l.kind !== 'vehicle');
   const [supplier, setSupplier] = useState<SupplierRow | null>(null);
   const [lines, setLines] = useState<PurchaseDraftLine[]>([]);
   const [entryItem, setEntryItem] = useState<ItemRow | null>(null);
@@ -187,12 +189,13 @@ export function PurchaseEditor() {
           <Field label="Into godown" htmlFor="pu-location" error={e.location_id?.message}>
             <NativeSelect id="pu-location" {...register('location_id')}>
               <option value="">— choose —</option>
-              {(locations.data ?? []).filter((l) => l.is_active && l.kind !== 'vehicle').map((l) => (
+              {godowns.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name}
                 </option>
               ))}
             </NativeSelect>
+            <SetupNeeded show={locations.isSuccess && godowns.length === 0} what="godowns" tab="locations" where="Locations" />
           </Field>
           <Field label="Other charges (₹)" htmlFor="pu-other" error={e.other_charges?.message}>
             <Input id="pu-other" type="number" step="0.01" className="num" {...register('other_charges')} />

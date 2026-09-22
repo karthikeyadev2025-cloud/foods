@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
+import { SetupNeeded } from '@/components/SetupNeeded';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,6 +66,7 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
   const canEdit = perms.canEdit('invoices') && editable;
 
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list });
+  const liveLocations = (locations.data ?? []).filter((l) => l.is_active);
   const vehicles = useQuery({ queryKey: ['vehicles', 'list'], queryFn: listVehicles });
   const openTrips = useQuery({ queryKey: ['trips', 'open'], queryFn: listOpenTrips, enabled: editable });
 
@@ -415,12 +417,13 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
               <Field label="Stock from" htmlFor="inv-location" error={e.location_id?.message}>
                 <NativeSelect id="inv-location" disabled={!canEdit} {...register('location_id')}>
                   <option value="">— choose —</option>
-                  {(locations.data ?? []).filter((l) => l.is_active).map((l) => (
+                  {liveLocations.map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.name}
                     </option>
                   ))}
                 </NativeSelect>
+                <SetupNeeded show={locations.isSuccess && liveLocations.length === 0} what="godowns" tab="locations" where="Locations" />
               </Field>
             )}
             <Field label="Transport name" htmlFor="inv-transport" error={e.transport_name?.message}>

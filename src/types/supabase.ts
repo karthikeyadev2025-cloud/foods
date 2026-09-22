@@ -11425,6 +11425,10 @@ export type Database = {
           town: string
         }[]
       }
+      unpost_purchase_stock: {
+        Args: { p_on?: string; p_purchase: string }
+        Returns: number
+      }
       update_batch_actuals: {
         Args: { p: Json; p_batch: string }
         Returns: undefined

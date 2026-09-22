@@ -28,7 +28,7 @@ import { MessagingPage } from '@/features/messaging/routes/MessagingPage';
 import { PaymentsPage } from '@/features/payments/routes/PaymentsPage';
 import { BatchPage } from '@/features/production/routes/BatchPage';
 import { ProductionPage } from '@/features/production/routes/ProductionPage';
-import { PurchaseNewPage, PurchaseViewPage, PurchasesPage } from '@/features/purchases/routes/PurchasesPage';
+import { PurchaseEditPage, PurchaseNewPage, PurchaseViewPage, PurchasesPage } from '@/features/purchases/routes/PurchasesPage';
 import { ReceiptNewPage, ReceiptViewPage, ReceiptsPage } from '@/features/receipts/routes/ReceiptsPage';
 import { ReportsPage } from '@/features/reports/routes/ReportsPage';
 import { ReturnNewPage, ReturnViewPage, ReturnsPage } from '@/features/returns/routes/ReturnsPage';
@@ -139,6 +139,7 @@ export const router = createRouter([
             { path: 'purchases/returns', element: <PurchaseReturnsPage /> },
             { path: 'purchases/new', element: <PurchaseNewPage /> },
             { path: 'purchases/:id', element: <PurchaseViewPage /> },
+            { path: 'purchases/:id/edit', element: <PurchaseEditPage /> },
           ]),
           guarded('returns', [
             { path: 'returns', element: <ReturnsPage /> },

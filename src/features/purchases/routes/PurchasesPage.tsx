@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Download, Plus } from 'lucide-react';
+import { Download, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { DeleteButton } from '@/components/DeleteButton';
@@ -196,6 +196,7 @@ export function PurchaseNewPage() {
 
 export function PurchaseViewPage() {
   const { id } = useParams();
+  const perms = usePermissions();
   const purchase = useQuery({ queryKey: ['purchases', 'one', id], queryFn: () => getPurchase(id ?? ''), enabled: Boolean(id) });
   const lines = useQuery({ queryKey: ['purchases', 'lines', id], queryFn: () => getPurchaseLines(id ?? ''), enabled: Boolean(id) });
   if (purchase.isLoading || lines.isLoading) return <Spinner label="Loading purchase…" />;
@@ -203,7 +204,18 @@ export function PurchaseViewPage() {
   const p = purchase.data;
   return (
     <div className="space-y-4">
-      <PageHeader title={`Purchase ${p.bill_no ?? ''}`} description={`${dateDMY(p.bill_date)} · ${p.supplier_name ?? 'cash purchase'} · into ${p.location_name ?? ''}`} actions={<Button asChild variant="ghost" size="sm"><Link to="/purchases">← Purchases</Link></Button>} />
+      <PageHeader
+        title={`Purchase ${p.bill_no ?? ''}`}
+        description={`${dateDMY(p.bill_date)} · ${p.supplier_name ?? 'cash purchase'} · into ${p.location_name ?? ''}`}
+        actions={
+          <div className="flex gap-2">
+            {perms.canEdit('purchases') && (
+              <Button asChild size="sm"><Link to={`/purchases/${id}/edit`}><Pencil /> Edit</Link></Button>
+            )}
+            <Button asChild variant="ghost" size="sm"><Link to="/purchases">← Purchases</Link></Button>
+          </div>
+        }
+      />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -238,7 +250,37 @@ export function PurchaseViewPage() {
         <div className="flex justify-between font-semibold"><span>Total</span><span className="tabular-nums">{amount(p.total)}</span></div>
         <div className="flex justify-between"><span className="text-muted-foreground">Paid now</span><span className="tabular-nums">{amount(p.paid_amount)}</span></div>
       </div>
-      <p className="text-xs text-muted-foreground">Purchases are final on save. Corrections go through a purchase return or a stock adjustment.</p>
+      <p className="text-xs text-muted-foreground">
+        Edit corrects this bill in place — the old quantities come back out of the godown and these go in, both movements
+        staying in the ledger. Goods actually sent back to the supplier are a purchase return, not an edit.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Correcting a bill already entered. The editor needs the saved lines, so both
+ * queries have to land before it can be shown at the right figures — opening it
+ * empty and filling it in afterwards would let somebody save a bill with no
+ * lines on it.
+ */
+export function PurchaseEditPage() {
+  const { id } = useParams();
+  const perms = usePermissions();
+  const purchase = useQuery({ queryKey: ['purchases', 'one', id], queryFn: () => getPurchase(id ?? ''), enabled: Boolean(id) });
+  const lines = useQuery({ queryKey: ['purchases', 'lines', id], queryFn: () => getPurchaseLines(id ?? ''), enabled: Boolean(id) });
+
+  if (!perms.canEdit('purchases')) return <p className="text-sm text-muted-foreground">Your role cannot change purchases.</p>;
+  if (purchase.isLoading || lines.isLoading) return <Spinner label="Loading purchase…" />;
+  if (!purchase.data || !lines.data) return <p role="alert" className="text-sm text-destructive">Purchase not found.</p>;
+
+  return (
+    <div className="space-y-4">
+      <PageHeader
+        title={`Edit purchase ${purchase.data.bill_no ?? ''}`}
+        actions={<Button asChild variant="ghost" size="sm"><Link to={`/purchases/${id}`}>← Back to the bill</Link></Button>}
+      />
+      <PurchaseEditor purchase={purchase.data} lines={lines.data} />
     </div>
   );
 }

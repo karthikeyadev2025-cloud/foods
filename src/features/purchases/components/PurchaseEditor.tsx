@@ -16,19 +16,44 @@ import { getItem, searchItems, type ItemRow } from '@/features/items/api';
 import { stockLocationsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { amount, qty, round, toISODate, toNumber, whole } from '@/lib/format';
-import { savePurchase, searchSuppliers, type SupplierRow } from '../api';
+import { savePurchase, searchSuppliers, type PurchaseLineRow, type PurchaseRow, type SupplierRow } from '../api';
 import { SupplierHistoryDialog } from './SupplierHistoryDialog';
 import { purchaseHeaderSchema, type PurchaseDraftLine, type PurchaseHeaderForm } from '../schema';
 
 let seq = 0;
 
-export function PurchaseEditor() {
+/**
+ * New purchase, and — when `purchase` is passed — the correction of one already
+ * entered (db/53).
+ *
+ * A correction is not a fresh bill: it keeps its number, and the database
+ * reverses what the old version put into stock and into the ledger before
+ * posting the new figures. So the screen looks the same and says different
+ * things: what it is about to do, and that it cannot be undone by closing it.
+ */
+export function PurchaseEditor({ purchase, lines: existing }: { purchase?: PurchaseRow; lines?: PurchaseLineRow[] } = {}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const editing = Boolean(purchase?.id);
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list });
   const godowns = (locations.data ?? []).filter((l) => l.is_active && l.kind !== 'vehicle');
-  const [supplier, setSupplier] = useState<SupplierRow | null>(null);
-  const [lines, setLines] = useState<PurchaseDraftLine[]>([]);
+  const [supplier, setSupplier] = useState<SupplierRow | null>(
+    purchase?.supplier_id ? ({ id: purchase.supplier_id, name: purchase.supplier_name } as SupplierRow) : null,
+  );
+  const [lines, setLines] = useState<PurchaseDraftLine[]>(() =>
+    (existing ?? []).map((l) => ({
+      key: `p${++seq}`,
+      item_id: l.item_id ?? '',
+      item_code: l.item_code ?? '',
+      item_name: l.item_name ?? '',
+      // The packing SAVED on the line, not the product's packing today. A bill
+      // entered before a product was re-packed must re-open at the figures it
+      // was entered with, or the edit would silently re-quantify it (db/50).
+      units_per_box: toNumber(l.units_per_box) || 1,
+      boxes: toNumber(l.boxes),
+      rate: toNumber(l.rate),
+    })),
+  );
   const [entryItem, setEntryItem] = useState<ItemRow | null>(null);
   // BOXES, as on a bill. This used to be a quantity plus a unit picker that
   // defaulted to the item's base unit, so "51" meant fifty-one jars.
@@ -41,7 +66,17 @@ export function PurchaseEditor() {
 
   const form = useForm<PurchaseHeaderForm>({
     resolver: zodResolver(purchaseHeaderSchema),
-    defaultValues: { supplier_id: '', bill_no: '', bill_date: toISODate(), location_id: '', other_charges: 0, paid_amount: 0, notes: '' },
+    defaultValues: purchase
+      ? {
+          supplier_id: purchase.supplier_id ?? '',
+          bill_no: purchase.bill_no ?? '',
+          bill_date: purchase.bill_date ?? toISODate(),
+          location_id: purchase.location_id ?? '',
+          other_charges: toNumber(purchase.other_charges),
+          paid_amount: toNumber(purchase.paid_amount),
+          notes: purchase.notes ?? '',
+        }
+      : { supplier_id: '', bill_no: '', bill_date: toISODate(), location_id: '', other_charges: 0, paid_amount: 0, notes: '' },
   });
   const { register, setValue, watch, formState } = form;
   const e = formState.errors;
@@ -121,6 +156,7 @@ export function PurchaseEditor() {
       if (h.paid_amount > total) throw new Error('Paid amount exceeds the bill total');
       return savePurchase(
         {
+          ...(purchase?.id ? { id: purchase.id } : {}),
           supplier_id: h.supplier_id || null,
           bill_no: h.bill_no || null,
           bill_date: h.bill_date,
@@ -133,9 +169,11 @@ export function PurchaseEditor() {
       );
     },
     onSuccess: async (id) => {
-      await queryClient.invalidateQueries({ queryKey: ['purchases'] });
-      await queryClient.invalidateQueries({ queryKey: ['items'] });
-      toast({ title: 'Purchase saved — stock and ledger posted' });
+      // Stock and the ledger both moved, so the narrow keys are not enough —
+      // the stock screens, the reports and the supplier's payable all read from
+      // what this just changed.
+      await queryClient.invalidateQueries();
+      toast({ title: editing ? 'Purchase corrected — stock and ledger adjusted' : 'Purchase saved — stock and ledger posted' });
       navigate(`/purchases/${id}`, { replace: true });
     },
     onError: (err) => toastError(err, 'Could not save the purchase'),
@@ -145,6 +183,13 @@ export function PurchaseEditor() {
 
   return (
     <form className="space-y-4" onSubmit={form.handleSubmit((h) => save.mutate(h))} noValidate>
+      {editing && (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+          <span className="font-medium">Correcting bill {purchase?.bill_no}.</span> Saving takes the old quantities back
+          out of {purchase?.location_name ?? 'the godown'} and puts these in, and corrects the supplier's account the same
+          way. Both the old figures and the correction stay in the ledger, so the change can be traced.
+        </p>
+      )}
       <Card>
         <CardContent className="grid grid-cols-2 gap-3 pt-4 md:grid-cols-4">
           <Field label="Supplier" htmlFor="pu-supplier" error={e.supplier_id?.message} className="col-span-2" help="Leave blank for a cash purchase.">
@@ -180,7 +225,12 @@ export function PurchaseEditor() {
               </button>
             )}
           </Field>
-          <Field label="Bill no." htmlFor="pu-bill" error={e.bill_no?.message} help="Leave blank and it is numbered for you. Type the supplier's own number when their bill has one.">
+          <Field
+            label="Bill no."
+            htmlFor="pu-bill"
+            error={e.bill_no?.message}
+            help={editing ? 'The number this bill already has. Changing it does not draw a new one.' : "Leave blank and it is numbered for you. Type the supplier's own number when their bill has one."}
+          >
             <Input id="pu-bill" placeholder="Numbered automatically" {...register('bill_no')} />
           </Field>
           <Field label="Bill date" htmlFor="pu-date" error={e.bill_date?.message}>
@@ -319,11 +369,11 @@ export function PurchaseEditor() {
       )}
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => navigate('/purchases')}>
+        <Button type="button" variant="outline" onClick={() => navigate(editing && purchase?.id ? `/purchases/${purchase.id}` : '/purchases')}>
           Cancel
         </Button>
         <Button type="submit" disabled={save.isPending}>
-          {save.isPending ? 'Saving…' : 'Save purchase'}
+          {save.isPending ? 'Saving…' : editing ? 'Save correction' : 'Save purchase'}
         </Button>
       </div>
     </form>

@@ -47,6 +47,12 @@ export function getPurchaseLines(id: string): Promise<PurchaseLineRow[]> {
 }
 
 export interface PurchaseHeaderInput {
+  /**
+   * Set to correct a bill already entered (db/53). The bill keeps its number;
+   * its old stock and ledger postings are reversed and the corrected ones
+   * posted, so nothing is rewritten and the trail stays readable.
+   */
+  id?: string;
   supplier_id: string | null;
   bill_no: string | null;
   bill_date: string;
@@ -63,7 +69,11 @@ export interface PurchaseLineInput {
   rate: number;
 }
 
-/** Saves, posts stock in, and journals Dr Purchases / Cr Creditors (+ any cash paid). Final on save. */
+/**
+ * Saves, posts stock in, and journals Dr Purchases / Cr Creditors (+ any cash
+ * paid). With `id` on the header it corrects that bill instead, reversing what
+ * the old one posted first.
+ */
 export function savePurchase(header: PurchaseHeaderInput, lines: PurchaseLineInput[]): Promise<string> {
   return queuedRpc('save_purchase', { p_header: { ...header }, p_lines: lines.map((l) => ({ ...l })) }, 'Purchase bill');
 }

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FeatureLocked } from '@/features/auth/components/RequireFeature';
 import { DeleteButton } from '@/components/DeleteButton';
 import { useMe, usePermissions } from '@/features/auth/hooks';
@@ -99,17 +99,23 @@ function ClosingStock() {
     return [...map.values()];
   }, [report.data, hideZero]);
 
-  const sum = (rows: ClosingStockRow[], k: 'opening' | 'purchase' | 'production' | 'sales' | 'other' | 'closing') => rows.reduce((s, r) => s + toNumber(r[k]), 0);
   const all = groups.flatMap((g) => g.rows);
   const negatives = all.filter((r) => r.is_negative).length;
 
+  /*
+    No section sub-totals and no grand total any more — the shop asked for them
+    off, and they were arithmetic without a meaning.
+
+    A box is not a fixed thing. KALAJAM comes twelve jars to a box, CHEKODI six,
+    SUGAR is a kilo. Adding those columns produced a number that counted
+    cardboard rather than goods, and it was the last place a stray "0.25" could
+    still appear on this report. A per-product figure is real; a column of them
+    added up is not. Excel can still total any column somebody actually wants.
+  */
   const onExport = () =>
     exportToExcel(
       `stock-report-${date}`,
-      groups.flatMap((g) => [
-        ...g.rows.map((r) => ({ Section: `${g.code ? `${g.code} ` : ''}${g.name}`, 'Item Code': r.item_code, Pack: r.pack, 'Group / Item Name': r.item_name, Opening: toNumber(r.opening), Purchase: toNumber(r.purchase), Made: toNumber(r.production), Sales: toNumber(r.sales), Other: toNumber(r.other), Closing: toNumber(r.closing) })),
-        { Section: `${g.name} total`, 'Item Code': '', Pack: '', 'Group / Item Name': '', Opening: sum(g.rows, 'opening'), Purchase: sum(g.rows, 'purchase'), Made: sum(g.rows, 'production'), Sales: sum(g.rows, 'sales'), Other: sum(g.rows, 'other'), Closing: sum(g.rows, 'closing') },
-      ]),
+      all.map((r) => ({ Section: `${r.section_code ? `${r.section_code} ` : ''}${r.section_name ?? 'OTHERS'}`, 'Item Code': r.item_code, Pack: r.pack, 'Group / Item Name': r.item_name, 'Units / box': toNumber(r.units_per_box), Opening: toNumber(r.opening), Purchase: toNumber(r.purchase), Made: toNumber(r.production), Sales: toNumber(r.sales), Other: toNumber(r.other), Closing: toNumber(r.closing) })),
       `Stock ${dateDMY(date)}`,
     );
 
@@ -175,26 +181,9 @@ function ClosingStock() {
                       <TableCell className={cn('num font-medium', r.is_negative && 'text-destructive')} title={`${qty(r.closing)} boxes`}>{boxesAndUnits(r.closing, r.units_per_box)}</TableCell>
                     </TableRow>
                   ))}
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableCell colSpan={3} className="text-right text-xs uppercase text-muted-foreground">{g.name} total</TableCell>
-                    <TableCell className="num font-medium">{qty(sum(g.rows, 'opening'))}</TableCell>
-                    <TableCell className="num font-medium">{qty(sum(g.rows, 'purchase'))}</TableCell>
-                    <TableCell className="num font-medium">{qty(sum(g.rows, 'production'))}</TableCell>
-                    <TableCell className="num font-medium">{qty(sum(g.rows, 'sales'))}</TableCell>
-                    <TableCell className="num font-medium">{qty(sum(g.rows, 'other'))}</TableCell>
-                    <TableCell className="num font-medium">{qty(sum(g.rows, 'closing'))}</TableCell>
-                  </TableRow>
                 </Fragment>
               ))}
             </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={3} className="text-right">Grand total (boxes)</TableCell>
-                <TableCell className="num">{qty(sum(all, 'opening'))}</TableCell><TableCell className="num">{qty(sum(all, 'purchase'))}</TableCell>
-                <TableCell className="num">{qty(sum(all, 'production'))}</TableCell><TableCell className="num">{qty(sum(all, 'sales'))}</TableCell>
-                <TableCell className="num">{qty(sum(all, 'other'))}</TableCell><TableCell className="num">{qty(sum(all, 'closing'))}</TableCell>
-              </TableRow>
-            </TableFooter>
           </Table>
         </div>
       )}

@@ -114,8 +114,43 @@ export function BatchPage() {
   const diff = actualWhole - expectedWhole;
   const usedOf = (lId: string, fallback: unknown) => (st === 'open' ? toNumber(used[lId]) : toNumber(fallback as number | string | null));
 
+  /**
+   * The sheet the shop knows, plus the two figures it is actually judged on.
+   *
+   * Expected and actual boxes went on the screen but never into the download,
+   * so the file answered "how much did the chief use?" and not "how many boxes
+   * came out?" — which is the question the batch exists to answer. They go on
+   * their own tab rather than into the ingredient grid: dropped into that
+   * table they would sit under a heading that means something else, and
+   * anybody totalling the column would get a wrong answer.
+   */
   const onExport = () =>
-    exportToExcel(`batch-${b.batch_no}`, lines.data.map((l) => ({ Ingredients: l.ingredient, Quantity: toNumber(l.quantity), 'No of Plates': toNumber(l.no_of_plates), 'Total Usage per Plate': toNumber(l.total_usage_per_plate), 'Total Used by Chief': usedOf(l.id ?? '', l.total_used_by_chief), Difference: usedOf(l.id ?? '', l.total_used_by_chief) - toNumber(l.total_usage_per_plate), 'No of Workers': toNumber(workers), Mestry: toNumber(mestry), Labour: toNumber(labour), Unit: l.uom_code, Rate: toNumber(l.rate) })), b.item_name ?? 'Sheet');
+    exportToExcel(
+      `batch-${b.batch_no}`,
+      lines.data.map((l) => ({ Ingredients: l.ingredient, Quantity: toNumber(l.quantity), 'No of Plates': toNumber(l.no_of_plates), 'Total Usage per Plate': toNumber(l.total_usage_per_plate), 'Total Used by Chief': usedOf(l.id ?? '', l.total_used_by_chief), Difference: usedOf(l.id ?? '', l.total_used_by_chief) - toNumber(l.total_usage_per_plate), 'No of Workers': toNumber(workers), Mestry: toNumber(mestry), Labour: toNumber(labour), Unit: l.uom_code, Rate: toNumber(l.rate) })),
+      b.item_name ?? 'Sheet',
+      [{
+        name: 'Boxes',
+        rows: [{
+          Batch: b.batch_no,
+          Date: dateDMY(b.production_date),
+          Item: b.item_name,
+          Section: b.section_name,
+          Mestri: b.mestri_name,
+          Chief: b.chief_name,
+          'No of plates': toNumber(b.no_of_plates),
+          // The same whole boxes the screen shows, and the variance worked out
+          // from those, so the file and the screen never disagree by 0.18.
+          'Expected boxes': expectedWhole,
+          'Actual boxes': actual ? actualWhole : null,
+          'Variance (boxes)': actual ? diff : null,
+          'Variance %': actual && expectedWhole ? round((diff * 100) / expectedWhole, 2) : null,
+          'Expected jars': toNumber(b.expected_jars),
+          'Actual jars': actual ? actualWhole * toNumber(b.units_per_box) : null,
+          Status: st,
+        }],
+      }],
+    );
 
   return (
     <div className="space-y-4">

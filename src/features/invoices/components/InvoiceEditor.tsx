@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { usePermissions } from '@/features/auth/hooks';
 import { CustomerHistoryDialog } from '@/features/customers/components/CustomerHistoryDialog';
 import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
+import { NewCustomerDialog } from '@/features/customers/components/NewCustomerDialog';
 import { applyDiscountSchemes } from '@/features/documents/api';
 import { effectiveUnitRate, getItem, searchItems, type ItemRow } from '@/features/items/api';
 import { NewItemDialog } from '@/features/items/components/NewItemDialog';
@@ -119,7 +120,9 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
   const [cancelOpen, setCancelOpen] = useState(false);
   // null = closed. '' is a real state: "new product, nothing typed yet".
   const [newItemName, setNewItemName] = useState<string | null>(null);
+  const [newCustomerName, setNewCustomerName] = useState<string | null>(null);
   const canCreateItem = perms.canEdit('items');
+  const canCreateCustomer = perms.canEdit('customers');
   const [reopenOpen, setReopenOpen] = useState(false);
 
   const invoiceDate = watch('invoice_date');
@@ -391,6 +394,8 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
                 disabled={!canEdit}
                 eager
                 onPicked={focusCode}
+                onCreate={canEdit && canCreateCustomer ? (t) => setNewCustomerName(t) : undefined}
+                createLabel="New customer"
               />
               </div>
               {customer?.id && (
@@ -721,7 +726,18 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
         </DialogContent>
       </Dialog>
 
-      {/* A product missing from the list no longer means abandoning the bill. */}
+      {/* Neither a product nor a customer missing from the list means abandoning the bill. */}
+      <NewCustomerDialog
+        open={newCustomerName !== null}
+        initialName={newCustomerName ?? ''}
+        onClose={() => setNewCustomerName(null)}
+        onCreated={(c) => {
+          setCustomer(c);
+          setValue('customer_id', c.id ?? '', { shouldValidate: true });
+          focusCode();
+        }}
+      />
+
       <NewItemDialog
         open={newItemName !== null}
         initialName={newItemName ?? ''}

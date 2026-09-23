@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
-import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
 import { DeleteButton } from '@/components/DeleteButton';
 import { PageHeader } from '@/components/PageHeader';
@@ -19,13 +18,14 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMe, usePermissions } from '@/features/auth/hooks';
-import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
+import { getCustomer, type CustomerRow } from '@/features/customers/api';
 import { getPrintTemplate, stockLocationsApi } from '@/features/setup/api';
 import { SalesDocPrint } from '@/components/print/SalesDocPrint';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
 import { deleteDocument } from '@/features/search/deletes';
+import { CustomerPicker } from '@/features/customers/components/CustomerPicker';
 import { amount, dateDMY, qty, round, toISODate, toNumber } from '@/lib/format';
 import { amountInWords } from '@/lib/money';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
@@ -167,7 +167,7 @@ function QuotationEditor({ quote, initialLines }: { quote?: QuotationRow; initia
         <Card>
           <CardContent className="grid grid-cols-2 gap-3 pt-4 md:grid-cols-4">
             <Field label="Customer" htmlFor="qt-customer" error={e.customer_id?.message} className="col-span-2">
-              <Combobox<CustomerRow> id="qt-customer" value={customer} onChange={(c) => { setCustomer(c); setValue('customer_id', c?.id ?? '', { shouldValidate: true }); }} search={searchCustomers} queryKey="customers" getKey={(c) => c.id ?? ''} getLabel={(c) => `${c.name ?? ''}${c.town ? ` — ${c.town}` : ''}`} renderOption={(c) => <span><span className="font-medium">{c.name}</span><span className="text-muted-foreground">{c.town ? ` · ${c.town}` : ''}</span></span>} placeholder="Type name, mobile or town…" autoFocus={!quote} disabled={!editable} eager />
+              <CustomerPicker id="qt-customer" value={customer} onChange={(c) => { setCustomer(c); setValue('customer_id', c?.id ?? '', { shouldValidate: true }); }} autoFocus={!quote} disabled={!editable} />
             </Field>
             <Field label="Quotation date" htmlFor="qt-date" error={e.quote_date?.message}><Input id="qt-date" type="date" disabled={!editable} {...register('quote_date')} /></Field>
             <Field label="Valid till" htmlFor="qt-valid"><Input id="qt-valid" type="date" disabled={!editable} {...register('valid_till')} /></Field>

@@ -4,7 +4,6 @@ import { DeleteButton } from '@/components/DeleteButton';
 import { SalesDocPrint } from '@/components/print/SalesDocPrint';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
 import { PageHeader } from '@/components/PageHeader';
 import { Spinner } from '@/components/Spinner';
@@ -16,12 +15,13 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMe, usePermissions } from '@/features/auth/hooks';
-import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
+import { getCustomer, type CustomerRow } from '@/features/customers/api';
 import { getPrintTemplate, stockLocationsApi } from '@/features/setup/api';
 import { listVehicles } from '@/features/vehicles/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { deleteDocument } from '@/features/search/deletes';
+import { CustomerPicker } from '@/features/customers/components/CustomerPicker';
 import { exportToExcel } from '@/lib/export';
 import { dateDMY, qty, toISODate, toNumber } from '@/lib/format';
 import { cancelChallan, convertChallan, getChallan, getChallanLines, listChallans, nextLineKey, saveChallan, stateTone, type ChallanRow, type DocLine, type DocState } from '../api';
@@ -118,7 +118,7 @@ function ChallanEditor({ challan, initialLines }: { challan?: ChallanRow; initia
       )}
       <Card>
         <CardContent className="grid grid-cols-2 gap-3 pt-4 md:grid-cols-4">
-          <Field label="Customer" htmlFor="ch-cust" className="col-span-2"><Combobox<CustomerRow> id="ch-cust" value={customer} onChange={setCustomer} search={searchCustomers} queryKey="customers" getKey={(c) => c.id ?? ''} getLabel={(c) => `${c.name ?? ''}${c.town ? ` — ${c.town}` : ''}`} placeholder="Type name, mobile or town…" autoFocus={!challan} disabled={!editable} eager /></Field>
+          <Field label="Customer" htmlFor="ch-cust" className="col-span-2"><CustomerPicker id="ch-cust" value={customer} onChange={setCustomer} autoFocus={!challan} disabled={!editable} /></Field>
           <Field label="Date" htmlFor="ch-date"><Input id="ch-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} disabled={!editable} /></Field>
           <Field label="Goods leave from" htmlFor="ch-loc"><NativeSelect id="ch-loc" value={locationId} onChange={(e) => setLocationId(e.target.value)} disabled={!editable}><option value="">— choose —</option>{(locations.data ?? []).filter((l) => l.is_active).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</NativeSelect></Field>
           <Field label="Vehicle" htmlFor="ch-veh"><NativeSelect id="ch-veh" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} disabled={!editable}><option value="">—</option>{(vehicles.data ?? []).filter((v) => v.is_active).map((v) => <option key={v.id ?? ''} value={v.id ?? ''}>{v.vehicle_number}</option>)}</NativeSelect></Field>

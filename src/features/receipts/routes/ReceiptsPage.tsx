@@ -2,7 +2,6 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { Download, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
 import { DeleteButton } from '@/components/DeleteButton';
 import { PageHeader } from '@/components/PageHeader';
@@ -14,13 +13,14 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/features/auth/hooks';
-import { searchCustomers, type CustomerRow } from '@/features/customers/api';
+import { type CustomerRow } from '@/features/customers/api';
 import { listOpenInvoices } from '@/features/invoices/api';
 import { receiptModesApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
 import { deleteDocument } from '@/features/search/deletes';
+import { CustomerPicker } from '@/features/customers/components/CustomerPicker';
 import { amount, dateDMY, money, round, toISODate, toNumber, type Numeric } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { getReceipt, getReceiptAllocations, getReceiptLines, listAllReceipts, listReceipts, saveReceipt } from '../api';
@@ -169,8 +169,8 @@ export function ReceiptNewPage() {
       <Card>
         <CardContent className="grid grid-cols-2 gap-3 pt-4 md:grid-cols-4">
           <Field label="Customer" htmlFor="rc-customer" className="col-span-2">
-            <Combobox<CustomerRow> id="rc-customer" value={customer} onChange={(c) => { setCustomer(c); setAlloc({}); }} search={searchCustomers} queryKey="customers" getKey={(c) => c.id ?? ''} getLabel={(c) => `${c.name ?? ''}${c.town ? ` — ${c.town}` : ''}`}
-              renderOption={(c) => <span><span className="font-medium">{c.name}</span><span className="text-muted-foreground">{c.town ? ` · ${c.town}` : ''} · outstanding {money(c.outstanding)}</span></span>} placeholder="Type name, mobile or town…" autoFocus eager />
+            <CustomerPicker id="rc-customer" value={customer} onChange={(c) => { setCustomer(c); setAlloc({}); }}
+              renderOption={(c) => <span><span className="font-medium">{c.name}</span><span className="text-muted-foreground">{c.town ? ` · ${c.town}` : ''} · outstanding {money(c.outstanding)}</span></span>} autoFocus />
           </Field>
           <Field label="Date" htmlFor="rc-date"><Input id="rc-date" type="date" value={date} onChange={(ev) => setDate(ev.target.value)} /></Field>
           <Field label="Narration" htmlFor="rc-narr"><Input id="rc-narr" value={narration} onChange={(ev) => setNarration(ev.target.value)} /></Field>

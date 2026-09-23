@@ -13,11 +13,12 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/features/auth/hooks';
 import { searchItems, type ItemRow } from '@/features/items/api';
-import { listPurchases, searchSuppliers, type SupplierRow } from '@/features/purchases/api';
+import { listPurchases, type SupplierRow } from '@/features/purchases/api';
 import { stockLocationsApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { deleteDocument } from '@/features/search/deletes';
+import { SupplierPicker } from '@/features/purchases/components/SupplierPicker';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, qty, round, toISODate, toNumber } from '@/lib/format';
 import { getPurchaseReturnLines, listPurchaseReturns, savePurchaseReturn, type PurchaseReturnRow } from '../api';
@@ -100,7 +101,7 @@ function NewReturnDialog({ onClose }: { onClose: () => void }) {
       <DialogContent className="max-w-2xl">
         <DialogHeader><DialogTitle>New purchase return</DialogTitle><DialogDescription>Quantity in the item's own unit (jars, kg…). Rate defaults to the purchase rate on Add Product.</DialogDescription></DialogHeader>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Field label="Supplier" htmlFor="pr-sup" className="col-span-2"><Combobox<SupplierRow> id="pr-sup" value={supplier} onChange={(s) => { setSupplier(s); setPurchaseId(''); }} search={searchSuppliers} queryKey="suppliers" getKey={(s) => s.id ?? ''} getLabel={(s) => s.name ?? ''} placeholder="Supplier…" autoFocus eager /></Field>
+          <Field label="Supplier" htmlFor="pr-sup" className="col-span-2"><SupplierPicker id="pr-sup" value={supplier} onChange={(s) => { setSupplier(s); setPurchaseId(''); }} autoFocus /></Field>
           <Field label="Against bill" htmlFor="pr-bill"><NativeSelect id="pr-bill" value={purchaseId} onChange={(e) => setPurchaseId(e.target.value)} disabled={!supplier}><option value="">— none —</option>{(purchases.data?.rows ?? []).map((p) => <option key={p.id ?? ''} value={p.id ?? ''}>{p.bill_no ?? dateDMY(p.bill_date)} · {amount(p.total)}</option>)}</NativeSelect></Field>
           <Field label="Date" htmlFor="pr-date"><Input id="pr-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
           <Field label="Goods leave from" htmlFor="pr-loc"><NativeSelect id="pr-loc" value={locationId} onChange={(e) => setLocationId(e.target.value)}>{(locations.data ?? []).filter((l) => l.is_active).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</NativeSelect></Field>

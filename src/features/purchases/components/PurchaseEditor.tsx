@@ -19,6 +19,7 @@ import { stockLocationsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { amount, qty, round, toISODate, toNumber, whole } from '@/lib/format';
 import { savePurchase, searchSuppliers, type PurchaseLineRow, type PurchaseRow, type SupplierRow } from '../api';
+import { NewSupplierDialog } from './NewSupplierDialog';
 import { SupplierHistoryDialog } from './SupplierHistoryDialog';
 import { purchaseHeaderSchema, type PurchaseDraftLine, type PurchaseHeaderForm } from '../schema';
 
@@ -64,7 +65,11 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
   const [historyOpen, setHistoryOpen] = useState(false);
   // null = closed. '' is a real state: "new product, nothing typed yet".
   const [newItemName, setNewItemName] = useState<string | null>(null);
-  const canCreateItem = usePermissions().canEdit('items');
+  const [newSupplierName, setNewSupplierName] = useState<string | null>(null);
+  const perms = usePermissions();
+  const canCreateItem = perms.canEdit('items');
+  // Suppliers are owned by the purchases module, not by a module of their own.
+  const canEditSuppliers = perms.canEdit('purchases');
   const boxesRef = useRef<HTMLInputElement>(null);
   const rateRef = useRef<HTMLInputElement>(null);
   const codeWrapRef = useRef<HTMLDivElement>(null);
@@ -219,6 +224,8 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
               autoFocus
               eager
               onPicked={focusCode}
+              onCreate={canEditSuppliers ? (t) => setNewSupplierName(t) : undefined}
+              createLabel="New supplier"
             />
             {supplier?.id && (
               <button
@@ -392,6 +399,17 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
         defaultType="raw_material"
         onClose={() => setNewItemName(null)}
         onCreated={onItemPicked}
+      />
+
+      <NewSupplierDialog
+        open={newSupplierName !== null}
+        initialName={newSupplierName ?? ''}
+        onClose={() => setNewSupplierName(null)}
+        onCreated={(s) => {
+          setSupplier(s);
+          setValue('supplier_id', s.id ?? '');
+          focusCode();
+        }}
       />
 
       {historyOpen && supplier?.id && (

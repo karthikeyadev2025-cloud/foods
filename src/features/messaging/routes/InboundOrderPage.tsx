@@ -14,7 +14,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/features/auth/hooks';
-import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
+import { getCustomer, type CustomerRow } from '@/features/customers/api';
 import { effectiveUnitRate, searchItems, type ItemRow } from '@/features/items/api';
 import { stockLocationsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
@@ -22,6 +22,7 @@ import { amount, dateTimeDMY, money, qty, round, toISODate, toNumber } from '@/l
 import { invoiceLine } from '@/lib/units';
 import { cn } from '@/lib/utils';
 import { convertInboundToOrder } from '@/features/documents/api';
+import { CustomerPicker } from '@/features/customers/components/CustomerPicker';
 import { convertInboundOrder, getInboundOrder, inboundOrderLines, orderTone, rejectInboundOrder, type InboundLine } from '../api';
 
 interface EditLine {
@@ -147,7 +148,9 @@ export function InboundOrderPage() {
             <div className="text-xs text-muted-foreground">From {o.from_number ?? o.mobile1}{o.confidence !== null && o.confidence !== undefined ? ` · parser confidence ${qty(toNumber(o.confidence) * 100, 0)}%` : ''}{o.campaign_kind === 'order_call' ? ` · taken on an order call${o.call_duration ? ` (${o.call_duration}s)` : ''}${o.campaign_note ? ` · ${o.campaign_note}` : ''}` : ''}</div>
             {o.reject_reason && <p className="text-destructive">Rejected: {o.reject_reason}</p>}
             <Field label="Customer" htmlFor="io-cust">
-              <Combobox<CustomerRow> id="io-cust" value={customer} onChange={setCustomer} search={searchCustomers} queryKey="customers-pick" getKey={(c) => c.id ?? ''} getLabel={(c) => `${c.name}${c.town ? ` — ${c.town}` : ''}`} renderOption={(c) => <span><span className="font-medium">{c.name}</span> <span className="text-muted-foreground">{c.town} · {c.mobile1}</span></span>} placeholder={o.customer_id ? '' : 'Unknown number — pick the customer'} disabled={!open || !canEdit} eager />
+              {/* An unknown number is usually a customer nobody has entered yet,
+                  which is exactly where creating one belongs. */}
+              <CustomerPicker id="io-cust" value={customer} onChange={setCustomer} placeholder={o.customer_id ? '' : 'Unknown number — pick or add the customer'} disabled={!open || !canEdit} />
             </Field>
             {!o.customer_id && open && <p className="text-xs text-amber-700">This number is not on any customer. Pick the right one, or add the number to their record first.</p>}
             <div className="grid grid-cols-2 gap-2">

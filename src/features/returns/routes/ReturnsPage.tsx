@@ -15,13 +15,14 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMe, usePermissions } from '@/features/auth/hooks';
-import { searchCustomers, type CustomerRow } from '@/features/customers/api';
+import { type CustomerRow } from '@/features/customers/api';
 import { getInvoiceLines, listOpenInvoices } from '@/features/invoices/api';
 import { searchItems, type ItemRow } from '@/features/items/api';
 import { stockLocationsApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { deleteDocument } from '@/features/search/deletes';
+import { CustomerPicker } from '@/features/customers/components/CustomerPicker';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, qty, round, toISODate, toNumber } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
@@ -211,7 +212,7 @@ export function ReturnNewPage() {
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Field label="Customer" htmlFor="rt-customer" className="col-span-2">
-              <Combobox<CustomerRow> id="rt-customer" value={customer} onChange={(c) => { setCustomer(c); setInvoiceId(''); }} search={searchCustomers} queryKey="customers" getKey={(c) => c.id ?? ''} getLabel={(c) => `${c.name ?? ''}${c.town ? ` — ${c.town}` : ''}`} placeholder="Type name, mobile or town…" autoFocus eager />
+              <CustomerPicker id="rt-customer" value={customer} onChange={(c) => { setCustomer(c); setInvoiceId(''); }} autoFocus />
             </Field>
             <Field label="Against invoice (optional)" htmlFor="rt-invoice">
               <NativeSelect id="rt-invoice" value={invoiceId} onChange={(ev) => setInvoiceId(ev.target.value)} disabled={!customer}>

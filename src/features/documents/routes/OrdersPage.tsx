@@ -3,7 +3,6 @@ import { Download, PackageCheck, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { DeleteButton } from '@/components/DeleteButton';
-import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
 import { PageHeader } from '@/components/PageHeader';
 import { Spinner } from '@/components/Spinner';
@@ -15,12 +14,14 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/features/auth/hooks';
-import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
+import { getCustomer, type CustomerRow } from '@/features/customers/api';
 import { searchSuppliers, type SupplierRow } from '@/features/purchases/api';
 import { stockLocationsApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toast, toastError } from '@/hooks/use-toast';
 import { deleteDocument } from '@/features/search/deletes';
+import { CustomerPicker } from '@/features/customers/components/CustomerPicker';
+import { SupplierPicker } from '@/features/purchases/components/SupplierPicker';
 import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, qty, toISODate, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -153,9 +154,9 @@ function OrderEditor({ kind, order, lineRows }: { kind: OrderKind; order?: Order
       <Card>
         <CardContent className="grid grid-cols-2 gap-3 pt-4 md:grid-cols-4">
           {kind === 'sale' ? (
-            <Field label="Customer" htmlFor="or-cust" className="col-span-2"><Combobox<CustomerRow> id="or-cust" value={customer} onChange={setCustomer} search={searchCustomers} queryKey="customers" getKey={(c) => c.id ?? ''} getLabel={(c) => `${c.name ?? ''}${c.town ? ` — ${c.town}` : ''}`} placeholder="Type name, mobile or town…" autoFocus={!order} disabled={!editable} eager /></Field>
+            <Field label="Customer" htmlFor="or-cust" className="col-span-2"><CustomerPicker id="or-cust" value={customer} onChange={setCustomer} autoFocus={!order} disabled={!editable} /></Field>
           ) : (
-            <Field label="Supplier" htmlFor="or-sup" className="col-span-2"><Combobox<SupplierRow> id="or-sup" value={supplier} onChange={setSupplier} search={searchSuppliers} queryKey="suppliers" getKey={(s) => s.id ?? ''} getLabel={(s) => s.name ?? ''} placeholder="Supplier…" autoFocus={!order} disabled={!editable} eager /></Field>
+            <Field label="Supplier" htmlFor="or-sup" className="col-span-2"><SupplierPicker id="or-sup" value={supplier} onChange={setSupplier} autoFocus={!order} disabled={!editable} /></Field>
           )}
           <Field label="Order date" htmlFor="or-date"><Input id="or-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} disabled={!editable} /></Field>
           <Field label="Due date" htmlFor="or-due"><Input id="or-due" type="date" value={due} onChange={(e) => setDue(e.target.value)} disabled={!editable} /></Field>

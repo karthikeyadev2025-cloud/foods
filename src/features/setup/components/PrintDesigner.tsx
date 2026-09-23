@@ -159,7 +159,7 @@ export function PrintDesigner({ compact }: { compact?: boolean }) {
               <div className="inline-block shadow">
                 <SalesDocPrint
                   preview
-                  title={doc === 'invoice' ? 'INVOICE' : doc === 'quotation' ? 'QUOTATION' : 'DELIVERY CHALLAN'}
+                  title={(PRINT_DOC_TYPES.find((d) => d.key === doc)?.label ?? 'Invoice').toUpperCase()}
                   org={me.data}
                   template={previewTemplate}
                   party={{ name: 'P. SRINIVAS (MCL)', town: 'MACHARLA', phones: '9849686746' }}

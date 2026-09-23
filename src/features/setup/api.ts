@@ -204,11 +204,14 @@ export async function uploadBranding(kind: 'logo' | 'signature', file: File): Pr
 }
 
 export type PrintTemplate = Tables['print_templates']['Row'];
-export type PrintDocType = 'invoice' | 'quotation' | 'challan';
+export type PrintDocType = 'invoice' | 'quotation' | 'challan' | 'purchase';
 export const PRINT_DOC_TYPES: { key: PrintDocType; label: string }[] = [
   { key: 'invoice', label: 'Invoice' },
   { key: 'quotation', label: 'Quotation' },
   { key: 'challan', label: 'Delivery challan' },
+  // The goods-inward sheet. Nothing on it is sold to anybody, so the sales
+  // terms and the "thanking you" line start off — see PurchasePrintPage.
+  { key: 'purchase', label: 'Purchase bill' },
 ];
 export const PAPERS = [
   { key: 'A4', label: 'A4 (210 × 297 mm)' },

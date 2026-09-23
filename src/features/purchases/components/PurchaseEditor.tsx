@@ -279,7 +279,15 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
                   <TableHead className="w-24 text-right">Units / box</TableHead>
                   <TableHead className="w-28 text-right">Boxes</TableHead>
                   <TableHead className="w-28 text-right">Qty</TableHead>
-                  <TableHead className="w-28 text-right">Rate</TableHead>
+                  {/*
+                    "Rate" beside a Boxes column reads as the rate for a box,
+                    and then the line looks like bad arithmetic. It is the rate
+                    for one jar, packet or kilo; the box rate beside it is what
+                    the supplier's bill usually quotes, so the two can be
+                    checked against each other before the bill is saved.
+                  */}
+                  <TableHead className="w-28 text-right" title="Per unit — per jar, packet or kg, never per box">Rate / unit</TableHead>
+                  <TableHead className="w-28 text-right">Rate / box</TableHead>
                   <TableHead className="w-32 text-right">Amount</TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
@@ -294,6 +302,7 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
                     <TableCell className="num font-medium">{qty(l.boxes)}</TableCell>
                     <TableCell className="num text-muted-foreground">{qty(lineQty(l))}</TableCell>
                     <TableCell className="num">{amount(l.rate)}</TableCell>
+                    <TableCell className="num text-muted-foreground">{amount(round(l.rate * l.units_per_box, 2))}</TableCell>
                     <TableCell className="num font-medium">{amount(lineAmount(l))}</TableCell>
                     <TableCell>
                       <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${l.item_code}`} onClick={() => setLines((p) => p.filter((x) => x.key !== l.key))}>
@@ -338,8 +347,12 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
                     {entryItem && entryBoxes ? qty(toNumber(entryBoxes) * (entryItem.units_per_box ?? 1)) : ''}
                   </TableCell>
                   <TableCell>
-                    <Input ref={rateRef} type="number" step="0.01" inputMode="decimal" className="num h-8" aria-label="Rate" value={entryRate} onChange={(ev) => setEntryRate(ev.target.value)} disabled={!entryItem}
+                    <Input ref={rateRef} type="number" step="0.01" inputMode="decimal" className="num h-8" aria-label="Rate per unit" value={entryRate} onChange={(ev) => setEntryRate(ev.target.value)} disabled={!entryItem}
                       onKeyDown={(ev) => { if (ev.key === 'Enter') { ev.preventDefault(); addEntry(); } }} />
+                  </TableCell>
+                  {/* Worked out live, so a box rate typed into the unit box is obvious before the line is added. */}
+                  <TableCell className="num text-muted-foreground">
+                    {entryItem && entryRate ? amount(round(toNumber(entryRate) * (entryItem.units_per_box ?? 1), 2)) : ''}
                   </TableCell>
                   <TableCell className="num text-muted-foreground">{entryItem && entryBoxes ? amount(toNumber(entryBoxes) * (entryItem.units_per_box ?? 1) * toNumber(entryRate)) : ''}</TableCell>
                   <TableCell>
@@ -351,12 +364,12 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-right">Subtotal</TableCell>
+                  <TableCell colSpan={8} className="text-right">Subtotal</TableCell>
                   <TableCell className="num">{amount(subtotal)}</TableCell>
                   <TableCell />
                 </TableRow>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-right font-semibold">Total (with other charges)</TableCell>
+                  <TableCell colSpan={8} className="text-right font-semibold">Total (with other charges)</TableCell>
                   <TableCell className="num font-semibold">{amount(total)}</TableCell>
                   <TableCell />
                 </TableRow>

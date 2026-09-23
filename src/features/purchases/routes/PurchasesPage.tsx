@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Download, Pencil, Plus } from 'lucide-react';
+import { Download, Pencil, Plus, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { DeleteButton } from '@/components/DeleteButton';
@@ -15,7 +15,7 @@ import { useDebounced } from '@/hooks/use-debounced';
 import { toastError } from '@/hooks/use-toast';
 import { deleteDocument } from '@/features/search/deletes';
 import { exportToExcel } from '@/lib/export';
-import { amount, dateDMY, int, qty, whole } from '@/lib/format';
+import { amount, dateDMY, int, qty, toNumber, whole } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { cn } from '@/lib/utils';
 import { createSupplier, getPurchase, getPurchaseLines, listAllPurchases, listPurchases, listSuppliers, removeSupplier, updateSupplier, type SupplierRow } from '../api';
@@ -209,6 +209,7 @@ export function PurchaseViewPage() {
         description={`${dateDMY(p.bill_date)} · ${p.supplier_name ?? 'cash purchase'} · into ${p.location_name ?? ''}`}
         actions={
           <div className="flex gap-2">
+            <Button asChild variant="outline" size="sm"><Link to={`/purchases/${id}/print`} target="_blank"><Printer /> Print</Link></Button>
             {perms.canEdit('purchases') && (
               <Button asChild size="sm"><Link to={`/purchases/${id}/edit`}><Pencil /> Edit</Link></Button>
             )}
@@ -225,7 +226,14 @@ export function PurchaseViewPage() {
               <TableHead className="text-right">Units / box</TableHead>
               <TableHead className="text-right">Boxes</TableHead>
               <TableHead className="text-right">Qty</TableHead>
-              <TableHead className="text-right">Rate</TableHead>
+              {/*
+                Headed "Rate", this column read as the rate for a box — it sits
+                beside one — and the line looked like bad arithmetic: 50 boxes
+                at 10 coming to 6,000. It is the rate for ONE of whatever the
+                product is counted in, and the line multiplies out from Qty.
+              */}
+              <TableHead className="text-right" title="Per unit — per jar, packet or kg, never per box">Rate / unit</TableHead>
+              <TableHead className="text-right">Rate / box</TableHead>
               <TableHead className="text-right">Amount</TableHead>
             </TableRow>
           </TableHeader>
@@ -238,6 +246,7 @@ export function PurchaseViewPage() {
                 <TableCell className="num font-medium">{qty(l.boxes)}</TableCell>
                 <TableCell className="num text-muted-foreground">{qty(l.qty)} {l.uom_code}</TableCell>
                 <TableCell className="num">{amount(l.rate)}</TableCell>
+                <TableCell className="num text-muted-foreground">{amount(toNumber(l.rate) * toNumber(l.units_per_box))}</TableCell>
                 <TableCell className="num">{amount(l.amount)}</TableCell>
               </TableRow>
             ))}

@@ -28,6 +28,7 @@ import { MessagingPage } from '@/features/messaging/routes/MessagingPage';
 import { PaymentsPage } from '@/features/payments/routes/PaymentsPage';
 import { BatchPage } from '@/features/production/routes/BatchPage';
 import { ProductionPage } from '@/features/production/routes/ProductionPage';
+import { PurchasePrintPage } from '@/features/purchases/routes/PurchasePrintPage';
 import { PurchaseEditPage, PurchaseNewPage, PurchaseViewPage, PurchasesPage } from '@/features/purchases/routes/PurchasesPage';
 import { ReceiptNewPage, ReceiptViewPage, ReceiptsPage } from '@/features/receipts/routes/ReceiptsPage';
 import { ReportsPage } from '@/features/reports/routes/ReportsPage';
@@ -75,6 +76,7 @@ export const router = createRouter([
         { path: '/quotations/:id/print', element: <QuotationPrintPage /> },
         { path: '/challans/:id/print', element: <ChallanPrintPage /> },
       ]),
+      guarded('purchases', [{ path: '/purchases/:id/print', element: <PurchasePrintPage /> }]),
       guarded('vehicles', [{ path: '/vehicles/trips/:id/print', element: <TripPrintPage /> }]),
       guarded('stock', [
         licensed('inventory', [

@@ -23,6 +23,14 @@ export interface ComboboxProps<T> {
   onPicked?: (t: T) => void;
   /** Search as soon as the box is focused, even with no text. */
   eager?: boolean;
+  /**
+   * Offer to create what was typed, as the last entry in the list. Called with
+   * the text as it stands — a picker that can only find things stops the work
+   * dead the first time somebody needs something that is not there yet.
+   */
+  onCreate?: (text: string) => void;
+  /** What that entry says, e.g. "New product". */
+  createLabel?: string;
   'aria-label'?: string;
 }
 
@@ -46,6 +54,8 @@ export function Combobox<T>({
   className,
   onPicked,
   eager = false,
+  onCreate,
+  createLabel = 'New',
   'aria-label': ariaLabel,
 }: ComboboxProps<T>) {
   const [text, setText] = useState(value ? getLabel(value) : '');
@@ -162,6 +172,24 @@ export function Combobox<T>({
                 {renderOption ? renderOption(t) : getLabel(t)}
               </li>
             ))
+          )}
+          {/*
+            Deliberately NOT one of the options: it is not keyboard-highlighted
+            and Enter never lands on it, so fast entry — code, Tab, boxes — can
+            never create a product by accident.
+          */}
+          {onCreate && !results.isLoading && (
+            <li
+              className="mt-1 cursor-pointer rounded-sm border-t px-2 py-1.5 pt-2 text-primary"
+              onMouseDown={(ev) => {
+                ev.preventDefault();
+                setOpen(false);
+                onCreate(text);
+              }}
+            >
+              + {createLabel}
+              {text.trim() ? <span className="text-muted-foreground"> — “{text.trim()}”</span> : null}
+            </li>
           )}
         </ul>
       )}

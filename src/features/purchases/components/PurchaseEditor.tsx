@@ -12,7 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usePermissions } from '@/features/auth/hooks';
 import { getItem, searchItems, type ItemRow } from '@/features/items/api';
+import { NewItemDialog } from '@/features/items/components/NewItemDialog';
 import { stockLocationsApi } from '@/features/setup/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { amount, qty, round, toISODate, toNumber, whole } from '@/lib/format';
@@ -60,6 +62,9 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
   const [entryBoxes, setEntryBoxes] = useState('');
   const [entryRate, setEntryRate] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
+  // null = closed. '' is a real state: "new product, nothing typed yet".
+  const [newItemName, setNewItemName] = useState<string | null>(null);
+  const canCreateItem = usePermissions().canEdit('items');
   const boxesRef = useRef<HTMLInputElement>(null);
   const rateRef = useRef<HTMLInputElement>(null);
   const codeWrapRef = useRef<HTMLDivElement>(null);
@@ -317,6 +322,8 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
                         placeholder="Code or name"
                         aria-label="Item"
                         onPicked={onItemPicked}
+                        onCreate={canCreateItem ? (t) => setNewItemName(t) : undefined}
+                        createLabel="New product"
                       />
                     </div>
                   </TableCell>
@@ -358,6 +365,21 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
           </div>
         </CardContent>
       </Card>
+
+      {/*
+        A product that was not on the list used to stop the bill dead: save
+        nothing, go to Items, add it, come back and type the bill again. It is
+        created here and goes straight onto the line that wanted it.
+      */}
+      <NewItemDialog
+        open={newItemName !== null}
+        initialName={newItemName ?? ''}
+        rateField="purchase_rate"
+        rateLabel="Purchase rate (₹ per unit)"
+        defaultType="raw_material"
+        onClose={() => setNewItemName(null)}
+        onCreated={onItemPicked}
+      />
 
       {historyOpen && supplier?.id && (
         <SupplierHistoryDialog

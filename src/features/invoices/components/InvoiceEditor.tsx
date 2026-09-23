@@ -19,6 +19,7 @@ import { CustomerHistoryDialog } from '@/features/customers/components/CustomerH
 import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
 import { applyDiscountSchemes } from '@/features/documents/api';
 import { effectiveUnitRate, getItem, searchItems, type ItemRow } from '@/features/items/api';
+import { NewItemDialog } from '@/features/items/components/NewItemDialog';
 import { stockLocationsApi } from '@/features/setup/api';
 import { listVehicles } from '@/features/vehicles/api';
 import { listOpenTrips } from '@/features/vehicles/trips-api';
@@ -116,6 +117,9 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
   const rateRef = useRef<HTMLInputElement>(null);
   const codeWrapRef = useRef<HTMLDivElement>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
+  // null = closed. '' is a real state: "new product, nothing typed yet".
+  const [newItemName, setNewItemName] = useState<string | null>(null);
+  const canCreateItem = perms.canEdit('items');
   const [reopenOpen, setReopenOpen] = useState(false);
 
   const invoiceDate = watch('invoice_date');
@@ -552,6 +556,8 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
                             placeholder="Code or name"
                             aria-label="Item code or name"
                             onPicked={onItemPicked}
+                            onCreate={canCreateItem ? (t) => setNewItemName(t) : undefined}
+                            createLabel="New product"
                           />
                         </div>
                       </TableCell>
@@ -714,6 +720,16 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* A product missing from the list no longer means abandoning the bill. */}
+      <NewItemDialog
+        open={newItemName !== null}
+        initialName={newItemName ?? ''}
+        rateField="unit_rate"
+        rateLabel="Selling rate (₹ per unit)"
+        onClose={() => setNewItemName(null)}
+        onCreated={onItemPicked}
+      />
 
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="max-w-sm">

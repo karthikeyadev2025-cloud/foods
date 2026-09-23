@@ -72,12 +72,21 @@ export function StockPage({ tab = 'closing' }: { tab?: StockTab }) {
   );
 }
 
-/** Reproduces STOCK_REPORT.xlsx: grouped by mestri section with sub-totals, in boxes. */
+/** What the report is showing. Materials are what the shop buys; goods are what it makes. */
+const STOCK_KINDS = [
+  { key: 'all', label: 'Everything' },
+  { key: 'finished_good', label: 'Finished goods' },
+  { key: 'materials', label: 'Raw & packing material' },
+] as const;
+type StockKind = (typeof STOCK_KINDS)[number]['key'];
+
+/** Reproduces STOCK_REPORT.xlsx: grouped by mestri section, in boxes. */
 function ClosingStock() {
   const me = useMe();
   const [date, setDate] = useState(toISODate());
   const [locationId, setLocationId] = useState('');
   const [sectionId, setSectionId] = useState('');
+  const [kind, setKind] = useState<StockKind>('all');
   const [hideZero, setHideZero] = useState(false);
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list });
   const sections = useQuery({ queryKey: ['setup', 'sections'], queryFn: sectionsApi.list });
@@ -89,15 +98,20 @@ function ClosingStock() {
   });
 
   const groups = useMemo(() => {
-    const rows = (report.data ?? []).filter((r) => !hideZero || toNumber(r.opening) !== 0 || toNumber(r.purchase) !== 0 || toNumber(r.sales) !== 0 || toNumber(r.closing) !== 0);
+    const rows = (report.data ?? [])
+      .filter((r) => (kind === 'all' ? true : kind === 'finished_good' ? r.item_type === 'finished_good' : r.item_type !== 'finished_good'))
+      .filter((r) => !hideZero || toNumber(r.opening) !== 0 || toNumber(r.purchase) !== 0 || toNumber(r.sales) !== 0 || toNumber(r.closing) !== 0);
     const map = new Map<string, { key: string; code: string | null; name: string; rows: ClosingStockRow[] }>();
     for (const r of rows) {
-      const key = r.section_id ?? 'none';
+      // Keyed by the heading, not by section_id: raw and packing material both
+      // have no section, so keying on the id alone merged sugar and cartons
+      // into one group under whichever heading came first.
+      const key = r.section_id ?? r.section_name ?? 'OTHERS';
       if (!map.has(key)) map.set(key, { key, code: r.section_code, name: r.section_name ?? 'OTHERS', rows: [] });
       map.get(key)?.rows.push(r);
     }
     return [...map.values()];
-  }, [report.data, hideZero]);
+  }, [report.data, hideZero, kind]);
 
   const all = groups.flatMap((g) => g.rows);
   const negatives = all.filter((r) => r.is_negative).length;
@@ -115,7 +129,7 @@ function ClosingStock() {
   const onExport = () =>
     exportToExcel(
       `stock-report-${date}`,
-      all.map((r) => ({ Section: `${r.section_code ? `${r.section_code} ` : ''}${r.section_name ?? 'OTHERS'}`, 'Item Code': r.item_code, Pack: r.pack, 'Group / Item Name': r.item_name, 'Units / box': toNumber(r.units_per_box), Opening: toNumber(r.opening), Purchase: toNumber(r.purchase), Made: toNumber(r.production), Sales: toNumber(r.sales), Other: toNumber(r.other), Closing: toNumber(r.closing) })),
+      all.map((r) => ({ Section: `${r.section_code ? `${r.section_code} ` : ''}${r.section_name ?? 'OTHERS'}`, 'Item Code': r.item_code, Pack: r.pack, 'Group / Item Name': r.item_name, Type: (r.item_type ?? '').replace(/_/g, ' '), 'Units / box': toNumber(r.units_per_box), Opening: toNumber(r.opening), Purchase: toNumber(r.purchase), Made: toNumber(r.production), Sales: toNumber(r.sales), Other: toNumber(r.other), Closing: toNumber(r.closing) })),
       `Stock ${dateDMY(date)}`,
     );
 
@@ -130,11 +144,22 @@ function ClosingStock() {
           </NativeSelect>
         </Field>
         <Field label="Section" htmlFor="cs-sec">
-          <NativeSelect id="cs-sec" className="h-8 w-52" value={sectionId} onChange={(e) => setSectionId(e.target.value)}>
+          <NativeSelect id="cs-sec" className="h-8 w-52" value={sectionId} onChange={(e) => { setSectionId(e.target.value); if (e.target.value) setKind('all'); }}>
             <option value="">All sections</option>
             {(sections.data ?? []).map((s) => <option key={s.id} value={s.id}>{s.code ? `${s.code} ` : ''}{s.name}</option>)}
           </NativeSelect>
         </Field>
+        {/*
+          A mestri section holds only finished goods, so this narrows to
+          nothing alongside one — it is hidden rather than left to puzzle over.
+        */}
+        {!sectionId && (
+          <Field label="Show" htmlFor="cs-kind">
+            <NativeSelect id="cs-kind" className="h-8 w-52" value={kind} onChange={(e) => setKind(e.target.value as StockKind)}>
+              {STOCK_KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
+            </NativeSelect>
+          </Field>
+        )}
         <label className="flex items-center gap-1 pb-2 text-sm"><Checkbox checked={hideZero} onChange={(e) => setHideZero(e.target.checked)} /> Hide all-zero rows</label>
         <span className="ml-auto flex items-center gap-2 pb-1">
           {negatives > 0 && <Badge variant="destructive">{negatives} negative</Badge>}

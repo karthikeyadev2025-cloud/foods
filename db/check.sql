@@ -84,7 +84,11 @@ with expected(ord, file, kind, obj, detail) as (
     (51, '51_stock_report_columns.sql','fixed','closing_stock_report#production_in',
                                                                            'the stock report''s Purchase column counts purchases, not everything that came in'),
     (52, '52_master_reset.sql',  'function', 'master_reset',                'Setup → Business: wipe and start fresh, owner only, business name typed to confirm'),
-    (53, '53_purchase_edit.sql', 'function', 'unpost_purchase_stock',       'a purchase can be opened and corrected — the old posting is reversed, never deleted')
+    (53, '53_purchase_edit.sql', 'function', 'unpost_purchase_stock',       'a purchase can be opened and corrected — the old posting is reversed, never deleted'),
+    -- Probed on a phrase in the BODY: the new item_type column lives in the
+    -- RETURNS TABLE clause, which prosrc does not carry.
+    (54, '54_stock_report_materials.sql','fixed','closing_stock_report#RAW MATERIAL',
+                                                                           'the stock report shows what the shop BUYS too — sugar, oil and packing were hidden from it')
 ),
 
 -- Did each file's own object actually make it?

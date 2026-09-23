@@ -10370,6 +10370,7 @@ export type Database = {
           item_code: string
           item_id: string
           item_name: string
+          item_type: string
           opening: number
           opening_units: number
           other: number

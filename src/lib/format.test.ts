@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { amount, boxesAndUnits, dateDMY, int, money, qty, round, toISODate, toNumber, whole } from './format';
+import { amount, boxesAndUnits, dateDMY, int, money, qty, round, timeHM, toISODate, toNumber, whole } from './format';
 
 describe('format', () => {
   it('groups the Indian way with two decimals', () => {
@@ -105,5 +105,28 @@ describe('format', () => {
     expect(dateDMY('2026-08-25')).toBe('25-08-2026');
     expect(dateDMY(null)).toBe('');
     expect(toISODate(new Date(2026, 7, 25))).toBe('2026-08-25');
+  });
+
+  // "This bill was open at …". A clock time for today; the date too once it is
+  // not, because "at 16:42" read on a Tuesday morning means this morning.
+  describe('timeHM', () => {
+    it('gives a clock time for something from today', () => {
+      const d = new Date();
+      d.setHours(16, 42, 0, 0);
+      expect(timeHM(d)).toBe('16:42');
+      expect(timeHM(d.getTime())).toBe('16:42');
+    });
+
+    it('gives the date as well once it is not today', () => {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      d.setHours(9, 5, 0, 0);
+      expect(timeHM(d)).toBe(`${dateDMY(d)} 09:05`);
+    });
+
+    it('says nothing when there is nothing', () => {
+      expect(timeHM(null)).toBe('');
+      expect(timeHM(undefined)).toBe('');
+    });
   });
 });

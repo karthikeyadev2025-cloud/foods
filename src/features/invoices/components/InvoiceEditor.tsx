@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { usePermissions } from '@/features/auth/hooks';
+import { useMe, usePermissions } from '@/features/auth/hooks';
 import { CustomerHistoryDialog } from '@/features/customers/components/CustomerHistoryDialog';
 import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
 import { NewCustomerDialog } from '@/features/customers/components/NewCustomerDialog';
@@ -25,7 +25,8 @@ import { stockLocationsApi } from '@/features/setup/api';
 import { listVehicles } from '@/features/vehicles/api';
 import { listOpenTrips } from '@/features/vehicles/trips-api';
 import { toast, toastError } from '@/hooks/use-toast';
-import { amount, dateDMY, qty, toISODate, toNumber } from '@/lib/format';
+import { amount, dateDMY, qty, timeHM, toISODate, toNumber } from '@/lib/format';
+import { useDraft, useRestoredDraft } from '@/hooks/use-draft';
 import { amountInWords } from '@/lib/money';
 import { invoiceLine, invoiceTotals } from '@/lib/units';
 import {
@@ -42,6 +43,21 @@ import { invoiceHeaderSchema, type DraftLine, type InvoiceHeaderForm } from '../
 
 let lineSeq = 0;
 const nextKey = () => `l${++lineSeq}`;
+
+/**
+ * A new bill, half typed, as it is kept on this machine (src/hooks/use-draft.ts).
+ *
+ * The customer is stored whole rather than as an id: the picker shows a name and
+ * a town, and re-fetching it on restore would leave the box blank for a moment
+ * on a slow line — which is the very flicker this was written to stop.
+ */
+interface InvoiceDraft {
+  header: InvoiceHeaderForm;
+  lines: DraftLine[];
+  customer: CustomerRow | null;
+}
+
+const DRAFT_KEY = 'invoice-new';
 
 function linesFromRows(rows: InvoiceLineRow[]): DraftLine[] {
   return rows.map((r) => ({
@@ -72,9 +88,20 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
   const vehicles = useQuery({ queryKey: ['vehicles', 'list'], queryFn: listVehicles });
   const openTrips = useQuery({ queryKey: ['trips', 'open'], queryFn: listOpenTrips, enabled: editable });
 
+  /*
+    A half-typed bill is kept on this machine until it is saved, and comes back
+    when the screen is opened again — after walking away to another screen, after
+    the browser is closed, after a crash or a deploy. Only for a NEW bill: an
+    existing one already has its lines on the server.
+  */
+  const me = useMe();
+  const uid = me.data?.staff_id ?? null;
+  const isNew = !invoice;
+  const draft = useRestoredDraft<InvoiceDraft>(DRAFT_KEY, uid, isNew);
+
   const form = useForm<InvoiceHeaderForm>({
     resolver: zodResolver(invoiceHeaderSchema),
-    defaultValues: {
+    defaultValues: draft?.value.header ?? {
       customer_id: invoice?.customer_id ?? '',
       invoice_date: invoice?.invoice_date ?? toISODate(),
       location_id: invoice?.location_id ?? '',
@@ -92,7 +119,8 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
   const { register, setValue, watch, formState } = form;
   const e = formState.errors;
 
-  const [customer, setCustomer] = useState<CustomerRow | null>(null);
+  const [customer, setCustomer] = useState<CustomerRow | null>(draft?.value.customer ?? null);
+  const [restoredAt, setRestoredAt] = useState<number | null>(draft?.at ?? null);
   // "whenever they double click on the customer name … old rates will recheck
   // while new bill" — the counter's own words for what this is.
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -110,7 +138,7 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
     }
   }, [locations.data, invoice, form, setValue]);
 
-  const [lines, setLines] = useState<DraftLine[]>(() => (lineRows ? linesFromRows(lineRows) : []));
+  const [lines, setLines] = useState<DraftLine[]>(() => draft?.value.lines ?? (lineRows ? linesFromRows(lineRows) : []));
   const [entryItem, setEntryItem] = useState<ItemRow | null>(null);
   const [entryBoxes, setEntryBoxes] = useState('');
   const [entryRate, setEntryRate] = useState('');
@@ -124,6 +152,18 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
   const canCreateItem = perms.canEdit('items');
   const canCreateCustomer = perms.canEdit('customers');
   const [reopenOpen, setReopenOpen] = useState(false);
+
+  // Everything a new bill would lose. Written 400ms after the last keystroke,
+  // and removed the moment the screen is empty again — an untouched New bill
+  // must not leave a draft for the next person to be offered.
+  const headerNow = watch();
+  const keptDraft = useDraft<InvoiceDraft>(
+    DRAFT_KEY,
+    uid,
+    { header: headerNow, lines, customer },
+    (d) => d.lines.length > 0 || Boolean(d.customer),
+    isNew,
+  );
 
   const invoiceDate = watch('invoice_date');
   const tripId = watch('trip_id');
@@ -265,6 +305,8 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
       return { id, confirm };
     },
     onSuccess: async ({ id, confirm }) => {
+      // On the server now, so the copy on this machine is finished with.
+      keptDraft.clear();
       await invalidate();
       toast({ title: confirm ? 'Invoice confirmed — stock and ledger posted' : 'Draft saved' });
       navigate(`/invoices/${id}`, { replace: true });
@@ -320,6 +362,31 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
 
   return (
     <div className="space-y-4">
+      {/*
+        Said out loud rather than done silently. Somebody opening New bill and
+        finding a customer and six lines already on it should know why, and be
+        one click from an empty screen.
+      */}
+      {restoredAt !== null && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 p-2 text-sm">
+          <span>Picked up where you left off — this bill was open at {timeHM(restoredAt)} and never saved.</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            onClick={() => {
+              keptDraft.clear();
+              setRestoredAt(null);
+              setLines([]);
+              setCustomer(null);
+              form.reset({ ...form.getValues(), customer_id: '', freight: 0, discount: 0, round_off: 0, notes: '', transport_name: '', lr_no: '', lr_date: '' });
+            }}
+          >
+            Start a fresh bill
+          </Button>
+        </div>
+      )}
       {invoice && (
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={invoice.status === 'cancelled' ? 'destructive' : invoice.status === 'draft' ? 'outline' : 'default'}>{statusLabel}</Badge>

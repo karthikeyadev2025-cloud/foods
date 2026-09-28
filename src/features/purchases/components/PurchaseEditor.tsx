@@ -12,18 +12,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { usePermissions } from '@/features/auth/hooks';
+import { useMe, usePermissions } from '@/features/auth/hooks';
 import { getItem, searchItems, type ItemRow } from '@/features/items/api';
 import { NewItemDialog } from '@/features/items/components/NewItemDialog';
 import { stockLocationsApi } from '@/features/setup/api';
+import { useDraft, useRestoredDraft } from '@/hooks/use-draft';
 import { toast, toastError } from '@/hooks/use-toast';
-import { amount, qty, round, toISODate, toNumber, whole } from '@/lib/format';
+import { amount, qty, round, timeHM, toISODate, toNumber, whole } from '@/lib/format';
 import { savePurchase, searchSuppliers, type PurchaseLineRow, type PurchaseRow, type SupplierRow } from '../api';
 import { NewSupplierDialog } from './NewSupplierDialog';
 import { SupplierHistoryDialog } from './SupplierHistoryDialog';
 import { purchaseHeaderSchema, type PurchaseDraftLine, type PurchaseHeaderForm } from '../schema';
 
 let seq = 0;
+
+/** A new purchase, half typed, as it is kept on this machine. See use-draft.ts. */
+interface PurchaseDraft {
+  header: PurchaseHeaderForm;
+  lines: PurchaseDraftLine[];
+  supplier: SupplierRow | null;
+}
+
+const DRAFT_KEY = 'purchase-new';
 
 /**
  * New purchase, and — when `purchase` is passed — the correction of one already
@@ -40,10 +50,20 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
   const editing = Boolean(purchase?.id);
   const locations = useQuery({ queryKey: ['setup', 'stock_locations'], queryFn: stockLocationsApi.list });
   const godowns = (locations.data ?? []).filter((l) => l.is_active && l.kind !== 'vehicle');
+  // A half-typed purchase is kept on this machine until it saves, for a NEW one
+  // only — a correction already has its lines on the server.
+  const me = useMe();
+  const uid = me.data?.staff_id ?? null;
+  const isNew = !purchase;
+  const draft = useRestoredDraft<PurchaseDraft>(DRAFT_KEY, uid, isNew);
+  const [restoredAt, setRestoredAt] = useState<number | null>(draft?.at ?? null);
+
   const [supplier, setSupplier] = useState<SupplierRow | null>(
-    purchase?.supplier_id ? ({ id: purchase.supplier_id, name: purchase.supplier_name } as SupplierRow) : null,
+    draft?.value.supplier ??
+      (purchase?.supplier_id ? ({ id: purchase.supplier_id, name: purchase.supplier_name } as SupplierRow) : null),
   );
   const [lines, setLines] = useState<PurchaseDraftLine[]>(() =>
+    draft?.value.lines ??
     (existing ?? []).map((l) => ({
       key: `p${++seq}`,
       item_id: l.item_id ?? '',
@@ -76,7 +96,7 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
 
   const form = useForm<PurchaseHeaderForm>({
     resolver: zodResolver(purchaseHeaderSchema),
-    defaultValues: purchase
+    defaultValues: draft?.value.header ?? (purchase
       ? {
           supplier_id: purchase.supplier_id ?? '',
           bill_no: purchase.bill_no ?? '',
@@ -86,7 +106,7 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
           paid_amount: toNumber(purchase.paid_amount),
           notes: purchase.notes ?? '',
         }
-      : { supplier_id: '', bill_no: '', bill_date: toISODate(), location_id: '', other_charges: 0, paid_amount: 0, notes: '' },
+      : { supplier_id: '', bill_no: '', bill_date: toISODate(), location_id: '', other_charges: 0, paid_amount: 0, notes: '' }),
   });
   const { register, setValue, watch, formState } = form;
   const e = formState.errors;
@@ -97,6 +117,15 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
       if (g) setValue('location_id', g.id);
     }
   }, [locations.data, form, setValue]);
+
+  const headerNow = watch();
+  const keptDraft = useDraft<PurchaseDraft>(
+    DRAFT_KEY,
+    uid,
+    { header: headerNow, lines, supplier },
+    (d) => d.lines.length > 0 || Boolean(d.supplier),
+    isNew,
+  );
 
   const lineQty = (l: PurchaseDraftLine) => round(l.boxes * l.units_per_box, 3);
   const lineAmount = (l: PurchaseDraftLine) => round(lineQty(l) * l.rate, 2);
@@ -179,6 +208,8 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
       );
     },
     onSuccess: async (id) => {
+      // On the server now, so the copy on this machine is finished with.
+      keptDraft.clear();
       // Stock and the ledger both moved, so the narrow keys are not enough —
       // the stock screens, the reports and the supplier's payable all read from
       // what this just changed.
@@ -193,6 +224,26 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
 
   return (
     <form className="space-y-4" onSubmit={form.handleSubmit((h) => save.mutate(h))} noValidate>
+      {restoredAt !== null && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/5 p-2 text-sm">
+          <span>Picked up where you left off — this purchase was open at {timeHM(restoredAt)} and never saved.</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            onClick={() => {
+              keptDraft.clear();
+              setRestoredAt(null);
+              setLines([]);
+              setSupplier(null);
+              form.reset({ ...form.getValues(), supplier_id: '', bill_no: '', other_charges: 0, paid_amount: 0, notes: '' });
+            }}
+          >
+            Start a fresh purchase
+          </Button>
+        </div>
+      )}
       {editing && (
         <p className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
           <span className="font-medium">Correcting bill {purchase?.bill_no}.</span> Saving takes the old quantities back

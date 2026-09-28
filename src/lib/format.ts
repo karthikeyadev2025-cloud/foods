@@ -133,6 +133,21 @@ export function dateTimeDMY(v: string | Date | null | undefined): string {
   return `${dateDMY(d)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
+/**
+ * HH:MM today, DD-MM-YYYY HH:MM otherwise.
+ *
+ * For "this was open at …": a bill left an hour ago wants a clock time, and one
+ * left yesterday wants the date, because "at 16:42" on a Tuesday morning reads
+ * as this morning.
+ */
+export function timeHM(v: string | Date | number | null | undefined): string {
+  const d = parseDate(typeof v === 'number' ? new Date(v) : v);
+  if (!d) return '';
+  const now = new Date();
+  const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  return sameDay ? `${pad2(d.getHours())}:${pad2(d.getMinutes())}` : dateTimeDMY(d);
+}
+
 /** YYYY-MM-DD in local time — what Postgres `date` columns and <input type="date"> want. */
 export function toISODate(d: Date = new Date()): string {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;

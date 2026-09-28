@@ -88,7 +88,8 @@ with expected(ord, file, kind, obj, detail) as (
     -- Probed on a phrase in the BODY: the new item_type column lives in the
     -- RETURNS TABLE clause, which prosrc does not carry.
     (54, '54_stock_report_materials.sql','fixed','closing_stock_report#RAW MATERIAL',
-                                                                           'the stock report shows what the shop BUYS too — sugar, oil and packing were hidden from it')
+                                                                           'the stock report shows what the shop BUYS too — sugar, oil and packing were hidden from it'),
+    (55, '55_line_order.sql',   'column',   'purchase_items.line_no',      'a document''s lines keep the order they were typed in, on screen and in print')
 ),
 
 -- Did each file's own object actually make it?

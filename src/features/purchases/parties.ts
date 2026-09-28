@@ -92,9 +92,13 @@ export function mergeParties(suppliers: SupplierRow[], customers: CustomerRow[])
 export async function searchParties(q: string): Promise<PartyOption[]> {
   const [suppliers, customers] = await Promise.all([
     searchSuppliers(q),
-    // A customer who cannot be found is simply not offered; the supplier half
-    // of the box must keep working even if this call fails.
-    searchCustomers(q).catch(() => [] as CustomerRow[]),
+    // The supplier half of the box must keep working even if this call fails —
+    // but a swallowed failure here looks exactly like "customer names are not
+    // visible", with nothing anywhere to say why. So it is logged.
+    searchCustomers(q).catch((err: unknown) => {
+      console.error('Could not search customers for the purchase party box', err);
+      return [] as CustomerRow[];
+    }),
   ]);
   return mergeParties(suppliers, customers);
 }

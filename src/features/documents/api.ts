@@ -78,7 +78,7 @@ export function getQuotation(id: string): Promise<QuotationRow> {
 }
 
 export function getQuotationLines(id: string): Promise<QuotationLineRow[]> {
-  return expectRows(supabase.from('v_quotation_lines').select('*').eq('quotation_id', id).order('id'));
+  return expectRows(supabase.from('v_quotation_lines').select('*').eq('quotation_id', id).order('line_no', { nullsFirst: false }).order('id'));
 }
 
 export type QuotationHeaderInput = {
@@ -124,7 +124,7 @@ export function getOrder(id: string): Promise<OrderRow> {
 }
 
 export function getOrderLines(id: string): Promise<OrderLineRow[]> {
-  return expectRows(supabase.from('v_order_lines').select('*').eq('order_id', id).order('id'));
+  return expectRows(supabase.from('v_order_lines').select('*').eq('order_id', id).order('line_no', { nullsFirst: false }).order('id'));
 }
 
 export function getOrderFulfilments(id: string): Promise<FulfilmentRow[]> {
@@ -180,7 +180,7 @@ export function getChallan(id: string): Promise<ChallanRow> {
 }
 
 export function getChallanLines(id: string): Promise<ChallanLineRow[]> {
-  return expectRows(supabase.from('v_challan_lines').select('*').eq('challan_id', id).order('id'));
+  return expectRows(supabase.from('v_challan_lines').select('*').eq('challan_id', id).order('line_no', { nullsFirst: false }).order('id'));
 }
 
 export type ChallanHeaderInput = { id?: string; customer_id: string; challan_date: string; location_id: string; vehicle_id?: string | null; notes?: string | null };
@@ -208,7 +208,7 @@ export function listPurchaseReturns(search?: string): Promise<PurchaseReturnRow[
 }
 
 export function getPurchaseReturnLines(id: string): Promise<PurchaseReturnLineRow[]> {
-  return expectRows(supabase.from('v_purchase_return_lines').select('*').eq('return_id', id).order('id'));
+  return expectRows(supabase.from('v_purchase_return_lines').select('*').eq('return_id', id).order('line_no', { nullsFirst: false }).order('id'));
 }
 
 export type PurchaseReturnHeaderInput = { supplier_id: string; purchase_id?: string | null; return_date: string; location_id: string; notes?: string | null };

@@ -50,7 +50,7 @@ export function getInvoice(id: string): Promise<InvoiceRow> {
 }
 
 export function getInvoiceLines(id: string): Promise<InvoiceLineRow[]> {
-  return expectRows(supabase.from('v_invoice_lines').select('*').eq('invoice_id', id).order('id'));
+  return expectRows(supabase.from('v_invoice_lines').select('*').eq('invoice_id', id).order('line_no', { nullsFirst: false }).order('id'));
 }
 
 /** Open (unpaid) invoices of a customer, oldest first — what a receipt allocates against. */

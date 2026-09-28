@@ -733,6 +733,7 @@ export type Database = {
           challan_id: string
           id: string
           item_id: string
+          line_no: number | null
           qty: number
           qty_base: number
           units_per_box: number
@@ -743,6 +744,7 @@ export type Database = {
           challan_id: string
           id?: string
           item_id: string
+          line_no?: number | null
           qty?: number
           qty_base?: number
           units_per_box?: number
@@ -753,6 +755,7 @@ export type Database = {
           challan_id?: string
           id?: string
           item_id?: string
+          line_no?: number | null
           qty?: number
           qty_base?: number
           units_per_box?: number
@@ -1592,6 +1595,7 @@ export type Database = {
           id: string
           invoice_id: string
           item_id: string
+          line_no: number | null
           qty: number
           qty_base: number
           rate: number
@@ -1604,6 +1608,7 @@ export type Database = {
           id?: string
           invoice_id: string
           item_id: string
+          line_no?: number | null
           qty: number
           qty_base: number
           rate: number
@@ -1616,6 +1621,7 @@ export type Database = {
           id?: string
           invoice_id?: string
           item_id?: string
+          line_no?: number | null
           qty?: number
           qty_base?: number
           rate?: number
@@ -3067,6 +3073,7 @@ export type Database = {
           delivered_base: number
           id: string
           item_id: string
+          line_no: number | null
           order_id: string
           qty: number
           qty_base: number
@@ -3080,6 +3087,7 @@ export type Database = {
           delivered_base?: number
           id?: string
           item_id: string
+          line_no?: number | null
           order_id: string
           qty?: number
           qty_base?: number
@@ -3093,6 +3101,7 @@ export type Database = {
           delivered_base?: number
           id?: string
           item_id?: string
+          line_no?: number | null
           order_id?: string
           qty?: number
           qty_base?: number
@@ -3945,6 +3954,7 @@ export type Database = {
           boxes: number | null
           id: string
           item_id: string
+          line_no: number | null
           purchase_id: string
           qty: number
           qty_base: number
@@ -3957,6 +3967,7 @@ export type Database = {
           boxes?: number | null
           id?: string
           item_id: string
+          line_no?: number | null
           purchase_id: string
           qty: number
           qty_base: number
@@ -3969,6 +3980,7 @@ export type Database = {
           boxes?: number | null
           id?: string
           item_id?: string
+          line_no?: number | null
           purchase_id?: string
           qty?: number
           qty_base?: number
@@ -4026,6 +4038,7 @@ export type Database = {
           amount: number
           id: string
           item_id: string
+          line_no: number | null
           qty: number
           qty_base: number
           rate: number
@@ -4036,6 +4049,7 @@ export type Database = {
           amount?: number
           id?: string
           item_id: string
+          line_no?: number | null
           qty?: number
           qty_base?: number
           rate?: number
@@ -4046,6 +4060,7 @@ export type Database = {
           amount?: number
           id?: string
           item_id?: string
+          line_no?: number | null
           qty?: number
           qty_base?: number
           rate?: number
@@ -4291,6 +4306,7 @@ export type Database = {
           boxes: number
           id: string
           item_id: string
+          line_no: number | null
           qty: number
           qty_base: number
           quotation_id: string
@@ -4303,6 +4319,7 @@ export type Database = {
           boxes?: number
           id?: string
           item_id: string
+          line_no?: number | null
           qty?: number
           qty_base?: number
           quotation_id: string
@@ -4315,6 +4332,7 @@ export type Database = {
           boxes?: number
           id?: string
           item_id?: string
+          line_no?: number | null
           qty?: number
           qty_base?: number
           quotation_id?: string
@@ -5120,6 +5138,7 @@ export type Database = {
           amount: number
           id: string
           item_id: string
+          line_no: number | null
           new_rate: number | null
           old_rate: number | null
           qty: number
@@ -5131,6 +5150,7 @@ export type Database = {
           amount?: number
           id?: string
           item_id: string
+          line_no?: number | null
           new_rate?: number | null
           old_rate?: number | null
           qty?: number
@@ -5142,6 +5162,7 @@ export type Database = {
           amount?: number
           id?: string
           item_id?: string
+          line_no?: number | null
           new_rate?: number | null
           old_rate?: number | null
           qty?: number
@@ -6666,6 +6687,7 @@ export type Database = {
           item_code: string | null
           item_id: string | null
           item_name: string | null
+          line_no: number | null
           qty: number | null
           qty_base: number | null
           units_per_box: number | null
@@ -7307,6 +7329,7 @@ export type Database = {
           item_code: string | null
           item_id: string | null
           item_name: string | null
+          line_no: number | null
           pack_code: string | null
           qty: number | null
           qty_base: number | null
@@ -8358,6 +8381,7 @@ export type Database = {
           item_code: string | null
           item_id: string | null
           item_name: string | null
+          line_no: number | null
           order_id: string | null
           pending_boxes: number | null
           qty: number | null
@@ -8697,6 +8721,7 @@ export type Database = {
           item_code: string | null
           item_id: string | null
           item_name: string | null
+          line_no: number | null
           purchase_id: string | null
           qty: number | null
           qty_base: number | null
@@ -8821,6 +8846,7 @@ export type Database = {
           item_code: string | null
           item_id: string | null
           item_name: string | null
+          line_no: number | null
           qty: number | null
           qty_base: number | null
           rate: number | null
@@ -8956,6 +8982,7 @@ export type Database = {
           item_code: string | null
           item_id: string | null
           item_name: string | null
+          line_no: number | null
           pack_code: string | null
           qty: number | null
           qty_base: number | null
@@ -9454,6 +9481,7 @@ export type Database = {
           item_code: string | null
           item_id: string | null
           item_name: string | null
+          line_no: number | null
           new_rate: number | null
           old_rate: number | null
           qty: number | null

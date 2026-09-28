@@ -43,7 +43,7 @@ export function getPurchase(id: string): Promise<PurchaseRow> {
 }
 
 export function getPurchaseLines(id: string): Promise<PurchaseLineRow[]> {
-  return expectRows(supabase.from('v_purchase_lines').select('*').eq('purchase_id', id).order('id'));
+  return expectRows(supabase.from('v_purchase_lines').select('*').eq('purchase_id', id).order('line_no', { nullsFirst: false }).order('id'));
 }
 
 export interface PurchaseHeaderInput {

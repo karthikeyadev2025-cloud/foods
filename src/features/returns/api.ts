@@ -45,7 +45,7 @@ export function getReturn(id: string): Promise<ReturnRow> {
 }
 
 export function getReturnLines(id: string): Promise<ReturnLineRow[]> {
-  return expectRows(supabase.from('v_return_lines').select('*').eq('return_id', id).order('id'));
+  return expectRows(supabase.from('v_return_lines').select('*').eq('return_id', id).order('line_no', { nullsFirst: false }).order('id'));
 }
 
 export interface ReturnHeaderInput {

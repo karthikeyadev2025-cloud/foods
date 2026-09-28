@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Combobox } from '@/components/Combobox';
 import { usePermissions } from '@/features/auth/hooks';
 import { amount } from '@/lib/format';
@@ -44,6 +44,23 @@ export function SupplierPicker({
   // Suppliers are owned by the purchases module, not by one of their own.
   const canCreate = usePermissions().canEdit('purchases');
 
+  const selected = useMemo<PartyOption | null>(
+    () =>
+      value
+        ? {
+            key: `s:${value.id}`,
+            kind: 'supplier',
+            supplier: value,
+            customer: null,
+            name: value.name ?? '',
+            town: value.town ?? null,
+            mobile1: value.mobile1 ?? null,
+            payable: Number(value.payable ?? 0),
+          }
+        : null,
+    [value],
+  );
+
   const open = (name: string, customer: PartyOption['customer']) => {
     setFromCustomer(customer);
     setNewName(name);
@@ -53,8 +70,11 @@ export function SupplierPicker({
     <>
       <Combobox<PartyOption>
         id={id}
-        // The box shows the chosen supplier; the option list is the wider search.
-        value={value ? { key: `s:${value.id}`, kind: 'supplier', supplier: value, customer: null, name: value.name ?? '', town: value.town ?? null, mobile1: value.mobile1 ?? null, payable: Number(value.payable ?? 0) } : null}
+        // The box shows the chosen supplier; the option list is the wider
+        // search. Memoised because the combobox re-reads its text whenever this
+        // changes identity, and a fresh object every render would fight the
+        // typing on a screen that re-renders on every keystroke.
+        value={selected}
         onChange={(p) => {
           if (!p) return onChange(null);
           // A customer is not a supplier yet, so nothing is put on the bill

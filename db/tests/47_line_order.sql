@@ -132,7 +132,58 @@ begin
   select line_no into n from purchase_items where purchase_id = v_pur and item_id = ids[3];
   assert n = 100, format('47.7 the next line took %s rather than 100', n);
 
-  raise notice 'OK: document lines keep the order they were typed — a purchase of twenty lines entered against the code order comes back in the typed order at every position, numbered 1..20 with no gaps; correcting a bill re-numbers it to the new order; a sales invoice does the same and confirming it does not disturb the order; each document numbers itself from 1; and a line number supplied by the caller is kept, with the next line carrying on past it';
+  -- ============================================================
+  -- 6. A DOCUMENT FROM BEFORE THIS MIGRATION. Its lines carry no number and
+  --    are never given one: the UPDATE that would have done it re-runs the
+  --    calc triggers, and those recompute qty from boxes. On a row whose boxes
+  --    were themselves derived by division, the round trip does not come back
+  --    to the same number, and a posted quantity moves by a hair for nothing.
+  --
+  --    So this checks the two things that follow: old rows read in id order,
+  --    and a line added afterwards lands AFTER them.
+  -- ============================================================
+  declare
+    v_old uuid;
+    v_qty numeric;
+    v_amt numeric;
+    ordered text[];
+  begin
+    v_old := save_purchase(
+      jsonb_build_object('location_id', v_loc, 'supplier_id', v_sup, 'bill_date', current_date::text),
+      jsonb_build_array(
+        jsonb_build_object('item_id', ids[11], 'boxes', 1, 'rate', 10),
+        jsonb_build_object('item_id', ids[12], 'boxes', 2, 'rate', 10),
+        jsonb_build_object('item_id', ids[13], 'boxes', 3, 'rate', 10)));
+
+    --    Make it look like a bill saved before today. This is the only place
+    --    the system ever writes a null line number, and it is a test fixture.
+    update purchase_items set line_no = null where purchase_id = v_old;
+
+    select qty, amount into v_qty, v_amt
+      from purchase_items where purchase_id = v_old and item_id = ids[11];
+
+    --    A line typed onto it now.
+    insert into purchase_items (purchase_id, item_id, boxes, qty, uom_id, qty_base, rate, amount)
+    values (v_old, ids[14], 4, 48, v_jar, 48, 10, 480);
+
+    select line_no into n from purchase_items where purchase_id = v_old and item_id = ids[14];
+    assert n = 1, format('47.8 the first numbered line on an old bill took %s, not 1', n);
+
+    --    Nulls first: the three old lines in id order, then the new one last.
+    select array_agg(item_code order by line_no nulls first, id) into ordered
+      from v_purchase_lines where purchase_id = v_old;
+    assert ordered[4] = lpad(14::text, 4, '0'),
+      format('47.8 the line added today came back at position 1..4 as %s', ordered);
+
+    --    And nothing about the old rows moved. This is the assertion the
+    --    abandoned backfill would have failed.
+    assert (select qty from purchase_items where purchase_id = v_old and item_id = ids[11]) = v_qty,
+      '47.9 a posted quantity changed while line numbers were being sorted out';
+    assert (select amount from purchase_items where purchase_id = v_old and item_id = ids[11]) = v_amt,
+      '47.9 a posted amount changed while line numbers were being sorted out';
+  end;
+
+  raise notice 'OK: document lines keep the order they were typed — a purchase of twenty lines entered against the code order comes back in the typed order at every position, numbered 1..20 with no gaps; correcting a bill re-numbers it to the new order; a sales invoice does the same and confirming it does not disturb the order; each document numbers itself from 1; and a line number supplied by the caller is kept, with the next line carrying on past it; a bill saved before this migration keeps its lines in id order with a line added today landing after them, and not one posted quantity or amount moved in the process';
 end $$;
 
 rollback;

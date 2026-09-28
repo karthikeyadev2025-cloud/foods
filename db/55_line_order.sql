@@ -21,15 +21,43 @@
 -- doing it, so all seven are fixed together.
 --
 -- HOW THE NUMBER IS SET. By a trigger, not by rewriting seven save_* functions.
--- The line number then holds for anything that inserts a line — the save
--- screens, the importer, a repair run — and none of those functions has to be
--- rebuilt from an older copy, which is exactly how migration 32's automatic
--- bill number was lost once already.
+-- The number then holds for anything that inserts a line — the save screens,
+-- the importer, a repair run — and none of those functions has to be rebuilt
+-- from an older copy, which is exactly how migration 32's automatic bill number
+-- was lost once already.
 --
--- THE BACKFILL IS HONEST, NOT MAGIC. Documents already saved never recorded
--- their entry order, and it cannot be recovered. They are numbered in the order
--- they happen to come back today, so an old bill at least stops reshuffling
--- between one look and the next. New documents keep the real order.
+-- ------------------------------------------------------------
+-- WHY THERE IS NO BACKFILL. An earlier draft of this file numbered the existing
+-- rows with an UPDATE. It failed on the first table, refused by
+-- t_invoice_items_guard: a confirmed bill's lines may not be changed. That
+-- refusal was doing its job, and it hid something worse than itself.
+--
+-- invoice_items, purchase_items and sales_return_items each carry a calc
+-- trigger that fires ON UPDATE and recomputes qty and amount from boxes:
+--
+--     new.qty    := new.boxes * new.units_per_box;
+--     new.amount := round(new.qty * new.rate, 2);
+--
+-- An UPDATE that touched nothing but line_no would still have run them, and on
+-- any row whose boxes were themselves derived by division (db/50 backfilled
+-- them as qty / units_per_box, rounded to three places) the round trip does not
+-- come back to the same number. 100 jars in threes is 33.333 boxes is 99.999
+-- jars. Posted quantities and posted amounts, on bills already in the ledger,
+-- would have shifted by a hair — silently, with no error and nothing on any
+-- screen to show it. db/50 avoided exactly this by dropping its trigger before
+-- its own backfill.
+--
+-- So nothing is updated. Old lines keep a NULL line_no and are read in id
+-- order, which is the order they come back in today and every day — the same
+-- order the backfill would have written down. The true entry order of a
+-- document saved before today was never recorded and cannot be recovered; a
+-- backfill would only have made the guess permanent, at the price of touching
+-- money that was already correct.
+--
+-- The screens therefore sort NULLS FIRST, then by line number. An old document
+-- keeps its order; a line added to one afterwards is numbered from 1 and lands
+-- AFTER the un-numbered ones, which is where it was typed. A document saved
+-- from today is numbered throughout and NULLS FIRST never comes into it.
 -- ============================================================
 
 do $$
@@ -50,37 +78,35 @@ begin
     t  := spec[1];
     fk := spec[2];
 
+    -- Nullable, and left null on every row that already exists. See above.
     execute format('alter table public.%I add column if not exists line_no integer', t);
 
     -- A child table had no index on the column that reaches its parent, so
-    -- every read, delete and now every max(line_no) walked the whole table.
+    -- every read, every delete of a document's lines, and now every line
+    -- number lookup walked the whole table.
     execute format('create index if not exists %I on public.%I (%I)', t || '_' || fk || '_idx', t, fk);
-
-    -- Existing rows: numbered in the order they come back today. Not the order
-    -- they were typed — that was never written down — but stable from now on.
-    execute format($f$
-      update public.%I x set line_no = n.rn
-        from (select id, row_number() over (partition by %I order by id) as rn from public.%I) n
-       where n.id = x.id and x.line_no is null$f$, t, fk, t);
   end loop;
 end $$;
 
 /**
  * The next line number within this document.
  *
- * A line that already carries one keeps it, so a caller that wants to set the
- * order itself still can. Everything else is numbered as it arrives, which is
- * the order somebody typed it.
+ * A line that already carries one keeps it, so a caller that knows the order —
+ * an importer reading a spreadsheet — can say so.
  *
  * Re-saving a document deletes its lines and inserts them again, so the
- * numbering starts at 1 in the new order — which is right: after an edit, the
+ * numbering starts at 1 in the new order. That is right: after an edit, the
  * order on the screen IS the order.
+ *
+ * On a document whose lines predate this migration, max() over nulls is null
+ * and the first line added afterwards takes 1. Sorted nulls first, it lands
+ * after the old ones — where it was typed.
  */
 create or replace function trg_line_no() returns trigger language plpgsql as $$
 declare v_col text := tg_argv[0]; v_parent uuid; v_next integer;
 begin
   if new.line_no is not null then return new; end if;
-  -- Read the parent id by column name without needing a composite type for
+  -- Read the parent id by column name, without needing a composite type for
   -- each of the seven tables.
   v_parent := (to_jsonb(new) ->> v_col)::uuid;
   execute format('select coalesce(max(line_no), 0) + 1 from public.%I where %I = $1', tg_table_name, v_col)
@@ -106,7 +132,9 @@ begin
   ] loop
     t  := spec[1];
     fk := spec[2];
-    -- `create trigger` is not idempotent; drop first (the lesson of db/50).
+    -- BEFORE INSERT only. It must never fire on UPDATE: see the note above on
+    -- what the calc triggers do to a posted figure when they are re-run.
+    -- `create trigger` is not idempotent, so drop first (the lesson of db/50).
     execute format('drop trigger if exists t_line_no on public.%I', t);
     execute format('create trigger t_line_no before insert on public.%I for each row execute function trg_line_no(%L)', t, fk);
   end loop;

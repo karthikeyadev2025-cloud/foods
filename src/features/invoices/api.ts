@@ -52,7 +52,7 @@ export function getInvoice(id: string): Promise<InvoiceRow> {
 export function getInvoiceLines(id: string): Promise<InvoiceLineRow[]> {
   return expectRowsOrUnordered((byLineNo) => {
     const q = supabase.from('v_invoice_lines').select('*').eq('invoice_id', id);
-    return byLineNo ? q.order('line_no', { nullsFirst: false }).order('id') : q.order('id');
+    return byLineNo ? q.order('line_no', { nullsFirst: true }).order('id') : q.order('id');
   });
 }
 

@@ -45,7 +45,7 @@ export function getPurchase(id: string): Promise<PurchaseRow> {
 export function getPurchaseLines(id: string): Promise<PurchaseLineRow[]> {
   return expectRowsOrUnordered((byLineNo) => {
     const q = supabase.from('v_purchase_lines').select('*').eq('purchase_id', id);
-    return byLineNo ? q.order('line_no', { nullsFirst: false }).order('id') : q.order('id');
+    return byLineNo ? q.order('line_no', { nullsFirst: true }).order('id') : q.order('id');
   });
 }
 

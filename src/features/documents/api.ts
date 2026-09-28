@@ -80,7 +80,7 @@ export function getQuotation(id: string): Promise<QuotationRow> {
 export function getQuotationLines(id: string): Promise<QuotationLineRow[]> {
   return expectRowsOrUnordered((byLineNo) => {
     const q = supabase.from('v_quotation_lines').select('*').eq('quotation_id', id);
-    return byLineNo ? q.order('line_no', { nullsFirst: false }).order('id') : q.order('id');
+    return byLineNo ? q.order('line_no', { nullsFirst: true }).order('id') : q.order('id');
   });
 }
 
@@ -129,7 +129,7 @@ export function getOrder(id: string): Promise<OrderRow> {
 export function getOrderLines(id: string): Promise<OrderLineRow[]> {
   return expectRowsOrUnordered((byLineNo) => {
     const q = supabase.from('v_order_lines').select('*').eq('order_id', id);
-    return byLineNo ? q.order('line_no', { nullsFirst: false }).order('id') : q.order('id');
+    return byLineNo ? q.order('line_no', { nullsFirst: true }).order('id') : q.order('id');
   });
 }
 
@@ -188,7 +188,7 @@ export function getChallan(id: string): Promise<ChallanRow> {
 export function getChallanLines(id: string): Promise<ChallanLineRow[]> {
   return expectRowsOrUnordered((byLineNo) => {
     const q = supabase.from('v_challan_lines').select('*').eq('challan_id', id);
-    return byLineNo ? q.order('line_no', { nullsFirst: false }).order('id') : q.order('id');
+    return byLineNo ? q.order('line_no', { nullsFirst: true }).order('id') : q.order('id');
   });
 }
 
@@ -219,7 +219,7 @@ export function listPurchaseReturns(search?: string): Promise<PurchaseReturnRow[
 export function getPurchaseReturnLines(id: string): Promise<PurchaseReturnLineRow[]> {
   return expectRowsOrUnordered((byLineNo) => {
     const q = supabase.from('v_purchase_return_lines').select('*').eq('return_id', id);
-    return byLineNo ? q.order('line_no', { nullsFirst: false }).order('id') : q.order('id');
+    return byLineNo ? q.order('line_no', { nullsFirst: true }).order('id') : q.order('id');
   });
 }
 

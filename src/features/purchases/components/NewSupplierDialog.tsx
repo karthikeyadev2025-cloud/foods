@@ -19,11 +19,18 @@ import { quickSupplierSchema, quickSupplierValues, type QuickSupplier } from '..
 export function NewSupplierDialog({
   open,
   initialName,
+  from,
   onClose,
   onCreated,
 }: {
   open: boolean;
   initialName: string;
+  /**
+   * A party already on the Customers list who also supplies. Everything known
+   * about them is carried across rather than re-typed: it is the same person,
+   * and two spellings of one name is how a shop ends up with two ledgers.
+   */
+  from?: { name: string; mobile1: string | null; town: string | null } | null;
   onClose: () => void;
   onCreated: (supplier: SupplierRow) => void;
 }) {
@@ -38,10 +45,14 @@ export function NewSupplierDialog({
 
   useEffect(() => {
     if (!open) return;
+    if (from) {
+      reset({ name: from.name, mobile1: from.mobile1 ?? '', town: from.town ?? '' });
+      return;
+    }
     const typed = initialName.trim();
     const isPhone = /^[\d\s+-]{6,}$/.test(typed);
     reset({ name: isPhone ? '' : typed, mobile1: isPhone ? typed : '', town: '' });
-  }, [open, initialName, reset]);
+  }, [open, initialName, from, reset]);
 
   const save = useMutation({
     mutationFn: async (v: QuickSupplier) => {
@@ -70,10 +81,17 @@ export function NewSupplierDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>New supplier</DialogTitle>
+          <DialogTitle>{from ? 'Add as a supplier too' : 'New supplier'}</DialogTitle>
           <DialogDescription>
-            Enough to enter this bill. What the shop already owes them belongs on the Suppliers screen, off a real
-            statement.
+            {from ? (
+              <>
+                <span className="font-medium">{from.name}</span> is on your customers list. Adding them as a supplier as
+                well lets you enter what you buy from them. The two accounts stay separate — what they owe you and what
+                you owe them are different figures.
+              </>
+            ) : (
+              'Enough to enter this bill. What the shop already owes them belongs on the Suppliers screen, off a real statement.'
+            )}
           </DialogDescription>
         </DialogHeader>
 

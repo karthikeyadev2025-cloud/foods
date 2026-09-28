@@ -19,8 +19,8 @@ import { stockLocationsApi } from '@/features/setup/api';
 import { useDraft, useRestoredDraft } from '@/hooks/use-draft';
 import { toast, toastError } from '@/hooks/use-toast';
 import { amount, qty, round, timeHM, toISODate, toNumber, whole } from '@/lib/format';
-import { savePurchase, searchSuppliers, type PurchaseLineRow, type PurchaseRow, type SupplierRow } from '../api';
-import { NewSupplierDialog } from './NewSupplierDialog';
+import { savePurchase, type PurchaseLineRow, type PurchaseRow, type SupplierRow } from '../api';
+import { SupplierPicker } from './SupplierPicker';
 import { SupplierHistoryDialog } from './SupplierHistoryDialog';
 import { purchaseHeaderSchema, type PurchaseDraftLine, type PurchaseHeaderForm } from '../schema';
 
@@ -85,11 +85,7 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
   const [historyOpen, setHistoryOpen] = useState(false);
   // null = closed. '' is a real state: "new product, nothing typed yet".
   const [newItemName, setNewItemName] = useState<string | null>(null);
-  const [newSupplierName, setNewSupplierName] = useState<string | null>(null);
-  const perms = usePermissions();
-  const canCreateItem = perms.canEdit('items');
-  // Suppliers are owned by the purchases module, not by a module of their own.
-  const canEditSuppliers = perms.canEdit('purchases');
+  const canCreateItem = usePermissions().canEdit('items');
   const boxesRef = useRef<HTMLInputElement>(null);
   const rateRef = useRef<HTMLInputElement>(null);
   const codeWrapRef = useRef<HTMLDivElement>(null);
@@ -253,30 +249,21 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
       )}
       <Card>
         <CardContent className="grid grid-cols-2 gap-3 pt-4 md:grid-cols-4">
-          <Field label="Supplier" htmlFor="pu-supplier" error={e.supplier_id?.message} className="col-span-2" help="Leave blank for a cash purchase.">
-            <Combobox<SupplierRow>
+          {/*
+            Searches the CUSTOMERS list as well — the shop buys from and sells
+            to the same people, and a party typed into Customers months ago used
+            to be unfindable here. See parties.ts.
+          */}
+          <Field label="Supplier" htmlFor="pu-supplier" error={e.supplier_id?.message} className="col-span-2" help="Leave blank for a cash purchase. Customers who also supply you are offered here.">
+            <SupplierPicker
               id="pu-supplier"
               value={supplier}
               onChange={(s) => {
                 setSupplier(s);
                 setValue('supplier_id', s?.id ?? '');
               }}
-              search={searchSuppliers}
-              queryKey="suppliers"
-              getKey={(s) => s.id ?? ''}
-              getLabel={(s) => s.name ?? ''}
-              renderOption={(s) => (
-                <span>
-                  <span className="font-medium">{s.name}</span>
-                  <span className="text-muted-foreground">{s.town ? ` · ${s.town}` : ''} · payable ₹{amount(s.payable)}</span>
-                </span>
-              )}
-              placeholder="Type a supplier…"
               autoFocus
-              eager
               onPicked={focusCode}
-              onCreate={canEditSuppliers ? (t) => setNewSupplierName(t) : undefined}
-              createLabel="New supplier"
             />
             {supplier?.id && (
               <button
@@ -450,17 +437,6 @@ export function PurchaseEditor({ purchase, lines: existing }: { purchase?: Purch
         defaultType="raw_material"
         onClose={() => setNewItemName(null)}
         onCreated={onItemPicked}
-      />
-
-      <NewSupplierDialog
-        open={newSupplierName !== null}
-        initialName={newSupplierName ?? ''}
-        onClose={() => setNewSupplierName(null)}
-        onCreated={(s) => {
-          setSupplier(s);
-          setValue('supplier_id', s.id ?? '');
-          focusCode();
-        }}
       />
 
       {historyOpen && supplier?.id && (

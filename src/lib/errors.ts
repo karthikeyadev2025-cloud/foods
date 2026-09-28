@@ -21,9 +21,24 @@ function asObject(err: unknown): PgLikeError {
   return (typeof err === 'object' && err !== null ? err : {}) as PgLikeError;
 }
 
+/**
+ * The few SQLSTATEs whose own wording leaves somebody no wiser and with nothing
+ * to do. Every message this system writes for itself is already in plain words
+ * and is shown exactly as written — this is only for what Postgres says when it
+ * is talking to a database administrator rather than to a shopkeeper.
+ */
+const PLAIN: Record<string, string> = {
+  // "canceling statement due to statement timeout"
+  '57014': 'The database took too long on this one and gave up. Nothing was saved, so nothing is half-done. Try again — and if it keeps failing on the same bill, it is the bill, not the connection.',
+  // "terminating connection due to administrator command"
+  '57P01': 'The database restarted while this was being saved. Nothing was saved. Try again.',
+};
+
 /** The sentence to show a person. Never empty, never "[object Object]". */
 export function errorMessage(err: unknown): string {
   const e = asObject(err);
+  const plain = e.code ? PLAIN[e.code] : undefined;
+  if (plain) return plain;
   if (e.message) return e.message;
   if (err instanceof Error && err.message) return err.message;
   if (typeof err === 'string' && err) return err;

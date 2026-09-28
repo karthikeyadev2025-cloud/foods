@@ -37,11 +37,38 @@ export function isOnline(): boolean {
   return typeof navigator === 'undefined' || typeof navigator.onLine !== 'boolean' ? true : navigator.onLine;
 }
 
-/** A failed fetch (no connection, DNS, server unreachable) rather than a business error. */
+/**
+ * Did the request fail to REACH the server, as against being refused BY it?
+ *
+ * Only the first kind may go to the outbox. Queueing the second tells the shop
+ * "it will be sent as soon as the connection is back", which is untrue: the
+ * same call will be refused in exactly the same way, and meanwhile the real
+ * reason is never shown to anybody.
+ *
+ * That is not hypothetical. A purchase came back 500 from the database, and the
+ * old test — which read the error's WORDING — matched "timeout" inside
+ * "canceling statement due to statement timeout" and filed a live server error
+ * under "offline". The counter saw a reassuring toast for a bill that had not
+ * saved.
+ *
+ * So the test is no longer the wording. postgrest-js builds its error object
+ * one of exactly two ways: a transport failure gets `code: ''`, and anything
+ * the server answered carries the code it answered with — a Postgres SQLSTATE
+ * like 23505 or 57014, or a PostgREST code like PGRST202. A non-empty code
+ * means the server was reached, whatever it then said.
+ */
 export function isNetworkError(err: unknown): boolean {
+  if (serverAnswered(err)) return false;
   if (!isOnline()) return true;
   const message = (err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as { message: unknown }).message) : String(err)).toLowerCase();
   return /failed to fetch|networkerror|network request failed|load failed|fetch failed|econnrefused|enotfound|timed? ?out/.test(message);
+}
+
+/** The database or PostgREST replied — the call arrived and was refused on its merits. */
+function serverAnswered(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null || !('code' in err)) return false;
+  const code = (err as { code: unknown }).code;
+  return typeof code === 'string' && code.trim() !== '';
 }
 
 // ---------------------------------------------------------------- store

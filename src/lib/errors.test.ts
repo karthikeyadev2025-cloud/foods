@@ -40,3 +40,18 @@ describe('errorMessage', () => {
     expect(errorMessage(e)).toBe('no');
   });
 });
+
+describe('errorMessage on a database that is talking to itself', () => {
+  // "canceling statement due to statement timeout" tells a shopkeeper nothing,
+  // and the important part — that nothing was half-saved — is not in it at all.
+  it('says what a timeout means in words the counter can act on', () => {
+    const m = errorMessage({ message: 'canceling statement due to statement timeout', code: '57014' });
+    expect(m).toContain('Nothing was saved');
+    expect(m).not.toContain('canceling statement');
+  });
+
+  it('leaves the system\'s own carefully worded refusals exactly as they are', () => {
+    const written = 'These goods have already gone out — deleting purchase 0002 would leave less than nothing of "SUGAR".';
+    expect(errorMessage({ message: written, code: '23514' })).toBe(written);
+  });
+});

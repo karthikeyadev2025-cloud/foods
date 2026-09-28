@@ -24,6 +24,30 @@ export async function expectRows<R>(query: PromiseLike<RowsResult<R>>): Promise<
   return data ?? [];
 }
 
+/**
+ * A document's lines in the order they were typed — on a database that may not
+ * have been given db/55 yet.
+ *
+ * The SQL is applied by hand in the Supabase editor; the front end deploys the
+ * moment a commit lands. So there is always a window where the app is ahead of
+ * the schema, and asking for a column that is not there yet is a 400 that kills
+ * the screen outright. It did: every purchase view, edit and print stopped
+ * working between the deploy and the migration being run.
+ *
+ * Postgres calls that 42703, undefined_column, and it is the one failure worth
+ * recovering from here — the query without the new ordering is exactly what the
+ * screen did last week. Showing the old order for an afternoon is a nuisance; a
+ * dead screen is not. Everything else is thrown as it always was.
+ */
+export async function expectRowsOrUnordered<R>(
+  run: (byLineNo: boolean) => PromiseLike<RowsResult<R>>,
+): Promise<R[]> {
+  const first = await run(true);
+  if (!first.error) return first.data ?? [];
+  if (first.error.code !== '42703') throw first.error;
+  return expectRows(run(false));
+}
+
 /** Await a `.single()` query and require a row. */
 export async function expectOne<R>(query: PromiseLike<OneResult<R>>): Promise<R> {
   const { data, error } = await query;

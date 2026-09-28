@@ -1,4 +1,4 @@
-import { expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
+import { expectOne, expectRows, expectRowsOrUnordered, queuedRpc, supabase } from '@/lib/supabase';
 import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
 import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
@@ -45,7 +45,10 @@ export function getReturn(id: string): Promise<ReturnRow> {
 }
 
 export function getReturnLines(id: string): Promise<ReturnLineRow[]> {
-  return expectRows(supabase.from('v_return_lines').select('*').eq('return_id', id).order('line_no', { nullsFirst: false }).order('id'));
+  return expectRowsOrUnordered((byLineNo) => {
+    const q = supabase.from('v_return_lines').select('*').eq('return_id', id);
+    return byLineNo ? q.order('line_no', { nullsFirst: false }).order('id') : q.order('id');
+  });
 }
 
 export interface ReturnHeaderInput {

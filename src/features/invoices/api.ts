@@ -1,4 +1,4 @@
-import { expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
+import { expectOne, expectRows, expectRowsOrUnordered, queuedRpc, supabase } from '@/lib/supabase';
 import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
 import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
@@ -50,7 +50,10 @@ export function getInvoice(id: string): Promise<InvoiceRow> {
 }
 
 export function getInvoiceLines(id: string): Promise<InvoiceLineRow[]> {
-  return expectRows(supabase.from('v_invoice_lines').select('*').eq('invoice_id', id).order('line_no', { nullsFirst: false }).order('id'));
+  return expectRowsOrUnordered((byLineNo) => {
+    const q = supabase.from('v_invoice_lines').select('*').eq('invoice_id', id);
+    return byLineNo ? q.order('line_no', { nullsFirst: false }).order('id') : q.order('id');
+  });
 }
 
 /** Open (unpaid) invoices of a customer, oldest first — what a receipt allocates against. */

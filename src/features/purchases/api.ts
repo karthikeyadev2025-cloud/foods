@@ -1,6 +1,6 @@
 import { currentOrgId } from '@/features/auth/api';
 import { deleteMaster } from '@/features/search/deletes';
-import { expectOne, expectRows, queuedRpc, supabase } from '@/lib/supabase';
+import { expectOne, expectRows, expectRowsOrUnordered, queuedRpc, supabase } from '@/lib/supabase';
 import { rangeFor, type Page, type PageQuery } from '@/lib/paging';
 import { orIlike } from '@/lib/search';
 import type { Database } from '@/types/supabase';
@@ -43,7 +43,10 @@ export function getPurchase(id: string): Promise<PurchaseRow> {
 }
 
 export function getPurchaseLines(id: string): Promise<PurchaseLineRow[]> {
-  return expectRows(supabase.from('v_purchase_lines').select('*').eq('purchase_id', id).order('line_no', { nullsFirst: false }).order('id'));
+  return expectRowsOrUnordered((byLineNo) => {
+    const q = supabase.from('v_purchase_lines').select('*').eq('purchase_id', id);
+    return byLineNo ? q.order('line_no', { nullsFirst: false }).order('id') : q.order('id');
+  });
 }
 
 export interface PurchaseHeaderInput {

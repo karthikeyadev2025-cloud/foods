@@ -47,11 +47,19 @@ ns_locks as (
    where c.relname = 'number_series'
 ),
 
--- 5. Dead rows that never got vacuumed turn a small table into a slow scan.
+-- 5. A table far bigger than the rows in it. This is the check that missed
+--    stock_ledger at 33 MB against 4 live rows: it only looked for DEAD rows,
+--    and a table that has been vacuumed has none — vacuum frees the space for
+--    reuse but never gives the pages back, so a table emptied by a master reset
+--    or a big delete stays its old size for ever. Every scan still reads all of
+--    it. The honest test is size against row count, not dead tuples.
 bloat as (
-  select relname, n_live_tup, n_dead_tup, last_autovacuum
+  select relname, n_live_tup, n_dead_tup, last_autovacuum,
+         pg_size_pretty(pg_total_relation_size(relid)) as size,
+         pg_total_relation_size(relid) as bytes
     from pg_stat_user_tables
-   where n_dead_tup > greatest(n_live_tup, 1000)
+   where pg_total_relation_size(relid) > 2 * 1024 * 1024          -- bigger than 2 MB
+     and pg_total_relation_size(relid) / greatest(n_live_tup, 1) > 50 * 1024   -- and over 50 kB a row
 ),
 
 -- 6. How big the shop's tables actually are, biggest first. A save that is
@@ -102,11 +110,12 @@ select * from (
    where not exists (select 1 from ns_locks)
 
   union all
-  select 5, 'FOUND  table never vacuumed',
-         format('%s: %s dead rows against %s live, last autovacuum %s', relname, n_dead_tup, n_live_tup, coalesce(last_autovacuum::text, 'never'))
+  select 5, 'FOUND  table is mostly empty space',
+         format('%s holds %s rows in %s (%s dead, last autovacuum %s). Reclaim it with:  vacuum (full, analyze) %I;',
+                relname, n_live_tup, size, n_dead_tup, coalesce(last_autovacuum::text, 'never'), relname)
     from bloat
   union all
-  select 5, 'ok     table never vacuumed', 'no table is mostly dead rows'
+  select 5, 'ok     table is mostly empty space', 'every table is a sensible size for the rows in it'
    where not exists (select 1 from bloat)
 
   union all

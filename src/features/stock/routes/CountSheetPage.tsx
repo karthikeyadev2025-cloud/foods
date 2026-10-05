@@ -115,7 +115,7 @@ export function CountSheetPage() {
           <Button asChild variant="ghost" size="sm"><Link to="/stock/counts">← Counts</Link></Button>
         </>}
       />
-      <div className="hidden print:block"><h2 className="text-lg font-semibold">{me.data?.org_name}</h2><p className="text-sm">Stock count {c.count_no} · {dateDMY(c.count_date)} · {c.location_name}{c.section_name ? ` · ${c.section_name}` : ''}{blank ? ' · counted by: ________________' : ''}</p></div>
+      <div className="hidden print:block">{me.data?.print_org_name !== false && <h2 className="text-lg font-semibold">{me.data?.org_name}</h2>}<p className="text-sm">Stock count {c.count_no} · {dateDMY(c.count_date)} · {c.location_name}{c.section_name ? ` · ${c.section_name}` : ''}{blank ? ' · counted by: ________________' : ''}</p></div>
       <div className="no-print flex flex-wrap items-center gap-2 text-sm">
         <label className="flex items-center gap-1"><Checkbox checked={onlyDiff} onChange={(e) => setOnlyDiff(e.target.checked)} /> Only differences</label>
         <span className="text-muted-foreground">{counted.length} of {all.length} counted{counted.length ? ` · difference value ${amount(varianceValue)}` : ''}</span>

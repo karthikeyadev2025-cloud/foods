@@ -90,7 +90,8 @@ with expected(ord, file, kind, obj, detail) as (
     (54, '54_stock_report_materials.sql','fixed','closing_stock_report#RAW MATERIAL',
                                                                            'the stock report shows what the shop BUYS too — sugar, oil and packing were hidden from it'),
     (55, '55_line_order.sql',   'column',   'purchase_items.line_no',      'a document''s lines keep the order they were typed in, on screen and in print'),
-    (56, '56_numbering_lock.sql','fixed',   'next_doc_no#lock_timeout',    'a blocked number series says so in three seconds, instead of "statement timeout" in eight')
+    (56, '56_numbering_lock.sql','fixed',   'next_doc_no#lock_timeout',    'a blocked number series says so in three seconds, instead of "statement timeout" in eight'),
+    (57, '57_print_letterhead.sql','column', 'orgs.print_org_name',         'the business name comes off every print in one switch — for pre-printed letterhead')
 ),
 
 -- Did each file's own object actually make it?

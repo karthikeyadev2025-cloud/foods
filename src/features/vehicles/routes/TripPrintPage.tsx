@@ -25,7 +25,7 @@ export function TripPrintPage() {
       </div>
       <div className="print-sheet mx-auto my-4 bg-white p-8 text-[12px] leading-tight text-black print:my-0 print:p-6">
         <div className="text-center text-base font-bold tracking-wide">VAN LOADING SHEET</div>
-        <div className="text-center text-xs text-neutral-700">{me.data?.org_name ?? 'JYOTHI FOODS'}</div>
+        {me.data?.print_org_name !== false && <div className="text-center text-xs text-neutral-700">{me.data?.org_name ?? 'JYOTHI FOODS'}</div>}
         <div className="mt-2 grid grid-cols-2 gap-x-4 border border-black p-2">
           <div><span className="font-bold">Vehicle:</span> {t.vehicle_number}</div>
           <div><span className="font-bold">Date:</span> {dateDMY(t.trip_date)}</div>

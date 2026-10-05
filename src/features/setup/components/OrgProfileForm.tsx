@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Field } from '@/components/Field';
 import { Spinner } from '@/components/Spinner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/features/auth/hooks';
@@ -39,6 +40,7 @@ export function OrgProfileForm({ compact }: { compact?: boolean }) {
       tagline: '',
       bank_details: '',
       app_url: '',
+      print_org_name: true,
     },
   });
 
@@ -57,6 +59,7 @@ export function OrgProfileForm({ compact }: { compact?: boolean }) {
         tagline: org.data.tagline ?? '',
         bank_details: org.data.bank_details ?? '',
         app_url: org.data.app_url ?? '',
+        print_org_name: org.data.print_org_name ?? true,
       });
     }
   }, [org.data, form]);
@@ -148,6 +151,23 @@ export function OrgProfileForm({ compact }: { compact?: boolean }) {
           <Field label="App web address" htmlFor="org-app" error={e.app_url?.message} help="Where this app is hosted; document links in WhatsApp messages start with it.">
             <Input id="org-app" inputMode="url" placeholder="https://erp.example.com" {...form.register('app_url')} />
           </Field>
+          {/*
+            One switch, not nine. The name was drawn on the invoice, quotation,
+            challan, purchase bill, loading sheet, transfer note, count sheet,
+            barcode labels and every report, and could be turned off on none of
+            them. Whether the paper already carries the name is a fact about the
+            paper, so it belongs here rather than in each print template.
+          */}
+          <label htmlFor="org-print-name" className="col-span-2 flex items-start gap-2 rounded-md border p-3 text-sm">
+            <Checkbox id="org-print-name" className="mt-0.5" {...form.register('print_org_name')} />
+            <span>
+              <span className="font-medium">Print the business name on documents</span>
+              <span className="block text-muted-foreground">
+                Turn this off when printing on letterhead that already carries the name — it comes off every print at
+                once, including the &ldquo;For {org.data?.name ?? 'the business'}&rdquo; line above the signature.
+              </span>
+            </span>
+          </label>
           <Field label="Bank details" htmlFor="org-bank" error={e.bank_details?.message} help="Printed under the totals when the print template shows the bank block." className="col-span-2">
             <Textarea id="org-bank" rows={2} placeholder={'State Bank of India, Guntur\nA/c 1234567890 · IFSC SBIN0001234'} {...form.register('bank_details')} />
           </Field>

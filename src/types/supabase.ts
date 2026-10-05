@@ -3305,6 +3305,7 @@ export type Database = {
           name: string
           phone: string | null
           plan_full_until: string | null
+          print_org_name: boolean
           signature_url: string | null
           stock_delete_until: string | null
           tagline: string | null
@@ -3333,6 +3334,7 @@ export type Database = {
           name: string
           phone?: string | null
           plan_full_until?: string | null
+          print_org_name?: boolean
           signature_url?: string | null
           stock_delete_until?: string | null
           tagline?: string | null
@@ -3361,6 +3363,7 @@ export type Database = {
           name?: string
           phone?: string | null
           plan_full_until?: string | null
+          print_org_name?: boolean
           signature_url?: string | null
           stock_delete_until?: string | null
           tagline?: string | null
@@ -8072,6 +8075,7 @@ export type Database = {
           org_name: string | null
           org_phone: string | null
           phone: string | null
+          print_org_name: boolean | null
           role: Database["public"]["Enums"]["staff_role"] | null
           signature_url: string | null
           staff_id: string | null

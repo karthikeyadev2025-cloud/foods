@@ -119,7 +119,7 @@ function PrintTitle({ title, range }: { title: string; range: string }) {
   const me = useMe();
   return (
     <div className="hidden print:block">
-      <h2 className="text-lg font-semibold">{me.data?.org_name}</h2>
+      {me.data?.print_org_name !== false && <h2 className="text-lg font-semibold">{me.data?.org_name}</h2>}
       <p className="text-sm">{title} · {range}</p>
     </div>
   );

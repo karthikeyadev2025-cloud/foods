@@ -129,7 +129,7 @@ export function LabelsPrintPage() {
       <div className="label-sheet mx-auto my-4 grid grid-cols-3 gap-2 bg-white p-4 print:my-0 print:p-0">
         {labels.flatMap((r) => Array.from({ length: n }).map((_, i) => (
           <div key={`${r.id}-${i}`} className="label flex flex-col items-center justify-between border border-dashed border-neutral-300 p-2 text-center text-black print:border-0">
-            <div className="text-[10px] font-semibold uppercase">{me.data?.org_name ?? 'JYOTHI FOODS'}</div>
+            {me.data?.print_org_name !== false && <div className="text-[10px] font-semibold uppercase">{me.data?.org_name ?? 'JYOTHI FOODS'}</div>}
             <div className="line-clamp-2 text-[11px] font-bold leading-tight">{r.item_name}</div>
             <div className="text-[10px]">{r.item_code} · {r.level === 'box' ? `BOX of ${r.units_per_box}` : (r.uom_code ?? 'UNIT')}{toNumber(r.mrp_per_piece) ? ` · MRP ₹${amount(r.mrp_per_piece)}/pc` : ''}</div>
             <div dangerouslySetInnerHTML={{ __html: ean13Svg(r.barcode ?? '', { moduleWidth: 1.4, height: 34 }) }} />

@@ -192,6 +192,8 @@ export const orgSchema = z.object({
   tagline: optionalText,
   bank_details: z.string().trim().max(500),
   app_url: z.string().trim().max(200).refine((v) => v === '' || /^https?:\/\//.test(v), 'Starts with http:// or https://'),
+  /** Off when the shop prints on paper that already carries its name (db/57). */
+  print_org_name: z.boolean(),
 });
 export type OrgInput = z.infer<typeof orgSchema>;
 

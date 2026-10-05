@@ -88,7 +88,7 @@ export function CataloguePage() {
           <header className="mb-5 flex items-center gap-3 border-b pb-3">
             {me.data?.logo_url && <img src={me.data.logo_url} alt="" className="h-12 w-auto object-contain" />}
             <div>
-              <h2 className="text-xl font-semibold">{me.data?.org_name ?? 'Rate card'}</h2>
+              {me.data?.print_org_name !== false && <h2 className="text-xl font-semibold">{me.data?.org_name ?? 'Rate card'}</h2>}
               <p className="text-sm text-muted-foreground">
                 {sectionId ? sections.data?.find((s) => s.id === sectionId)?.name : 'All products'}
                 {' · '}

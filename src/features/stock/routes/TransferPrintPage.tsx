@@ -25,7 +25,7 @@ export function TransferPrintPage() {
       </div>
       <div className="print-sheet mx-auto my-4 bg-white p-8 text-[12px] leading-tight text-black print:my-0 print:p-6">
         <div className="text-center text-base font-bold tracking-wide">STOCK TRANSFER NOTE</div>
-        <div className="text-center text-xs text-neutral-700">{me.data?.org_name ?? 'JYOTHI FOODS'}{me.data?.address ? ` · ${me.data.address}` : ''}</div>
+        {me.data?.print_org_name !== false && <div className="text-center text-xs text-neutral-700">{me.data?.org_name ?? 'JYOTHI FOODS'}{me.data?.address ? ` · ${me.data.address}` : ''}</div>}
         <div className="mt-2 grid grid-cols-2 border border-black">
           <div className="border-r border-black p-2"><div><span className="font-bold">From:</span> {t.from_name}</div><div><span className="font-bold">To:</span> {t.to_name}</div>{t.notes && <div>{t.notes}</div>}</div>
           <div className="p-2"><div className="flex justify-between"><span className="font-bold">Transfer No.</span><span>{t.transfer_no}</span></div><div className="flex justify-between"><span className="font-bold">Date</span><span>{dateDMY(t.txn_date)}</span></div><div className="flex justify-between"><span>Prepared by</span><span>{t.created_by_name ?? ''}</span></div></div>

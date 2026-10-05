@@ -68,6 +68,10 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
   const terms = fillTerms(template?.terms, org);
   const cell = 'border-r border-black px-1';
   const orgName = org?.org_name ?? 'JYOTHI FOODS';
+  // Off when the shop prints on letterhead that already carries the name
+  // (db/57). It takes the heading AND the "For <name>" line above the
+  // signature: printing one without the other reads as a mistake.
+  const showName = org?.print_org_name !== false;
   const contact = [
     show('address') && org?.address ? org.address : null,
     show('address') && org?.org_phone ? `Ph ${org.org_phone}` : null,
@@ -83,7 +87,7 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
       <div className={`flex ${paper.thermal ? 'flex-col items-center' : 'items-center gap-3'}`}>
         {show('logo') && org?.logo_url && <img src={org.logo_url} alt="" className="max-h-16 max-w-[30mm] object-contain" />}
         <div className="flex-1 text-center">
-          <div className="text-base font-bold tracking-wide">{orgName}</div>
+          {showName && <div className="text-base font-bold tracking-wide">{orgName}</div>}
           {show('tagline') && org?.tagline && <div className="text-xs italic text-neutral-700">{org.tagline}</div>}
           {contact.length > 0 && <div className="text-xs text-neutral-700">{contact.join(' · ')}</div>}
           {template?.header_html && <div className="whitespace-pre-line text-xs">{template.header_html}</div>}
@@ -183,7 +187,7 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
 
       <div className="mt-1 flex justify-between border border-black p-1">
         <span className="font-bold">E&amp;E.O</span>
-        <span>For {orgName}</span>
+        <span>{showName ? `For ${orgName}` : ''}</span>
       </div>
 
       {show('terms') && terms.length > 0 && (

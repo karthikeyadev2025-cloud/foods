@@ -1,18 +1,312 @@
 -- ============================================================
--- JYOTHI FOODS ERP — 58: RECEIPT OPENING BALANCE, PURCHASE PRINT & STOCK REPORT
+-- JYOTHI FOODS ERP — CONSOLIDATED PENDING MIGRATIONS (53 to 58)
 --
--- FORWARD ONLY. Never run a file with a lower number than one already applied.
+-- This file combines all pending migrations into a single, self-contained,
+-- fully idempotent script that can be run directly in the Supabase SQL Editor.
 --
--- 1. Receipt: when a customer pays credit amount, clear their opening
---    balance FIRST before allocating to invoices.
--- 2. Purchase print: include supplier's phone and town/address.
--- 3. Purchase edit: unposting reverses on the bill's original date so
---    stock reports do not treat an edit as an extra new purchase.
+-- INCLUDES:
+--   53: Purchase Edit (reversing stock & journals instead of delete)
+--   54: Stock Report (includes Raw Material & Packing Material)
+--   55: Document Lines Ordering (preserves typed sequence across 7 documents)
+--   56: Numbering Lock Timeout (clean 3-second timeout & diagnostic error)
+--   57: Print Letterhead (toggle to hide business name on pre-printed paper)
+--   58: Receipt Opening Balance First, Purchase Contact Print & Stock Reversal Date
 -- ============================================================
 
--- ------------------------------------------------------------
--- 1. RECEIPT ALLOCATIONS TO OPENING BALANCE
--- ------------------------------------------------------------
+-- ============================================================
+-- SECTION 1: DOCUMENT LINE ORDERING (55)
+-- ============================================================
+
+do $$
+declare
+  spec text[];
+  t text;
+  fk text;
+begin
+  foreach spec slice 1 in array array[
+    ['invoice_items',        'invoice_id'],
+    ['purchase_items',       'purchase_id'],
+    ['sales_return_items',   'return_id'],
+    ['quotation_items',      'quotation_id'],
+    ['order_items',          'order_id'],
+    ['challan_items',        'challan_id'],
+    ['purchase_return_items','return_id']
+  ] loop
+    t  := spec[1];
+    fk := spec[2];
+
+    execute format('alter table public.%I add column if not exists line_no integer', t);
+    execute format('create index if not exists %I on public.%I (%I)', t || '_' || fk || '_idx', t, fk);
+  end loop;
+end $$;
+
+create or replace function trg_line_no() returns trigger language plpgsql as $$
+declare v_col text := tg_argv[0]; v_parent uuid; v_next integer;
+begin
+  if new.line_no is not null then return new; end if;
+  v_parent := (to_jsonb(new) ->> v_col)::uuid;
+  execute format('select coalesce(max(line_no), 0) + 1 from public.%I where %I = $1', tg_table_name, v_col)
+    into v_next using v_parent;
+  new.line_no := v_next;
+  return new;
+end $$;
+
+do $$
+declare
+  spec text[];
+  t text;
+  fk text;
+begin
+  foreach spec slice 1 in array array[
+    ['invoice_items',        'invoice_id'],
+    ['purchase_items',       'purchase_id'],
+    ['sales_return_items',   'return_id'],
+    ['quotation_items',      'quotation_id'],
+    ['order_items',          'order_id'],
+    ['challan_items',        'challan_id'],
+    ['purchase_return_items','return_id']
+  ] loop
+    t  := spec[1];
+    fk := spec[2];
+    execute format('drop trigger if exists t_line_no on public.%I', t);
+    execute format('create trigger t_line_no before insert on public.%I for each row execute function trg_line_no(%L)', t, fk);
+  end loop;
+end $$;
+
+drop view if exists v_invoice_lines cascade;
+create or replace view v_invoice_lines as
+select ii.id, ii.invoice_id, ii.item_id, i.item_code, i.name as item_name, pt.code as pack_code,
+       ii.units_per_box, ii.boxes, ii.qty, ii.rate, ii.amount, ii.uom_id, ii.qty_base, ii.line_no
+from invoice_items ii
+join items i on i.id = ii.item_id
+left join pack_types pt on pt.id = i.pack_type_id;
+alter view v_invoice_lines set (security_invoker = on);
+grant select on v_invoice_lines to authenticated, anon;
+
+drop view if exists v_purchase_lines cascade;
+create or replace view v_purchase_lines as
+select pi.id, pi.purchase_id, pi.item_id, i.item_code, i.name as item_name, pi.qty, pi.uom_id, u.code as uom_code,
+       pi.qty_base, pi.rate, pi.amount, pi.boxes, pi.units_per_box, pi.line_no
+from purchase_items pi join items i on i.id = pi.item_id left join uoms u on u.id = pi.uom_id;
+alter view v_purchase_lines set (security_invoker = on);
+grant select on v_purchase_lines to authenticated, anon;
+
+drop view if exists v_return_lines cascade;
+create or replace view v_return_lines as
+select ri.id, ri.return_id, ri.item_id, i.item_code, i.name as item_name, i.units_per_box,
+       ri.qty, ri.qty / nullif(i.units_per_box, 0) as boxes, ri.uom_id, ri.qty_base, ri.old_rate, ri.new_rate, ri.amount,
+       ri.line_no
+from sales_return_items ri join items i on i.id = ri.item_id;
+alter view v_return_lines set (security_invoker = on);
+grant select on v_return_lines to authenticated, anon;
+
+drop view if exists v_quotation_lines cascade;
+create or replace view v_quotation_lines as
+select qi.id, qi.quotation_id, qi.item_id, i.item_code, i.name as item_name, pt.code as pack_code, qi.units_per_box,
+       qi.boxes, qi.qty, qi.rate, qi.amount, qi.uom_id, qi.qty_base, qi.line_no
+  from quotation_items qi join items i on i.id = qi.item_id left join pack_types pt on pt.id = i.pack_type_id;
+alter view v_quotation_lines set (security_invoker = on);
+grant select on v_quotation_lines to authenticated, anon;
+
+drop view if exists v_order_lines cascade;
+create or replace view v_order_lines as
+select oi.id, oi.order_id, oi.item_id, i.item_code, i.name as item_name, oi.units_per_box, oi.boxes, oi.qty, oi.rate,
+       oi.amount, oi.uom_id, oi.qty_base, oi.delivered_base,
+       round(oi.delivered_base / nullif(oi.units_per_box, 0), 3) as delivered_boxes,
+       round(oi.boxes - oi.delivered_base / nullif(oi.units_per_box, 0), 3) as pending_boxes,
+       oi.line_no
+  from order_items oi join items i on i.id = oi.item_id;
+alter view v_order_lines set (security_invoker = on);
+grant select on v_order_lines to authenticated, anon;
+
+drop view if exists v_challan_lines cascade;
+create or replace view v_challan_lines as
+select ci.id, ci.challan_id, ci.item_id, i.item_code, i.name as item_name, ci.units_per_box, ci.boxes, ci.qty,
+       ci.uom_id, ci.qty_base, ci.line_no
+  from challan_items ci join items i on i.id = ci.item_id;
+alter view v_challan_lines set (security_invoker = on);
+grant select on v_challan_lines to authenticated, anon;
+
+drop view if exists v_purchase_return_lines cascade;
+create or replace view v_purchase_return_lines as
+select ri.id, ri.return_id, ri.item_id, i.item_code, i.name as item_name, ri.qty, ri.uom_id, u.code as uom_code,
+       ri.qty_base, ri.rate, ri.amount, ri.line_no
+  from purchase_return_items ri join items i on i.id = ri.item_id left join uoms u on u.id = ri.uom_id;
+alter view v_purchase_return_lines set (security_invoker = on);
+grant select on v_purchase_return_lines to authenticated, anon;
+
+
+-- ============================================================
+-- SECTION 2: STOCK REPORT RAW & PACKING MATERIALS (54)
+-- ============================================================
+
+drop function if exists closing_stock_report(uuid, date, uuid, uuid);
+
+create or replace function closing_stock_report(
+  p_org uuid, p_date date default current_date, p_location uuid default null, p_section uuid default null
+) returns table (
+  section_id uuid, section_code text, section_name text, sort_order integer,
+  item_id uuid, item_code text, pack text, item_name text, units_per_box integer,
+  item_type text,
+  opening numeric, purchase numeric, production numeric, sales numeric, other numeric, closing numeric,
+  opening_units numeric, closing_units numeric, is_negative boolean
+) language sql stable as $$
+  select
+    case when i.type = 'finished_good' then sec.id end,
+    case when i.type = 'finished_good' then sec.code end,
+    case i.type
+      when 'raw_material'    then 'RAW MATERIAL'
+      when 'packing_material' then 'PACKING MATERIAL'
+      else coalesce(sec.name, 'OTHERS') end,
+    case i.type
+      when 'raw_material'    then 1001
+      when 'packing_material' then 1002
+      else coalesce(sec.sort_order, 999) end,
+    i.id, i.item_code, pt.code, i.name, i.units_per_box,
+    i.type::text,
+    round(coalesce(sum(sl.qty_base) filter (where sl.txn_date < p_date), 0) / upb.n, 3),
+    round(coalesce(sum(sl.qty_base) filter (
+      where sl.txn_date = p_date and sl.txn_type = 'purchase'), 0) / upb.n, 3),
+    round(coalesce(sum(sl.qty_base) filter (
+      where sl.txn_date = p_date and sl.txn_type = 'production_in'), 0) / upb.n, 3),
+    round(coalesce(-sum(sl.qty_base) filter (
+      where sl.txn_date = p_date and sl.txn_type = 'sale'), 0) / upb.n, 3),
+    round(coalesce(sum(sl.qty_base) filter (
+      where sl.txn_date = p_date and sl.txn_type not in ('purchase', 'production_in', 'sale')), 0)
+          / upb.n, 3),
+    round(coalesce(sum(sl.qty_base) filter (where sl.txn_date <= p_date), 0) / upb.n, 3),
+    coalesce(sum(sl.qty_base) filter (where sl.txn_date <  p_date), 0),
+    coalesce(sum(sl.qty_base) filter (where sl.txn_date <= p_date), 0),
+    coalesce(sum(sl.qty_base) filter (where sl.txn_date <= p_date), 0) < 0
+  from items i
+  cross join lateral (select coalesce(nullif(i.units_per_box, 0), 1)::numeric as n) upb
+  left join sections sec on sec.id = i.section_id
+  left join pack_types pt on pt.id = i.pack_type_id
+  left join stock_ledger sl on sl.item_id = i.id
+       and (p_location is null or sl.location_id = p_location)
+  where i.org_id = p_org and i.is_active
+    and (p_section is null or i.section_id = p_section)
+  group by sec.id, sec.code, sec.name, sec.sort_order, i.id, i.item_code, pt.code, i.name,
+           i.units_per_box, i.type, upb.n
+  order by
+    case i.type when 'raw_material' then 1001 when 'packing_material' then 1002
+                else coalesce(sec.sort_order, 999) end,
+    case i.type
+      when 'raw_material'    then 'RAW MATERIAL'
+      when 'packing_material' then 'PACKING MATERIAL'
+      else coalesce(sec.name, 'OTHERS') end,
+    i.item_code;
+$$;
+
+
+-- ============================================================
+-- SECTION 3: NUMBERING LOCK TIMEOUT (56)
+-- ============================================================
+
+create or replace function next_doc_no(p_org uuid, p_doc_type text)
+returns text language plpgsql security definer set search_path = public as $$
+declare
+  ns      number_series%rowtype;
+  v_reset boolean := false;
+  h       record;
+  v_pre   text;
+  v_suf   text;
+  v_no    text;
+  v_taken boolean;
+  tries   int := 0;
+begin
+  if p_org is distinct from my_org_id() then
+    raise exception 'Cannot number documents for another organisation';
+  end if;
+
+  set local lock_timeout = '3s';
+
+  begin
+    select * into ns from number_series
+     where org_id = p_org and doc_type = p_doc_type for update;
+  exception when lock_not_available then
+    raise exception
+      'The % numbering is locked by something else and did not let go. Nothing was saved. If it keeps happening, somebody has a query or a session open on Setup → Numbering — close it, or run db/diagnose.sql to find it.',
+      p_doc_type
+      using errcode = '55P03';
+  end;
+
+  if not found then
+    insert into number_series (org_id, doc_type) values (p_org, p_doc_type)
+    returning * into ns;
+  end if;
+
+  v_reset := case ns.reset_period
+    when 'yearly'  then ns.last_reset is null or date_trunc('year', ns.last_reset)  < date_trunc('year', current_date)
+    when 'monthly' then ns.last_reset is null or date_trunc('month', ns.last_reset) < date_trunc('month', current_date)
+    when 'daily'   then ns.last_reset is null or ns.last_reset < current_date
+    else false end;
+
+  if v_reset then
+    update number_series set next_number = 1, last_reset = current_date where id = ns.id;
+    ns.next_number := 1;
+  end if;
+
+  v_pre := doc_no_stamp(ns.prefix);
+  v_suf := doc_no_stamp(ns.suffix);
+
+  select * into h from doc_no_home(p_doc_type);
+
+  loop
+    v_no := v_pre || lpad(ns.next_number::text, ns.width, '0') || v_suf;
+
+    if h.tbl is null then
+      v_taken := false;
+    else
+      execute format('select exists (select 1 from %I where org_id = $1 and %I = $2)', h.tbl, h.col)
+        into v_taken using p_org, v_no;
+    end if;
+
+    exit when not v_taken;
+
+    ns.next_number := ns.next_number + 1;
+    tries := tries + 1;
+    if tries > 100000 then
+      raise exception 'Could not find a free % number after % tries — check Setup → Numbering',
+        p_doc_type, tries;
+    end if;
+  end loop;
+
+  update number_series set next_number = ns.next_number + 1, last_reset = current_date
+   where id = ns.id;
+
+  return v_no;
+end $$;
+
+
+-- ============================================================
+-- SECTION 4: PRE-PRINTED LETTERHEAD SETTING (57)
+-- ============================================================
+
+alter table orgs add column if not exists print_org_name boolean not null default true;
+
+comment on column orgs.print_org_name is
+  'Print the business name at the top of documents. Off when printing on pre-printed letterhead.';
+
+drop view if exists v_me cascade;
+create or replace view v_me as
+select s.id as staff_id, s.auth_uid, s.full_name, s.phone, s.role, s.is_mestry, s.is_active,
+       o.id as org_id, o.name as org_name, o.address, o.phone as org_phone, o.fssai_no,
+       o.breakage_recovery_pct, o.interest_pct_pa, o.credit_days, o.jurisdiction,
+       o.license_valid_till,
+       o.logo_url, o.signature_url, o.email as org_email, o.tagline, o.bank_details,
+       o.print_org_name
+from staff s join orgs o on o.id = s.org_id
+where s.auth_uid = auth.uid();
+alter view v_me set (security_invoker = on);
+grant select on v_me to authenticated, anon;
+
+
+-- ============================================================
+-- SECTION 5: RECEIPT OPENING BALANCE & PURCHASE PRINT/EDIT (58)
+-- ============================================================
+
+-- 1. Receipt allocations to Opening Balance (invoice_id is nullable)
 alter table receipt_allocations alter column invoice_id drop not null;
 
 drop view if exists v_receipt_allocations cascade;
@@ -26,6 +320,7 @@ left join invoices i on i.id = a.invoice_id;
 alter view v_receipt_allocations set (security_invoker = on);
 grant select on v_receipt_allocations to authenticated, anon;
 
+-- 2. Customer list with opening_balance_remaining and all original columns preserved
 drop view if exists v_customer_list cascade;
 create or replace view v_customer_list as
 select c.id, c.org_id, c.code, c.name, c.mobile1, c.mobile2, c.mobile3, c.town, c.address,
@@ -46,6 +341,7 @@ left join v_customer_outstanding o on o.customer_id = c.id;
 alter view v_customer_list set (security_invoker = on);
 grant select on v_customer_list to authenticated, anon;
 
+-- 3. Outstanding Ageing Report with remaining opening balance
 drop function if exists outstanding_ageing(uuid, date, uuid);
 
 create or replace function outstanding_ageing(p_org uuid, p_as_on date default current_date, p_route uuid default null)
@@ -89,6 +385,7 @@ returns table (
    order by 12 desc;
 $$;
 
+-- 4. save_receipt prioritizing opening balance before invoices
 create or replace function save_receipt(p_header jsonb, p_lines jsonb, p_allocations jsonb default '[]'::jsonb)
 returns uuid language plpgsql as $$
 declare
@@ -200,9 +497,7 @@ begin
   return v_id;
 end $$;
 
--- ------------------------------------------------------------
--- 2. PURCHASE DETAILS ON PURCHASE LIST VIEW
--- ------------------------------------------------------------
+-- 5. Supplier address and purchase list view with contact details
 alter table suppliers add column if not exists address text;
 
 drop view if exists v_purchase_list cascade;
@@ -218,16 +513,34 @@ left join stock_locations l on l.id = p.location_id;
 alter view v_purchase_list set (security_invoker = on);
 grant select on v_purchase_list to authenticated, anon;
 
--- ------------------------------------------------------------
--- 3. UNPOSTING ON PURCHASE CORRECTION REVERSES ON THE BILL'S DATE
--- ------------------------------------------------------------
+-- 6. Purchase stock posting and unposting with proper date reversal
+create or replace function post_purchase_stock(p_purchase uuid)
+returns void language plpgsql as $$
+declare p purchases%rowtype; v_net numeric;
+begin
+  select * into p from purchases where id = p_purchase;
+  if not found then return; end if;
+
+  select coalesce(sum(qty_base), 0) into v_net
+    from stock_ledger where ref_table = 'purchases' and ref_id = p_purchase;
+
+  if v_net <> 0 then
+    raise exception 'Purchase % is already posted to stock. Corrections are adjustment rows.', p.bill_no;
+  end if;
+
+  insert into stock_ledger (org_id,item_id,location_id,txn_type,txn_date,qty_base,rate,ref_table,ref_id,created_by)
+  select p.org_id, pi.item_id, p.location_id, 'purchase', p.bill_date,
+         pi.qty_base, pi.rate, 'purchases', p.id, p.created_by
+  from purchase_items pi where pi.purchase_id = p_purchase;
+end $$;
+
 create or replace function unpost_purchase_stock(p_purchase uuid, p_on date default null)
 returns int language plpgsql as $$
 declare v_net numeric; n int := 0;
 begin
   select coalesce(sum(qty_base), 0) into v_net
     from stock_ledger where ref_table = 'purchases' and ref_id = p_purchase;
-  if v_net = 0 then return 0; end if;   -- never posted, or already taken back
+  if v_net = 0 then return 0; end if;
 
   insert into stock_ledger (org_id,item_id,location_id,txn_type,txn_date,qty_base,rate,ref_table,ref_id,created_by)
   select org_id, item_id, location_id, 'purchase'::stock_txn_type, coalesce(p_on, max(txn_date)),
@@ -240,6 +553,9 @@ begin
   return n;
 end $$;
 
+grant execute on function unpost_purchase_stock(uuid, date) to authenticated;
+
+-- 7. Purchase creation and editing
 create or replace function save_purchase(p_header jsonb, p_lines jsonb)
 returns uuid language plpgsql as $$
 declare
@@ -359,5 +675,3 @@ begin
       jsonb_build_object('account','CASH',      'credit', v_paid)));
   return v_id;
 end $$;
-
-grant execute on function unpost_purchase_stock(uuid, date) to authenticated;

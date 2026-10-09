@@ -23,6 +23,7 @@ import { deleteDocument } from '@/features/search/deletes';
 import { CustomerPicker } from '@/features/customers/components/CustomerPicker';
 import { amount, dateDMY, money, round, toISODate, toNumber, type Numeric } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
+import { supabase } from '@/lib/supabase';
 import { getReceipt, getReceiptAllocations, getReceiptLines, listAllReceipts, listReceipts, saveReceipt } from '../api';
 
 export function ReceiptsPage() {
@@ -104,6 +105,25 @@ export function ReceiptNewPage() {
   const [manual, setManual] = useState(false);
   const open = useQuery({ queryKey: ['invoices', 'open', customer?.id], queryFn: () => listOpenInvoices(customer?.id ?? ''), enabled: Boolean(customer?.id) });
 
+  const openBalanceQuery = useQuery({
+    queryKey: ['customers', 'opening_remaining', customer?.id],
+    queryFn: async () => {
+      if (!customer?.id) return 0;
+      const { data: cust } = await supabase.from('customers').select('opening_balance').eq('id', customer.id).single();
+      const openBal = toNumber(cust?.opening_balance);
+      if (openBal <= 0) return 0;
+      const { data: allocs } = await supabase
+        .from('receipt_allocations')
+        .select('amount, receipts!inner(customer_id)')
+        .is('invoice_id', null)
+        .eq('receipts.customer_id', customer.id);
+      const paid = (allocs ?? []).reduce((s, a) => s + toNumber(a.amount), 0);
+      return Math.max(0, round(openBal - paid, 2));
+    },
+    enabled: Boolean(customer?.id),
+  });
+  const openBalRemaining = openBalanceQuery.data ?? 0;
+
   useEffect(() => {
     if (modes.data && lines.length === 0) {
       const cash = modes.data.find((m) => m.is_active && m.code.toUpperCase() === 'CASH') ?? modes.data.find((m) => m.is_active);
@@ -115,6 +135,11 @@ export function ReceiptNewPage() {
   const fifo = useMemo(() => {
     const out: Record<string, number> = {};
     let rem = total;
+    if (openBalRemaining > 0) {
+      const a = Math.min(rem, openBalRemaining);
+      out['OPENING'] = round(a, 2);
+      rem = round(rem - a, 2);
+    }
     for (const i of open.data ?? []) {
       if (rem <= 0) break;
       const a = Math.min(rem, toNumber(i.balance));
@@ -122,7 +147,7 @@ export function ReceiptNewPage() {
       rem = round(rem - a, 2);
     }
     return out;
-  }, [open.data, total]);
+  }, [open.data, total, openBalRemaining]);
   const allocations = manual ? Object.fromEntries(Object.entries(alloc).map(([k, v]) => [k, toNumber(v)])) : fifo;
   const allocated = round(Object.values(allocations).reduce((s, v) => s + v, 0), 2);
   const onAccount = round(total - allocated, 2);
@@ -133,8 +158,9 @@ export function ReceiptNewPage() {
    * recorded against the wrong invoice.
    */
   const remainingOn = (invoiceId: string, balance: Numeric) => round(toNumber(balance) - (allocations[invoiceId] ?? 0), 2);
+  const remainingOpening = Math.max(0, round(openBalRemaining - (allocations['OPENING'] ?? 0), 2));
   const remainingTotal = round(
-    (open.data ?? []).reduce((s, i) => s + remainingOn(i.invoice_id ?? '', i.balance), 0),
+    remainingOpening + (open.data ?? []).reduce((s, i) => s + remainingOn(i.invoice_id ?? '', i.balance), 0),
     2,
   );
   const modeOf = (id: string) => modes.data?.find((m) => m.id === id);
@@ -145,10 +171,13 @@ export function ReceiptNewPage() {
       const ls = lines.filter((l) => toNumber(l.amount) > 0);
       if (ls.length === 0) throw new Error('Enter at least one amount');
       if (onAccount < 0) throw new Error('Allocations exceed the receipt total');
+      const allocList = manual
+        ? Object.entries(allocations).filter(([, v]) => v > 0).map(([k, v]) => ({ invoice_id: k === 'OPENING' ? null : k, amount: v }))
+        : Object.entries(fifo).filter(([, v]) => v > 0).map(([k, v]) => ({ invoice_id: k === 'OPENING' ? null : k, amount: v }));
       return saveReceipt(
         { customer_id: customer.id, receipt_date: date, narration: narration || null },
         ls.map((l) => ({ mode_id: l.mode_id, amount: toNumber(l.amount), reference: l.reference.trim() || null, cheque_date: l.cheque_date || null, bank_name: l.bank_name.trim() || null })),
-        manual ? Object.entries(allocations).filter(([, v]) => v > 0).map(([invoice_id, v]) => ({ invoice_id, amount: v })) : [],
+        allocList,
       );
     },
     onSuccess: async (id) => {
@@ -209,17 +238,26 @@ export function ReceiptNewPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between text-base">
-              <span>Against invoices</span>
+              <span>Against opening balance & invoices</span>
               <label className="flex items-center gap-1 text-xs font-normal"><input type="checkbox" className="accent-primary" checked={manual} onChange={(ev) => { setManual(ev.target.checked); if (ev.target.checked) setAlloc(Object.fromEntries(Object.entries(fifo).map(([k, v]) => [k, String(v)]))); }} /> Allocate manually</label>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!customer ? <p className="text-sm text-muted-foreground">Choose a customer to see open invoices.</p> : open.isLoading ? <Spinner /> : (open.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No open invoices — the full amount stays on account as an advance.</p>
+            {!customer ? <p className="text-sm text-muted-foreground">Choose a customer to see open dues.</p> : open.isLoading || openBalanceQuery.isLoading ? <Spinner /> : openBalRemaining <= 0 && (open.data ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">No open dues — the full amount stays on account as an advance.</p>
             ) : (
               <Table>
-                <TableHeader><TableRow><TableHead>Invoice</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Balance</TableHead><TableHead className="w-32 text-right">Allocate</TableHead><TableHead className="text-right">Remaining</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Invoice / Due</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Balance</TableHead><TableHead className="w-32 text-right">Allocate</TableHead><TableHead className="text-right">Remaining</TableHead></TableRow></TableHeader>
                 <TableBody>
+                  {openBalRemaining > 0 && (
+                    <TableRow key="OPENING" className="bg-muted/30">
+                      <TableCell className="font-semibold">Opening Balance</TableCell>
+                      <TableCell className="text-muted-foreground">—</TableCell>
+                      <TableCell className="num">{amount(openBalRemaining)}</TableCell>
+                      <TableCell className="num">{manual ? <Input type="number" step="0.01" className="num h-8" aria-label="Allocate to Opening Balance" value={alloc['OPENING'] ?? ''} onChange={(ev) => setAlloc((p) => ({ ...p, OPENING: ev.target.value }))} /> : amount(fifo['OPENING'] ?? 0)}</TableCell>
+                      <TableCell className={remainingOpening === 0 ? 'num text-muted-foreground' : 'num'}>{amount(remainingOpening)}</TableCell>
+                    </TableRow>
+                  )}
                   {(open.data ?? []).map((i) => {
                     const id = i.invoice_id ?? '';
                     return (
@@ -270,9 +308,9 @@ export function ReceiptViewPage() {
         </div>
         <div className="rounded-md border">
           <Table>
-            <TableHeader><TableRow><TableHead>Invoice</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Allocated</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Invoice / Due</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Allocated</TableHead></TableRow></TableHeader>
             <TableBody>
-              {(allocs.data ?? []).length === 0 ? <TableRow><TableCell colSpan={3} className="text-muted-foreground">Nothing allocated — on account.</TableCell></TableRow> : (allocs.data ?? []).map((a) => <TableRow key={a.id}><TableCell className="font-medium">{a.invoice_no}</TableCell><TableCell>{dateDMY(a.invoice_date)}</TableCell><TableCell className="num">{amount(a.amount)}</TableCell></TableRow>)}
+              {(allocs.data ?? []).length === 0 ? <TableRow><TableCell colSpan={3} className="text-muted-foreground">Nothing allocated — on account.</TableCell></TableRow> : (allocs.data ?? []).map((a) => <TableRow key={a.id}><TableCell className="font-medium">{a.invoice_no ?? 'Opening Balance'}</TableCell><TableCell>{dateDMY(a.invoice_date) || '—'}</TableCell><TableCell className="num">{amount(a.amount)}</TableCell></TableRow>)}
             </TableBody>
             <TableFooter><TableRow><TableCell colSpan={2} className="text-right">On account</TableCell><TableCell className="num">{amount(round(toNumber(r.total_amount) - toNumber(r.allocated), 2))}</TableCell></TableRow></TableFooter>
           </Table>

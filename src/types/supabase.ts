@@ -6989,6 +6989,7 @@ export type Database = {
           sales_exec_name: string | null
           town: string | null
           whatsapp_opt_in: boolean | null
+          opening_balance_remaining: number | null
         }
         Relationships: [
           {
@@ -8797,6 +8798,9 @@ export type Database = {
           supplier_id: string | null
           supplier_name: string | null
           total: number | null
+          supplier_town: string | null
+          supplier_mobile: string | null
+          supplier_address: string | null
         }
         Relationships: [
           {

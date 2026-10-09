@@ -12,7 +12,10 @@ import { IMPORT_TARGETS, findTarget } from './targets';
  * a target gains a required field and the sample is not regenerated, this fails.
  */
 const FILE = 'public/seed/sample-import.xlsx';
-const book = () => readFileSync(FILE).buffer.slice(0) as ArrayBuffer;
+const book = () => {
+  const b = readFileSync(FILE);
+  return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer;
+};
 
 /** Sheet name in the workbook → the import target it is meant for. */
 const SHEET_FOR_TARGET: Record<string, string> = {

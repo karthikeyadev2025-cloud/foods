@@ -59,7 +59,7 @@ export interface ReceiptLineInput {
   bank_name?: string | null;
 }
 export interface AllocationInput {
-  invoice_id: string;
+  invoice_id: string | null;
   amount: number;
 }
 

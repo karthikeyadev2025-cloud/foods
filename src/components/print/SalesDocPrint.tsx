@@ -32,7 +32,7 @@ export interface SalesDocPrintProps {
   title: string;
   org: PrintOrg | null | undefined;
   template: PrintTemplateLike | null | undefined;
-  party: { name: string; town: string; phones: string };
+  party: { name: string; town: string; phones: string; address?: string };
   /** Right-hand header block: date, number, transport, L.R… in order. */
   meta: { label: string; value: string; bold?: boolean; transport?: boolean }[];
   lines: PrintLine[];
@@ -98,7 +98,8 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
       <div className={`mt-2 border border-black ${paper.thermal ? '' : 'grid grid-cols-2'}`}>
         <div className={`${paper.thermal ? 'border-b' : 'border-r'} border-black p-2`}>
           <div className="font-bold">{party.name}</div>
-          <div>{party.town}</div>
+          {party.address && <div>{party.address}</div>}
+          {party.town && <div>{party.town}</div>}
           {show('phones') && party.phones && <div>PH NO : {party.phones}</div>}
         </div>
         <div className="p-2">

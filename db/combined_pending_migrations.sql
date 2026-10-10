@@ -11,6 +11,11 @@
 --   56: Numbering Lock Timeout (clean 3-second timeout & diagnostic error)
 --   57: Print Letterhead (toggle to hide business name on pre-printed paper)
 --   58: Receipt Opening Balance First, Purchase Contact Print & Stock Reversal Date
+--   59: the fix that lets 58's purchase reversal run at all
+--
+-- If 53 to 58 have already been run by hand, this file is not needed — run
+-- db/59_purchase_edit_author.sql on its own, which is the only part of it that
+-- is new.
 -- ============================================================
 
 -- ============================================================
@@ -544,7 +549,12 @@ begin
 
   insert into stock_ledger (org_id,item_id,location_id,txn_type,txn_date,qty_base,rate,ref_table,ref_id,created_by)
   select org_id, item_id, location_id, 'purchase'::stock_txn_type, coalesce(p_on, max(txn_date)),
-         -sum(qty_base), max(rate), 'purchases', ref_id, max(created_by)
+         -sum(qty_base), max(rate), 'purchases', ref_id,
+         -- There is no max() for uuid, and reaching for one here made every
+         -- purchase edit fail outright. The correction belongs to whoever is
+         -- making it, falling back to the author of the rows being reversed
+         -- (db/59).
+         coalesce(my_staff_id(), (array_agg(created_by order by id desc))[1])
     from stock_ledger
    where ref_table = 'purchases' and ref_id = p_purchase
    group by org_id, item_id, location_id, ref_id

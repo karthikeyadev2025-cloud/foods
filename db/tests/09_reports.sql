@@ -71,11 +71,24 @@ begin
 
   -- ===== ageing =====
   select * into r from outstanding_ageing(v_org, current_date) where customer_id = v_cust;
-  -- FIFO: both receipts (1000 + 800) settle the oldest bill first → inv1 (70d) 2688 - 1800 = 888 in 60+;
-  -- inv2 (20d) 1344 untouched in 16-30; inv3 (today) 2688 - 64 rate difference = 2624 in 0-15
-  assert r.b60p = 888 and r.b16_30 = 1344 and r.b0_15 = 2624 and r.b31_60 = 0,
+  -- A receipt clears the customer's OPENING BALANCE before any bill (db/58):
+  -- what the shop was owed before the system started is the oldest money on
+  -- the account, so first-in-first-out has to reach it first. The 1,000 taken
+  -- 30 days ago therefore settles the 1,000 opening, not inv1, and only
+  -- today's 800 lands on the oldest bill:
+  --   opening  1000 - 1000 = 0 left
+  --   inv1 (70d)  2688 - 800 = 1888 in 60+
+  --   inv2 (20d)  1344 untouched in 16-30
+  --   inv3 (today) 2688 - 64 rate difference = 2624 in 0-15
+  assert r.opening_balance = 0, format('the opening balance is settled first; shows %s', r.opening_balance);
+  assert r.b60p = 1888 and r.b16_30 = 1344 and r.b0_15 = 2624 and r.b31_60 = 0,
     format('ageing buckets %s/%s/%s/%s', r.b0_15, r.b16_30, r.b31_60, r.b60p);
   assert r.oldest_days = 70 and r.outstanding = 6720 - 800 - 64;
+  -- The buckets plus whatever is left of the opening must be the whole debt:
+  -- no rupee counted twice, none fallen between the two.
+  assert r.opening_balance + r.b0_15 + r.b16_30 + r.b31_60 + r.b60p = r.outstanding,
+    format('buckets %s + opening %s must equal outstanding %s',
+           r.b0_15 + r.b16_30 + r.b31_60 + r.b60p, r.opening_balance, r.outstanding);
 
   -- ===== collection by mode =====
   select jsonb_object_agg(code, amount) into j from collection_by_mode(v_org, current_date - 60, current_date);

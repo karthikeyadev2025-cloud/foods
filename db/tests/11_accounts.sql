@@ -63,13 +63,18 @@ begin
   -- ===== a second cheque bounces: the customer owes again, the bill reopens, bank charges =====
   v_rc2 := save_receipt(jsonb_build_object('customer_id', v_cust, 'receipt_date', current_date),
     jsonb_build_array(jsonb_build_object('mode_id', m_chq, 'amount', 500, 'reference', 'CHQ777')));
-  select balance into q from v_invoice_balance where invoice_id = v_inv; assert q = 2688 - 1688 - 500, format('invoice balance before bounce %s', q);
+  -- A receipt settles the customer's 500 OPENING BALANCE before it touches any
+  -- bill (db/58), so of the 1,688 collected only 1,188 reached this invoice.
+  select opening_balance_remaining into q from v_customer_list where id = v_cust;
+  assert q = 0, format('the opening 500 is settled first, %s left', q);
+  select balance into q from v_invoice_balance where invoice_id = v_inv;
+  assert q = 2688 - (1688 - 500) - 500, format('invoice balance before bounce %s', q);
   select id into v_chq2 from cheques where cheque_no = 'CHQ777';
   perform deposit_cheque(v_chq2, a_bank);
   v_rev := bounce_cheque(v_chq2, current_date, 50);
   select state::text into r from v_cheques where id = v_chq2; assert r.state = 'bounced';
   select total_amount, reversal_of into r from receipts where id = v_rev; assert r.total_amount = -500 and r.reversal_of = v_rc2, 'reversal receipt';
-  select balance into q from v_invoice_balance where invoice_id = v_inv; assert q = 2688 - 1688, format('invoice reopened %s', q);
+  select balance into q from v_invoice_balance where invoice_id = v_inv; assert q = 2688 - (1688 - 500), format('invoice reopened %s', q);
   select outstanding into q from v_customer_outstanding where customer_id = v_cust; assert q = 500 + 2688 - 1688, format('outstanding back %s', q);
   select balance into q from v_cash_bank_accounts where id = a_bank; assert q = 688 - 50, format('bank charges %s', q);
   select balance into q from v_trial_balance where org_id = v_org and code = 'BANK_CHARGES'; assert q = 50;

@@ -101,14 +101,49 @@ packing as (
     from items i
 ),
 
--- 6. The same movement twice. Two identical rows against one document is not a
---    double delivery; it is a double post.
-dups as (
-  select item_id, location_id, txn_type, txn_date, qty_base, ref_table, ref_id, count(*) as n
+-- 6 and 8. Two very different things look alike here, and telling somebody to
+--    delete the wrong one would break the stock.
+--
+--    A DOUBLE POST is a movement recorded twice with nothing taking it back:
+--    every row for that document and product leans the same way. Removing the
+--    extras is right, and the balance is wrong until they go.
+--
+--    CHURN is a document saved over and over, each save writing a reversal and
+--    a fresh posting. The rows come in matched pairs that cancel, so the
+--    balance is RIGHT and deleting "the extras" would wreck it. What is wrong
+--    there is the sheer number of rows — which is what made stock_ledger
+--    33 MB holding four rows' worth of stock, and what makes a save time out.
+doc_item as (
+  select item_id, location_id, ref_table, ref_id,
+         count(*)                                   as rows_n,
+         count(*) filter (where qty_base > 0)        as pos_n,
+         count(*) filter (where qty_base < 0)        as neg_n,
+         sum(qty_base)                               as net,
+         min(created_at)                             as first_written,
+         max(created_at)                             as last_written
     from stock_ledger
    where ref_id is not null
-   group by 1, 2, 3, 4, 5, 6, 7
-  having count(*) > 1
+   group by 1, 2, 3, 4
+),
+dups as (
+  select d.item_id, d.location_id, d.ref_table, d.ref_id, d.rows_n,
+         (select max(sl.qty_base) from stock_ledger sl
+           where sl.ref_id = d.ref_id and sl.ref_table = d.ref_table
+             and sl.item_id = d.item_id and sl.location_id = d.location_id) as qty_base,
+         (select max(sl.txn_date) from stock_ledger sl
+           where sl.ref_id = d.ref_id and sl.ref_table = d.ref_table
+             and sl.item_id = d.item_id and sl.location_id = d.location_id) as txn_date
+    from doc_item d
+   where d.rows_n > 1 and (d.pos_n = 0 or d.neg_n = 0)   -- one-sided: nothing takes it back
+),
+churn as (
+  select d.*, i.item_code, i.name,
+         coalesce((select p.bill_no from purchases p where p.id = d.ref_id),
+                  (select v.invoice_no from invoices v where v.id = d.ref_id)) as doc_no,
+         extract(epoch from (d.last_written - d.first_written))::bigint as seconds
+    from doc_item d
+    join items i on i.id = d.item_id
+   where d.rows_n >= 4 and d.pos_n > 0 and d.neg_n > 0
 ),
 
 -- 7. Right today, wrong in the past. The running balance dips below zero on a
@@ -187,9 +222,9 @@ q5 as (
      and exists (select 1 from neg n where n.item_id = p.item_id)
 ),
 q6 as (
-  select 6, 'duplicates', coalesce(i.item_code || ' ' || i.name, '?'), coalesce(l.name, '?'),
-         'FOUND — the same movement is recorded ' || d.n || ' times. Stock → Problems can remove the extras.',
-         d.txn_type::text || ' ' || rtrim(trim(to_char(d.qty_base, 'FM999999990.999')), '.')
+  select 6, 'double post', coalesce(i.item_code || ' ' || i.name, '?'), coalesce(l.name, '?'),
+         'FOUND — this movement is recorded ' || d.rows_n || ' times with nothing taking it back, so the stock is wrong by the extras. Stock → Problems can remove them.',
+         rtrim(trim(to_char(d.qty_base, 'FM999999990.999')), '.')
            || ' on ' || to_char(d.txn_date, 'DD-MM-YYYY') || ' from ' || coalesce(d.ref_table, '?')
     from dups d
     join items i on i.id = d.item_id
@@ -205,6 +240,25 @@ q7 as (
     join items i on i.id = d.item_id
     left join stock_locations l on l.id = d.location_id
    where d.worst < 0 and b.qty >= 0
+),
+q8 as (
+  select 8, 'saved over and over', c.item_code || ' ' || c.name, coalesce(l.name, '?'),
+         'FOUND — ' || coalesce(c.ref_table, '?') || ' ' || coalesce(c.doc_no, '?')
+           || ' has written ' || c.rows_n || ' stock rows for this one product ('
+           || c.pos_n || ' in, ' || c.neg_n || ' out) where it should have written 1. '
+           || case when c.net = 0
+                   then 'They cancel to nothing, so this product is not on the bill any more.'
+                   else 'They cancel down to ' || rtrim(trim(to_char(c.net, 'FM999999990.999')), '.')
+                        || ', which is the bill — the BALANCE IS RIGHT. Do not delete these rows.' end,
+         'all written between ' || to_char(c.first_written, 'DD-MM-YYYY HH24:MI:SS')
+           || ' and ' || to_char(c.last_written, 'DD-MM-YYYY HH24:MI:SS')
+           || ' — ' || case when c.seconds < 120
+                            then c.seconds || ' seconds apart, so nobody typed this: something saved it in a loop'
+                            else (c.seconds / 3600) || ' hours apart, so these are hand edits' end
+    from churn c
+    left join stock_locations l on l.id = c.location_id
+   order by c.rows_n desc
+   limit 40
 )
 
 select * from (
@@ -215,6 +269,7 @@ select * from (
   union all select * from q5
   union all select * from q6
   union all select * from q7
+  union all select * from q8
 ) answers
 order by n, item
-limit 200;
+limit 300;

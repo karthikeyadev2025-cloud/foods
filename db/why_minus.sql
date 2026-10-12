@@ -32,31 +32,48 @@
 
 with
 
--- Every item/godown balance, with in and out separated so the size of the hole
--- is visible rather than just its sign.
-bal as (
-  select sl.item_id, sl.location_id,
-         sum(sl.qty_base)                                        as qty,
-         sum(sl.qty_base) filter (where sl.qty_base > 0)          as came_in,
-         -sum(sl.qty_base) filter (where sl.qty_base < 0)         as went_out,
-         count(*)                                                 as rows_n,
-         min(sl.txn_date)                                         as first_moved,
-         max(sl.txn_date)                                         as last_moved
+-- Goods arriving and goods leaving, told apart by the KIND of movement rather
+-- than by the sign of the row. The sign alone lies: reopening a bill for
+-- correction writes a positive 'sale' row (db/30) and correcting a purchase
+-- writes a negative 'purchase' row (db/58), and neither is a lorry at the door.
+-- Counting those as stock arriving is how a product with no purchase at all
+-- still shows hundreds of units "came in". So each kind is NETTED within
+-- itself: a bill and its correction cancel, and what is left is the truth.
+arrivals as (
+  select sl.item_id, sl.location_id, sl.txn_type,
+         sl.txn_type in ('opening','purchase','production_in','sale_return',
+                         'transfer','van_unload','adjustment') as is_in,
+         sum(sl.qty_base) as net,
+         count(*) filter (where (sl.qty_base > 0) <> (sl.txn_type in
+           ('opening','purchase','production_in','sale_return','transfer','van_unload','adjustment'))) as corrections,
+         min(sl.txn_date) as first_moved, max(sl.txn_date) as last_moved,
+         count(*) as rows_n
     from stock_ledger sl
+   group by 1, 2, 3
+),
+bal as (
+  select item_id, location_id,
+         sum(net)                                      as qty,
+         coalesce(sum(net) filter (where is_in), 0)     as came_in,
+         coalesce(-sum(net) filter (where not is_in), 0) as went_out,
+         sum(corrections)                               as corrections,
+         sum(rows_n)                                    as rows_n,
+         min(first_moved)                               as first_moved,
+         max(last_moved)                                as last_moved
+    from arrivals
    group by 1, 2
 ),
 neg as (select * from bal where qty < 0),
 
--- What kinds of movement the item has, per godown: 'sale 240 · purchase 120'.
--- in_kinds is everything that can ADD stock, so zero there means nothing was
--- ever recorded arriving.
+-- What kinds of movement the item has, per godown, signed and netted:
+-- 'sale -400 · purchase +348'.
 mix as (
   select item_id, location_id,
-         string_agg(txn_type::text || ' ' || rtrim(trim(to_char(total, 'FM999999990.999')), '.'), ' · '
-                    order by total desc) as mix,
-         coalesce(sum(total) filter (where txn_type in ('purchase','opening','production_in','sale_return','transfer','van_unload','adjustment')), 0) as in_kinds
-    from (select item_id, location_id, txn_type, sum(abs(qty_base)) as total
-            from stock_ledger group by 1, 2, 3) t
+         string_agg(txn_type::text || ' ' || case when net > 0 then '+' else '' end
+                    || rtrim(trim(to_char(net, 'FM999999990.999')), '.'), ' · '
+                    order by abs(net) desc) as mix,
+         coalesce(sum(net) filter (where is_in), 0) as in_kinds
+    from arrivals
    group by 1, 2
 ),
 
@@ -124,10 +141,13 @@ q2 as (
          case when coalesce(m.in_kinds, 0) = 0
                 then 'FOUND — NOTHING was ever recorded coming in. The purchase, opening stock or batch is missing.'
               else 'FOUND — less came in than went out. Some of the purchases are missing, or one went out twice.' end,
-         'in ' || rtrim(trim(to_char(coalesce(n.came_in, 0), 'FM999999990.999')), '.')
-           || ' · out ' || rtrim(trim(to_char(coalesce(n.went_out, 0), 'FM999999990.999')), '.')
+         'goods in ' || rtrim(trim(to_char(coalesce(n.came_in, 0), 'FM999999990.999')), '.')
+           || ' · gone out ' || rtrim(trim(to_char(coalesce(n.went_out, 0), 'FM999999990.999')), '.')
            || ' · balance ' || rtrim(trim(to_char(n.qty, 'FM999999990.999')), '.')
            || ' · ' || coalesce(m.mix, 'no movements')
+           || case when coalesce(n.corrections, 0) > 0
+                   then ' · ' || n.corrections || ' of these rows are corrections, already netted off'
+                   else '' end
            || ' · ' || to_char(n.first_moved, 'DD-MM-YYYY') || ' to ' || to_char(n.last_moved, 'DD-MM-YYYY')
     from neg n
     join items i on i.id = n.item_id

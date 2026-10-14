@@ -21,9 +21,14 @@
 --   3  wrong godown  plus in one godown, minus in another — nothing is missing
 --   4  no opening    the product was never given its starting stock
 --   5  packing       the box size was changed after movements were recorded
---   6  duplicates    the same movement recorded twice
+--   6  double post   the same movement recorded twice with nothing taking it back
 --   7  date order    right today, but minus on an earlier date — a bill dated
 --                    before the purchase that supplied it
+--   8  saved again   one document saved over and over, in matched pairs that
+--                    cancel: the balance is right, the ledger is enormous
+--   9  earlier days  a bill corrected on a different day from the one it was
+--                    for, so every report in between is wrong while today is
+--                    right — this is what fills the OPENING column with minus
 --
 -- What this file CANNOT see: purchases still sitting unsent in the Outbox on
 -- somebody's screen. Those goods are in the shop and are being billed out, and
@@ -146,6 +151,34 @@ churn as (
    where d.rows_n >= 4 and d.pos_n > 0 and d.neg_n > 0
 ),
 
+-- 9. A document whose rows sit on two different dates. Correcting a bill used
+--    to take the goods back on TODAY's date while the re-made bill posted on
+--    the BILL's date, so between those two days the bill counted twice and
+--    every "as on" report in between was wrong — which is what fills the stock
+--    report's opening column with minus while today comes out right (db/62).
+--    db/62 stops new ones; the ones already written stay, and this names them.
+doc_day as (
+  select ref_table, ref_id, item_id, location_id, txn_date, sum(qty_base) as day_net
+    from stock_ledger where ref_id is not null
+   group by 1, 2, 3, 4, 5
+),
+doc_run as (
+  select d.*,
+         sum(day_net) over (partition by ref_table, ref_id, item_id, location_id order by txn_date) as upto,
+         sum(day_net) over (partition by ref_table, ref_id, item_id, location_id)                   as final
+    from doc_day d
+),
+split as (
+  select ref_table, ref_id, item_id, location_id,
+         max(abs(upto - final))                                      as worst_gap,
+         (array_agg(txn_date order by abs(upto - final) desc, txn_date))[1] as wrong_from,
+         max(txn_date)                                               as right_again,
+         max(final)                                                  as final
+    from doc_run
+   group by 1, 2, 3, 4
+  having count(*) > 1 and max(abs(upto - final)) > 0
+),
+
 -- 7. Right today, wrong in the past. The running balance dips below zero on a
 --    date and climbs back, which means a bill is dated before the purchase
 --    that supplied it. Today's figure is fine; every "as on" report before
@@ -259,6 +292,24 @@ q8 as (
     left join stock_locations l on l.id = c.location_id
    order by c.rows_n desc
    limit 40
+),
+q9 as (
+  select 9, 'wrong on earlier days', i.item_code || ' ' || i.name, coalesce(l.name, '?'),
+         'FOUND — ' || coalesce(s.ref_table, '?') || ' '
+           || coalesce((select p.bill_no from purchases p where p.id = s.ref_id),
+                       (select v.invoice_no from invoices v where v.id = s.ref_id),
+                       (select t.return_no from sales_returns t where t.id = s.ref_id), '?')
+           || ' was corrected on a different day from the one it was for, so every stock report between '
+           || to_char(s.wrong_from, 'DD-MM-YYYY') || ' and ' || to_char(s.right_again, 'DD-MM-YYYY')
+           || ' is out by ' || rtrim(trim(to_char(s.worst_gap, 'FM999999990.999')), '.')
+           || ' units on this product. Today is right (db/62).',
+         'it should hold ' || rtrim(trim(to_char(s.final, 'FM999999990.999')), '.')
+           || ' on every day from ' || to_char(s.wrong_from, 'DD-MM-YYYY')
+    from split s
+    join items i on i.id = s.item_id
+    left join stock_locations l on l.id = s.location_id
+   order by s.worst_gap desc
+   limit 40
 )
 
 select * from (
@@ -270,6 +321,7 @@ select * from (
   union all select * from q6
   union all select * from q7
   union all select * from q8
+  union all select * from q9
 ) answers
 order by n, item
 limit 300;

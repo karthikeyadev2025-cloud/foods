@@ -130,8 +130,21 @@ doc_item as (
    where ref_id is not null
    group by 1, 2, 3, 4
 ),
+-- How many LINES a document has for a product. A bill may carry the same
+-- product twice on purpose — two rates, two batches, or simply typed twice —
+-- and two ledger rows for two lines is not a double post. Only rows beyond the
+-- lines that asked for them are.
+doc_lines as (
+  select 'purchases'::text as ref_table, purchase_id as ref_id, item_id, count(*) as lines_n
+    from purchase_items group by 1, 2, 3
+  union all
+  select 'invoices', invoice_id, item_id, count(*) from invoice_items group by 1, 2, 3
+  union all
+  select 'sales_returns', return_id, item_id, count(*) from sales_return_items group by 1, 2, 3
+),
 dups as (
   select d.item_id, d.location_id, d.ref_table, d.ref_id, d.rows_n,
+         coalesce(dl.lines_n, 1) as lines_n,
          (select max(sl.qty_base) from stock_ledger sl
            where sl.ref_id = d.ref_id and sl.ref_table = d.ref_table
              and sl.item_id = d.item_id and sl.location_id = d.location_id) as qty_base,
@@ -139,7 +152,10 @@ dups as (
            where sl.ref_id = d.ref_id and sl.ref_table = d.ref_table
              and sl.item_id = d.item_id and sl.location_id = d.location_id) as txn_date
     from doc_item d
-   where d.rows_n > 1 and (d.pos_n = 0 or d.neg_n = 0)   -- one-sided: nothing takes it back
+    left join doc_lines dl on dl.ref_table = d.ref_table and dl.ref_id = d.ref_id and dl.item_id = d.item_id
+   -- one-sided (nothing takes it back) AND more rows than the document has
+   -- lines for this product
+   where (d.pos_n = 0 or d.neg_n = 0) and d.rows_n > coalesce(dl.lines_n, 1)
 ),
 churn as (
   select d.*, i.item_code, i.name,
@@ -221,6 +237,8 @@ q2 as (
     join items i on i.id = n.item_id
     left join stock_locations l on l.id = n.location_id
     left join mix m on m.item_id = n.item_id and m.location_id = n.location_id
+   order by n.qty
+   limit 80
 ),
 q3 as (
   select 3, 'wrong godown', i.item_code || ' ' || i.name, coalesce(l.name, '?'),
@@ -245,6 +263,8 @@ q4 as (
    where not exists (select 1 from stock_ledger s
                       where s.item_id = n.item_id
                         and s.txn_type in ('opening','purchase','production_in'))
+   order by n.qty
+   limit 80
 ),
 q5 as (
   select 5, 'packing', p.item_code || ' ' || p.name, '',
@@ -256,23 +276,38 @@ q5 as (
 ),
 q6 as (
   select 6, 'double post', coalesce(i.item_code || ' ' || i.name, '?'), coalesce(l.name, '?'),
-         'FOUND — this movement is recorded ' || d.rows_n || ' times with nothing taking it back, so the stock is wrong by the extras. Stock → Problems can remove them.',
+         'FOUND — this movement is recorded ' || d.rows_n || ' times for '
+           || d.lines_n || ' line' || case when d.lines_n = 1 then '' else 's' end
+           || ' on the document, with nothing taking the extras back, so the stock is wrong by them. Stock → Problems can remove them.',
          rtrim(trim(to_char(d.qty_base, 'FM999999990.999')), '.')
            || ' on ' || to_char(d.txn_date, 'DD-MM-YYYY') || ' from ' || coalesce(d.ref_table, '?')
     from dups d
     join items i on i.id = d.item_id
     left join stock_locations l on l.id = d.location_id
+   order by d.rows_n desc
+   limit 80
 ),
 q7 as (
+  -- Two different things leave a product right today and below zero earlier,
+  -- and saying the wrong one sends the shop hunting for a bill that is not the
+  -- problem. So this asks section 9 first: where a correction landed on a
+  -- different day from the posting it was correcting, that IS the cause, and
+  -- it is named rather than guessed at.
   select 7, 'date order', i.item_code || ' ' || i.name, coalesce(l.name, '?'),
          'FOUND — right today, but it was below zero on ' || to_char(d.first_minus_on, 'DD-MM-YYYY')
-           || '. A bill is dated before the purchase that supplied it, so every report "as on" an earlier date is wrong.',
+           || '. ' || case when exists (select 1 from split s
+                                         where s.item_id = d.item_id and s.location_id = d.location_id
+                                           and d.first_minus_on between s.wrong_from and s.right_again)
+                           then 'A document was corrected on a different day from the one it was for and is counted twice in between — section 9 names it.'
+                           else 'Goods went out before anything recorded them coming in: a bill dated before the purchase that supplied it.' end,
          'worst it reached ' || rtrim(trim(to_char(d.worst, 'FM999999990.999')), '.') || ' units'
     from dipped d
     join bal b on b.item_id = d.item_id and b.location_id = d.location_id
     join items i on i.id = d.item_id
     left join stock_locations l on l.id = d.location_id
    where d.worst < 0 and b.qty >= 0
+   order by d.worst
+   limit 80
 ),
 q8 as (
   select 8, 'saved over and over', c.item_code || ' ' || c.name, coalesce(l.name, '?'),
@@ -291,7 +326,7 @@ q8 as (
     from churn c
     left join stock_locations l on l.id = c.location_id
    order by c.rows_n desc
-   limit 40
+   limit 80
 ),
 q9 as (
   select 9, 'wrong on earlier days', i.item_code || ' ' || i.name, coalesce(l.name, '?'),
@@ -309,11 +344,25 @@ q9 as (
     join items i on i.id = s.item_id
     left join stock_locations l on l.id = s.location_id
    order by s.worst_gap desc
-   limit 40
+   limit 80
+),
+tally as (
+  select 0 as n, 'how many of each' as question, '' as item, '' as godown,
+         'Sections found: 2 → ' || (select count(*) from neg)
+           || ' · 4 → ' || (select count(*) from neg n where not exists (
+                select 1 from stock_ledger s where s.item_id = n.item_id
+                 and s.txn_type in ('opening','purchase','production_in')))
+           || ' · 6 → ' || (select count(*) from dups)
+           || ' · 7 → ' || (select count(*) from dipped d join bal b on b.item_id = d.item_id
+                             and b.location_id = d.location_id where d.worst < 0 and b.qty >= 0)
+           || ' · 8 → ' || (select count(*) from churn)
+           || ' · 9 → ' || (select count(*) from split) as finding,
+         'each section shows at most 80 rows, worst first — a bigger number here means there are more of them' as numbers
 )
 
 select * from (
-  select * from q1
+  select * from tally
+  union all select * from q1
   union all select * from q2
   union all select * from q3
   union all select * from q4
@@ -324,4 +373,4 @@ select * from (
   union all select * from q9
 ) answers
 order by n, item
-limit 300;
+limit 800;

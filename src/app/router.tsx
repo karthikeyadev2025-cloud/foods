@@ -32,7 +32,7 @@ import { PurchasePrintPage } from '@/features/purchases/routes/PurchasePrintPage
 import { PurchaseEditPage, PurchaseNewPage, PurchaseViewPage, PurchasesPage } from '@/features/purchases/routes/PurchasesPage';
 import { ReceiptNewPage, ReceiptViewPage, ReceiptsPage } from '@/features/receipts/routes/ReceiptsPage';
 import { ReportsPage } from '@/features/reports/routes/ReportsPage';
-import { ReturnNewPage, ReturnViewPage, ReturnsPage } from '@/features/returns/routes/ReturnsPage';
+import { ReturnEditPage, ReturnNewPage, ReturnViewPage, ReturnsPage } from '@/features/returns/routes/ReturnsPage';
 import { SetupPage } from '@/features/setup/routes/SetupPage';
 import { SetupWizard } from '@/features/setup/routes/SetupWizard';
 import { LabelsPrintPage } from '@/features/stock/components/inventory';
@@ -147,6 +147,7 @@ export const router = createRouter([
             { path: 'returns', element: <ReturnsPage /> },
             { path: 'returns/new', element: <ReturnNewPage /> },
             { path: 'returns/:id', element: <ReturnViewPage /> },
+            { path: 'returns/:id/edit', element: <ReturnEditPage /> },
           ]),
           guarded('receipts', [
             { path: 'receipts', element: <ReceiptsPage /> },

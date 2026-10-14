@@ -52,6 +52,13 @@ export function getReturnLines(id: string): Promise<ReturnLineRow[]> {
 }
 
 export interface ReturnHeaderInput {
+  /**
+   * Set to correct a return already recorded (db/61). The database keeps its
+   * number, reverses what the old version put into the godown and into the
+   * ledger, and posts the new figures — and a save that changes nothing at all
+   * writes nothing at all.
+   */
+  id?: string;
   customer_id: string;
   invoice_id: string | null;
   kind: ReturnKind;

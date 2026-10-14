@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, Plus, Trash2 } from 'lucide-react';
+import { Download, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { DeleteButton } from '@/components/DeleteButton';
@@ -27,7 +27,7 @@ import { exportToExcel } from '@/lib/export';
 import { amount, dateDMY, qty, round, toISODate, toNumber } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { cn } from '@/lib/utils';
-import { RETURN_KINDS, getReturn, getReturnLines, listAllReturns, listReturns, saveSalesReturn, type ReturnKind } from '../api';
+import { RETURN_KINDS, getReturn, getReturnLines, listAllReturns, listReturns, saveSalesReturn, type ReturnKind, type ReturnLineRow, type ReturnRow } from '../api';
 
 const kindLabel = (k: string | null) => RETURN_KINDS.find((r) => r.value === k)?.label ?? k ?? '';
 
@@ -120,19 +120,45 @@ export function ReturnsPage() {
 interface DraftLine { key: string; item_id: string; item_code: string; item_name: string; units_per_box: number; boxes: number; rate: number; new_rate: number }
 let seq = 0;
 
-export function ReturnNewPage() {
+/**
+ * A new return, and — when `ret` is passed — the correction of one already
+ * recorded (db/61).
+ *
+ * A correction is not a fresh return: it keeps its number, which has been read
+ * out to the customer and written on the slip in their hand, and the database
+ * reverses what the old version put into the godown and into the ledger before
+ * posting the new figures. So this is the same screen, saying what it is about
+ * to do.
+ */
+function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: ReturnLineRow[] } = {}) {
   const perms = usePermissions();
   const me = useMe();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const editing = Boolean(ret?.id);
   const pct = toNumber(me.data?.breakage_recovery_pct);
-  const [kind, setKind] = useState<ReturnKind>('fresh_return');
-  const [customer, setCustomer] = useState<CustomerRow | null>(null);
-  const [invoiceId, setInvoiceId] = useState('');
-  const [locationId, setLocationId] = useState('');
-  const [date, setDate] = useState(toISODate());
-  const [notes, setNotes] = useState('');
-  const [lines, setLines] = useState<DraftLine[]>([]);
+  const [kind, setKind] = useState<ReturnKind>((ret?.kind as ReturnKind | null) ?? 'fresh_return');
+  const [customer, setCustomer] = useState<CustomerRow | null>(
+    ret?.customer_id ? ({ id: ret.customer_id, name: ret.customer_name } as CustomerRow) : null,
+  );
+  const [invoiceId, setInvoiceId] = useState(ret?.invoice_id ?? '');
+  const [locationId, setLocationId] = useState(ret?.location_id ?? '');
+  const [date, setDate] = useState(ret?.return_date ?? toISODate());
+  const [notes, setNotes] = useState(ret?.notes ?? '');
+  const [lines, setLines] = useState<DraftLine[]>(() =>
+    (existing ?? []).map((l) => ({
+      key: `r${++seq}`,
+      item_id: l.item_id ?? '',
+      item_code: l.item_code ?? '',
+      item_name: l.item_name ?? '',
+      // The packing the LINE was saved with, not the product's packing today:
+      // re-opening a return at today's packing would silently re-quantify it.
+      units_per_box: toNumber(l.units_per_box) || 1,
+      boxes: toNumber(l.boxes),
+      rate: toNumber(l.old_rate),
+      new_rate: toNumber(l.new_rate),
+    })),
+  );
   const [entryItem, setEntryItem] = useState<ItemRow | null>(null);
   const [entryBoxes, setEntryBoxes] = useState('');
   const [entryRate, setEntryRate] = useState('');
@@ -177,7 +203,7 @@ export function ReturnNewPage() {
       if (kind !== 'rate_difference' && !locationId) throw new Error('Choose the location the goods came back to');
       if (kind === 'rate_difference' && lines.some((l) => l.new_rate <= 0)) throw new Error('Every rate-difference line needs the new rate');
       return saveSalesReturn(
-        { customer_id: customer.id, invoice_id: invoiceId || null, kind, return_date: date, location_id: kind === 'rate_difference' ? null : locationId, notes: notes || null },
+        { ...(ret?.id ? { id: ret.id } : {}), customer_id: customer.id, invoice_id: invoiceId || null, kind, return_date: date, location_id: kind === 'rate_difference' ? null : locationId, notes: notes || null },
         lines.map((l) => ({ item_id: l.item_id, boxes: l.boxes, rate: l.rate, new_rate: kind === 'rate_difference' ? l.new_rate : null })),
       );
     },
@@ -185,10 +211,13 @@ export function ReturnNewPage() {
       await queryClient.invalidateQueries({ queryKey: ['returns'] });
       await queryClient.invalidateQueries({ queryKey: ['invoices'] });
       await queryClient.invalidateQueries({ queryKey: ['customers'] });
-      toast({ title: 'Return saved' });
+      // The godown and the customer's account both moved, so anything showing
+      // either is stale until it refetches.
+      await queryClient.invalidateQueries({ queryKey: ['stock'] });
+      toast({ title: editing ? 'Return corrected' : 'Return saved' });
       navigate(`/returns/${id}`, { replace: true });
     },
-    onError: (err) => toastError(err, 'Could not save the return'),
+    onError: (err) => toastError(err, editing ? 'Could not correct the return' : 'Could not save the return'),
   });
 
   if (!perms.canEdit('returns')) return <p className="text-sm text-muted-foreground">Your role cannot record returns.</p>;
@@ -196,7 +225,14 @@ export function ReturnNewPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="New return" actions={<Button asChild variant="ghost" size="sm"><Link to="/returns">← Returns</Link></Button>} />
+      {editing && (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+          <span className="font-medium">Correcting return {ret?.return_no}.</span> Saving takes what the old version put
+          back into {ret?.location_name ?? 'the godown'} out again and puts these in, and corrects the customer's credit
+          the same way. Both the old figures and the correction stay in the ledger, so the change can be traced. The
+          return keeps its number.
+        </p>
+      )}
       <Card>
         <CardContent className="space-y-3 pt-4">
           <div className="grid gap-2 md:grid-cols-3" role="radiogroup" aria-label="Kind of return">
@@ -296,15 +332,55 @@ export function ReturnNewPage() {
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => navigate('/returns')}>Cancel</Button>
-        <Button type="button" onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save return'}</Button>
+        <Button type="button" variant="outline" onClick={() => navigate(editing ? `/returns/${ret?.id}` : '/returns')}>Cancel</Button>
+        <Button type="button" onClick={() => save.mutate()} disabled={save.isPending}>
+          {save.isPending ? 'Saving…' : editing ? 'Save the correction' : 'Save return'}
+        </Button>
       </div>
+    </div>
+  );
+}
+
+export function ReturnNewPage() {
+  const perms = usePermissions();
+  if (!perms.canEdit('returns')) return <p className="text-sm text-muted-foreground">Your role cannot record returns.</p>;
+  return (
+    <div className="space-y-4">
+      <PageHeader title="New return" actions={<Button asChild variant="ghost" size="sm"><Link to="/returns">← Returns</Link></Button>} />
+      <ReturnEditor />
+    </div>
+  );
+}
+
+/**
+ * Correcting a return already recorded. Both queries have to land before the
+ * editor is shown: opening it empty and filling it in afterwards would let
+ * somebody save a return with no lines on it.
+ */
+export function ReturnEditPage() {
+  const { id } = useParams();
+  const perms = usePermissions();
+  const ret = useQuery({ queryKey: ['returns', 'one', id], queryFn: () => getReturn(id ?? ''), enabled: Boolean(id) });
+  const lines = useQuery({ queryKey: ['returns', 'lines', id], queryFn: () => getReturnLines(id ?? ''), enabled: Boolean(id) });
+
+  if (!perms.canEdit('returns')) return <p className="text-sm text-muted-foreground">Your role cannot change returns.</p>;
+  if (ret.isLoading || lines.isLoading) return <Spinner label="Loading return…" />;
+  if (!ret.data || !lines.data) return <p role="alert" className="text-sm text-destructive">Return not found.</p>;
+
+  return (
+    <div className="space-y-4">
+      <PageHeader
+        title={`Edit return ${ret.data.return_no ?? ''}`}
+        actions={<Button asChild variant="ghost" size="sm"><Link to={`/returns/${id}`}>← Back to the return</Link></Button>}
+      />
+      <ReturnEditor ret={ret.data} lines={lines.data} />
     </div>
   );
 }
 
 export function ReturnViewPage() {
   const { id } = useParams();
+  const perms = usePermissions();
   const ret = useQuery({ queryKey: ['returns', 'one', id], queryFn: () => getReturn(id ?? ''), enabled: Boolean(id) });
   const lines = useQuery({ queryKey: ['returns', 'lines', id], queryFn: () => getReturnLines(id ?? ''), enabled: Boolean(id) });
   if (ret.isLoading || lines.isLoading) return <Spinner label="Loading return…" />;
@@ -312,7 +388,16 @@ export function ReturnViewPage() {
   const r = ret.data;
   return (
     <div className="space-y-4">
-      <PageHeader title={`Return ${r.return_no}`} description={`${kindLabel(r.kind)} · ${dateDMY(r.return_date)} · ${r.customer_name}${r.invoice_no ? ` · against ${r.invoice_no}` : ''}${r.location_name ? ` · to ${r.location_name}` : ''}`} actions={<Button asChild variant="ghost" size="sm"><Link to="/returns">← Returns</Link></Button>} />
+      <PageHeader
+        title={`Return ${r.return_no}`}
+        description={`${kindLabel(r.kind)} · ${dateDMY(r.return_date)} · ${r.customer_name}${r.invoice_no ? ` · against ${r.invoice_no}` : ''}${r.location_name ? ` · to ${r.location_name}` : ''}`}
+        actions={
+          <div className="flex gap-2">
+            {perms.canEdit('returns') && <Button asChild size="sm"><Link to={`/returns/${id}/edit`}><Pencil /> Edit</Link></Button>}
+            <Button asChild variant="ghost" size="sm"><Link to="/returns">← Returns</Link></Button>
+          </div>
+        }
+      />
       <div className="rounded-md border">
         <Table>
           <TableHeader><TableRow><TableHead>CODE</TableHead><TableHead>Item</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Billed rate</TableHead>{r.kind === 'rate_difference' && <TableHead className="text-right">New rate</TableHead>}<TableHead className="text-right">Credit</TableHead></TableRow></TableHeader>
@@ -329,6 +414,11 @@ export function ReturnViewPage() {
           <TableFooter><TableRow><TableCell colSpan={r.kind === 'rate_difference' ? 6 : 5} className="text-right font-semibold">Credit</TableCell><TableCell className="num font-semibold">{amount(r.total)}</TableCell></TableRow></TableFooter>
         </Table>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Edit corrects this return in place — what it put back into the godown comes out again and the corrected figures
+        go in, both movements staying in the ledger, and the return keeps its number. Goods that came back and have
+        since been sold on again cannot be taken off a return; the bill that sold them has to be dealt with first.
+      </p>
     </div>
   );
 }

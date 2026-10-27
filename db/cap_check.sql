@@ -42,6 +42,22 @@ select
   s.days_left,
   case when s.read_only then 'READ-ONLY — cannot write bills' else 'can write' end as writing,
 
+  -- Is the client being TOLD anything? A cap with no notice produces a support
+  -- call, not a payment (db/63). This is the half nobody can see from the
+  -- vendor's side without asking for it.
+  coalesce(o.account_notice, '(nothing — the client is not being told why)') as account_notice,
+
+  -- Can the client simply undo the cap? Until db/64 is run, the owner's update
+  -- policy on orgs covers the licence columns, so one request puts them back
+  -- on Full.
+  case when to_regclass('public.orgs') is not null
+             and exists (select 1 from pg_trigger t
+                          where t.tgrelid = 'public.orgs'::regclass
+                            and t.tgname = 't_orgs_licence_locked'
+                            and not t.tgisinternal)
+       then 'locked — only the vendor can change the licence'
+       else 'NOT LOCKED — the client can set themselves back to Full. Run db/64.' end as cap_holds,
+
   -- what the effective plan unlocks, and what it does not
   array_to_string(plan_features(
     case when o.plan_full_until is not null and o.plan_full_until >= current_date

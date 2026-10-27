@@ -16,6 +16,12 @@
 --   4. locks the licence columns so the client cannot lift his own cap
 --   5. sets the notice and the plan, and prints what the client now has
 --
+-- The plan below is STARTER: billing, receipts, customers, items, stock on
+-- hand, reports, setup and attendance. Everything else goes, purchases
+-- included — so from the moment it runs the client cannot enter a supplier
+-- bill, and his stock figures only fall. Change v_plan to 'growth' if that is
+-- not what is wanted.
+--
 -- The Supabase editor runs the whole box as ONE transaction: if any line
 -- fails, nothing at all is applied. So either it all lands or nothing does —
 -- there is no half-capped state to untangle.
@@ -115,7 +121,7 @@ do $$
 declare
   -- ======== SET THIS: your own words and your own phone number ========
   v_notice text := 'Account on hold — ₹2,60,000 outstanding. Call 98xxx xxxxx to restore.';
-  v_plan   text := 'growth';          -- 'growth' or 'starter'
+  v_plan   text := 'starter';         -- 'starter' or 'growth'
   -- ====================================================================
   v_org uuid; v_name text; n int; v_trial date;
 begin

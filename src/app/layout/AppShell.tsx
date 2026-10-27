@@ -216,6 +216,17 @@ export function LicenceBar({ canOpenSetup }: { canOpenSetup: boolean }) {
     }
   }
 
+  /*
+    The supplier's message about the account (db/63) outranks all of it, and is
+    shown whatever the licence is doing. Everything above is the software
+    telling the shop about a date; this is a person telling them about money,
+    and it stays on every screen until it is cleared.
+  */
+  if (s.account_notice) {
+    text = s.account_notice;
+    tone = 'red';
+  }
+
   if (!text) return null;
   return (
     <div role={tone === 'red' ? 'alert' : 'status'} className={barClass(tone)}>

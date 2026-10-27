@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useMe, usePermissions } from '@/features/auth/hooks';
+import { useLicense, useMe, usePermissions } from '@/features/auth/hooks';
+import { featuresOutsidePlan } from '@/lib/permissions';
 import { dateDMY, dateTimeDMY, int, money, toISODate } from '@/lib/format';
 import type { ModuleKey } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,8 @@ export function DashboardPage() {
           <Field label="Date" htmlFor="db-date"><Input id="db-date" type="date" className="h-8 w-40" value={date} max={toISODate()} onChange={(e) => setDate(e.target.value || toISODate())} /></Field>
         }
       />
+
+      <AccountNotice />
 
       {summary.error && <p role="alert" className="text-sm text-destructive">Could not load the summary: {summary.error.message}</p>}
 
@@ -128,6 +131,38 @@ export function DashboardPage() {
             )}
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The supplier's message about the account (db/63), where the shop cannot miss
+ * it: the first thing on the first screen, every morning, until it is cleared.
+ *
+ * The thin bar across the top of every screen carries the same words, but a bar
+ * is read once and then stops being seen. This says it again, with the count of
+ * what has actually closed, because "twelve screens are shut" is the part that
+ * gets a bill paid.
+ */
+function AccountNotice() {
+  const perms = usePermissions();
+  const license = useLicense();
+  if (!perms.accountNotice) return null;
+  const shut = license.data ? featuresOutsidePlan(license.data.paid_plan) : [];
+  return (
+    <div role="alert" className="rounded-md border-2 border-destructive/50 bg-destructive/5 p-4">
+      <div className="flex items-start gap-3">
+        <Lock className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden />
+        <div className="space-y-1">
+          <p className="text-sm font-semibold">{perms.accountNotice}</p>
+          {shut.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {shut.length} {shut.length === 1 ? 'feature is' : 'features are'} closed on this licence: {shut.join(', ')}.
+              Nothing entered is lost — they open again as soon as the account is settled.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

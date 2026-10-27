@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, ArrowRight, Boxes, Factory, FileText, IndianRupee, Landmark, MessageSquare, Truck, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Boxes, Factory, FileText, IndianRupee, Landmark, Lock, MessageSquare, Truck, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -144,14 +144,36 @@ function Tile({ perms, module, to, icon: Icon, label, value, sub, tone }: {
   tone?: 'warn' | 'bad';
 }) {
   const allowed = perms.canView(module);
+  /*
+    Locked by the LICENCE, not by the role. The figure behind it is blurred
+    rather than removed: the shop can see that the screen exists and that a
+    number lives there, which is the whole point of showing it at all. The
+    number itself is not readable, and the database would not have returned it
+    anyway — a capped module reads as nothing (db/21).
+  */
+  const locked = perms.planLockFor(module);
+  const roleOnly = !allowed && !locked;
   const body = (
-    <Card className={cn('h-full transition-colors', allowed && 'hover:border-primary/60', tone === 'warn' && 'border-amber-300 bg-amber-50/40', tone === 'bad' && 'border-red-300 bg-red-50/40')}>
+    <Card className={cn('h-full transition-colors', allowed && 'hover:border-primary/60', tone === 'warn' && 'border-amber-300 bg-amber-50/40', tone === 'bad' && 'border-red-300 bg-red-50/40', locked && 'relative overflow-hidden border-dashed bg-muted/30')}>
       <CardContent className="p-4">
-        <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground"><span>{label}</span><Icon className="h-4 w-4" /></div>
-        <div className={cn('mt-1 text-2xl font-semibold tabular-nums', tone === 'bad' && 'text-destructive')}>{value ?? <span className="text-muted-foreground">…</span>}</div>
-        <div className="text-xs text-muted-foreground">{sub}</div>
+        <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground">
+          <span>{label}</span>
+          {locked ? <Lock className="h-4 w-4" aria-hidden /> : <Icon className="h-4 w-4" />}
+        </div>
+        <div className={cn('mt-1 text-2xl font-semibold tabular-nums', tone === 'bad' && !locked && 'text-destructive', locked && 'select-none blur-sm')} aria-hidden={locked ? true : undefined}>
+          {locked ? '0000' : value ?? <span className="text-muted-foreground">…</span>}
+        </div>
+        <div className={cn('text-xs text-muted-foreground', locked && 'select-none blur-[2px]')} aria-hidden={locked ? true : undefined}>{sub}</div>
+        {locked && (
+          <div className="absolute inset-x-0 bottom-0 bg-background/80 px-4 py-1 text-center text-[11px] font-medium text-muted-foreground backdrop-blur-sm">
+            Not in this licence
+          </div>
+        )}
       </CardContent>
     </Card>
   );
-  return allowed ? <Link to={to} className="block">{body}</Link> : body;
+  // A locked tile still opens: the screen behind it says what the feature is,
+  // what it costs and whatever the supplier has put on the account.
+  if (roleOnly) return body;
+  return <Link to={to} className="block">{body}</Link>;
 }

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, CloudOff, LogOut, Send, Smartphone } from 'lucide-react';
+import { AlertTriangle, CloudOff, Lock, LogOut, Send, Smartphone } from 'lucide-react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { NAV } from '@/app/nav';
 import { DocumentSearch } from '@/app/layout/DocumentSearch';
@@ -32,9 +32,20 @@ export function AppShell() {
     onError: (err) => toastError(err, 'Could not sign out'),
   });
 
+  /*
+    Two different reasons an entry is not usable, drawn two different ways.
+
+    The ROLE is access control: a cashier has no business seeing Payments, so
+    it stays out of the menu. The LICENCE PLAN is a bill: the shop should see
+    exactly what it is not getting, with a padlock on it, or it has no idea
+    what the money would buy. Hiding those was the kinder choice while every
+    client was on Full; it is the wrong one the moment a plan is capped.
+  */
   const groups = NAV.map((g) => ({
     ...g,
-    items: g.items.filter((i) => perms.canView(i.module) && (!i.feature || perms.has(i.feature))),
+    items: g.items
+      .filter((i) => perms.roleCanView(i.module))
+      .map((i) => ({ ...i, locked: perms.planLockFor(i.module, i.feature) })),
   })).filter((g) => g.items.length > 0);
 
   return (
@@ -56,15 +67,18 @@ export function AppShell() {
                   key={item.to}
                   to={item.to}
                   end={item.to === '/'}
+                  title={item.locked ? `${item.label} is not in this licence — tap to see what it includes` : undefined}
                   className={({ isActive }) =>
                     cn(
                       'mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground/80 hover:bg-accent hover:text-accent-foreground',
                       isActive && 'bg-primary/10 font-medium text-primary',
+                      item.locked && 'text-muted-foreground/60',
                     )
                   }
                 >
-                  <item.icon className="h-4 w-4" aria-hidden />
-                  {item.label}
+                  <item.icon className={cn('h-4 w-4', item.locked && 'opacity-50')} aria-hidden />
+                  <span className={cn('flex-1 truncate', item.locked && 'blur-[0.4px]')}>{item.label}</span>
+                  {item.locked && <Lock className="h-3 w-3 shrink-0 opacity-70" aria-label="not in this licence" />}
                 </NavLink>
               ))}
             </div>

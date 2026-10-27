@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useMemo } from 'react';
 import { getLicenseStatus, type LicenseStatus } from '@/features/license/api';
 import { moduleFeature, planLabel, type FeatureKey, type ModuleKey, type PlanKey } from '@/lib/permissions';
+import { isLocked, whyNotUsable } from './locked';
 import { getMe, getRolePermissions, type Me } from './api';
 
 export interface SessionState {
@@ -58,6 +59,19 @@ export interface Permissions {
   canDelete: (module: ModuleKey) => boolean;
   /** Is this feature part of the org's licence plan (db/21_plans.sql)? */
   has: (feature: FeatureKey) => boolean;
+  /**
+   * The caller's ROLE alone, ignoring the licence plan.
+   *
+   * canView() folds the two together, which is right for deciding whether a
+   * screen may be opened and wrong for deciding what to draw: a module the
+   * shop has not paid for should be shown locked, so they can see what they
+   * are missing, while a module this person's role may not see should stay
+   * out of sight entirely. Those are different facts and need asking
+   * separately.
+   */
+  roleCanView: (module: ModuleKey) => boolean;
+  /** The feature the plan is withholding here, or null if the plan allows it. */
+  planLockFor: (module: ModuleKey, feature?: FeatureKey) => FeatureKey | null;
   plan: PlanKey;
   planName: string;
   /** The licence has lapsed: everything can be viewed and exported, nothing created (T11.2). */
@@ -102,6 +116,15 @@ export function usePermissions(): Permissions {
       canEdit: (m) => !readOnly && has(moduleFeature(m)) && (isOwner || Boolean(find(m)?.can_edit)),
       canDelete: (m) => !readOnly && has(moduleFeature(m)) && (isOwner || Boolean(find(m)?.can_delete)),
       has,
+      roleCanView: (m) => isOwner || Boolean(find(m)?.can_view),
+      planLockFor: (m, f) => {
+        const why = whyNotUsable(m, {
+          roleCanView: isOwner || Boolean(find(m)?.can_view),
+          planFeatures: features,
+          ...(f ? { feature: f } : {}),
+        });
+        return isLocked(why) ? (f ?? moduleFeature(m)) : null;
+      },
       plan,
       planName: planLabel(plan),
       readOnly,

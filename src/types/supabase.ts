@@ -3283,6 +3283,7 @@ export type Database = {
       }
       orgs: {
         Row: {
+          account_notice: string | null
           address: string | null
           app_url: string | null
           bank_details: string | null
@@ -3312,6 +3313,7 @@ export type Database = {
           trial_days: number
         }
         Insert: {
+          account_notice?: string | null
           address?: string | null
           app_url?: string | null
           bank_details?: string | null
@@ -3341,6 +3343,7 @@ export type Database = {
           trial_days?: number
         }
         Update: {
+          account_notice?: string | null
           address?: string | null
           app_url?: string | null
           bank_details?: string | null
@@ -4519,19 +4522,19 @@ export type Database = {
         Row: {
           amount: number
           id: string
-          invoice_id: string
+          invoice_id: string | null
           receipt_id: string
         }
         Insert: {
           amount: number
           id?: string
-          invoice_id: string
+          invoice_id?: string | null
           receipt_id: string
         }
         Update: {
           amount?: number
           id?: string
-          invoice_id?: string
+          invoice_id?: string | null
           receipt_id?: string
         }
         Relationships: [
@@ -5904,6 +5907,7 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          address: string | null
           id: string
           is_active: boolean
           mobile1: string | null
@@ -5913,6 +5917,7 @@ export type Database = {
           town: string | null
         }
         Insert: {
+          address?: string | null
           id?: string
           is_active?: boolean
           mobile1?: string | null
@@ -5922,6 +5927,7 @@ export type Database = {
           town?: string | null
         }
         Update: {
+          address?: string | null
           id?: string
           is_active?: boolean
           mobile1?: string | null
@@ -6977,6 +6983,7 @@ export type Database = {
           mobile3: string | null
           name: string | null
           opening_balance: number | null
+          opening_balance_remaining: number | null
           org_id: string | null
           outstanding: number | null
           payment_promise_note: string | null
@@ -6989,7 +6996,6 @@ export type Database = {
           sales_exec_name: string | null
           town: string | null
           whatsapp_opt_in: boolean | null
-          opening_balance_remaining: number | null
         }
         Relationships: [
           {
@@ -8795,12 +8801,12 @@ export type Database = {
           other_charges: number | null
           paid_amount: number | null
           subtotal: number | null
-          supplier_id: string | null
-          supplier_name: string | null
-          total: number | null
-          supplier_town: string | null
-          supplier_mobile: string | null
           supplier_address: string | null
+          supplier_id: string | null
+          supplier_mobile: string | null
+          supplier_name: string | null
+          supplier_town: string | null
+          total: number | null
         }
         Relationships: [
           {
@@ -11312,6 +11318,10 @@ export type Database = {
         Args: { p_body: string; p_customer: string; p_media_url?: string }
         Returns: string
       }
+      set_account_notice: {
+        Args: { p_notice?: string; p_org: string }
+        Returns: string
+      }
       set_invoice_status: {
         Args: {
           p_invoice: string
@@ -11464,6 +11474,10 @@ export type Database = {
       }
       unpost_purchase_stock: {
         Args: { p_on?: string; p_purchase: string }
+        Returns: number
+      }
+      unpost_return_stock: {
+        Args: { p_on?: string; p_return: string }
         Returns: number
       }
       update_batch_actuals: {

@@ -62,6 +62,8 @@ export interface Permissions {
   planName: string;
   /** The licence has lapsed: everything can be viewed and exported, nothing created (T11.2). */
   readOnly: boolean;
+  /** The vendor's message about the account — why a screen is locked, and what to do (db/63). */
+  accountNotice: string | null;
   /** True while the role's rows are still loading; callers should not show or hide on it. */
   loading: boolean;
 }
@@ -84,6 +86,7 @@ export function usePermissions(): Permissions {
   });
   const readOnly = license.data?.read_only ?? false;
   const plan = (license.data?.plan ?? 'full') as PlanKey;
+  const accountNotice = license.data?.account_notice ?? null;
   // Until the licence answers, assume open rather than flashing "locked" on every screen —
   // the database refuses a locked feature either way.
   const features = license.data?.features ?? null;
@@ -102,9 +105,10 @@ export function usePermissions(): Permissions {
       plan,
       planName: planLabel(plan),
       readOnly,
+      accountNotice,
       loading: me.isLoading || (!isOwner && perms.isLoading),
     };
-  }, [role, perms.data, perms.isLoading, me.isLoading, readOnly, plan, features]);
+  }, [role, perms.data, perms.isLoading, me.isLoading, readOnly, plan, features, accountNotice]);
 }
 
 export type { Me };

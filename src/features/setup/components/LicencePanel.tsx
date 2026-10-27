@@ -119,6 +119,16 @@ export function LicencePanel({ compact }: { compact?: boolean }) {
         </p>
       </div>
 
+      {/*
+        The vendor's message about the account (db/63), above everything else:
+        on this screen it is the thing the owner came to find out.
+      */}
+      {s?.account_notice && (
+        <p className="max-w-3xl rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm font-medium">
+          {s.account_notice}
+        </p>
+      )}
+
       {license.isLoading ? (
         <Spinner />
       ) : license.error ? (

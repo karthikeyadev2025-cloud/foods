@@ -27,6 +27,11 @@ export interface LicenseStatus {
   plan_full_until: string | null;
   /** Days left including today, null when none is running. */
   plan_trial_days_left: number | null;
+  /**
+   * The vendor's message to this client — what is outstanding and who to call
+   * (db/63). Null when there is nothing to say. Shown wherever the cap bites.
+   */
+  account_notice: string | null;
   features: FeatureKey[];
   catalogue: { feature: FeatureKey; label: string; plan: PlanKey; detail: string }[];
 }

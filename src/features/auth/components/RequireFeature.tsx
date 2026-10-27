@@ -24,6 +24,17 @@ export function FeatureLocked({ feature }: { feature: FeatureKey }) {
         You are on the <strong>{perms.planName}</strong> plan. This is included in{' '}
         <strong>{planLabel(info?.plan)}</strong>.
       </p>
+      {/*
+        Why it is locked, in the vendor's own words (db/63). Without it the
+        shopkeeper who had this screen yesterday concludes the software is
+        broken and telephones, rather than concluding anything about an
+        account. Shown above the reassurance, because it is the actionable half.
+      */}
+      {perms.accountNotice && (
+        <p className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm font-medium">
+          {perms.accountNotice}
+        </p>
+      )}
       <p className="mt-2 text-sm text-muted-foreground">
         Nothing is lost — anything already entered stays, and it appears again the moment the new key is entered.
       </p>

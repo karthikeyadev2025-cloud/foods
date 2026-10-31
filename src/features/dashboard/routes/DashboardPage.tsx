@@ -156,6 +156,12 @@ function AccountNotice() {
         <Lock className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden />
         <div className="space-y-1">
           <p className="text-sm font-semibold">{perms.accountNotice}</p>
+          {perms.readOnly && (
+            <p className="text-sm font-medium text-destructive">
+              The app is read-only until then: everything can be read, printed and exported, but no new bill, receipt
+              or entry can be saved.
+            </p>
+          )}
           {shut.length > 0 && (
             <p className="text-xs text-muted-foreground">
               {shut.length} {shut.length === 1 ? 'feature is' : 'features are'} closed on this licence: {shut.join(', ')}.

@@ -223,7 +223,13 @@ export function LicenceBar({ canOpenSetup }: { canOpenSetup: boolean }) {
     and it stays on every screen until it is cleared.
   */
   if (s.account_notice) {
-    text = s.account_notice;
+    // Read-only is not something to leave to inference. If the shop cannot
+    // write a bill, the bar says so AND why — otherwise the screens look
+    // normal, the till keeps being used, and the first anyone knows is a save
+    // that fails in front of a customer.
+    text = s.read_only
+      ? `${s.account_notice} Until then the app is read-only: everything can be read, printed and exported, but no new bill, receipt or entry can be saved.`
+      : s.account_notice;
     tone = 'red';
   }
 

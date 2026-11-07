@@ -1,6 +1,7 @@
 import { createClient, type PostgrestError } from '@supabase/supabase-js';
 import { getConnection } from '@/lib/config';
 import { enqueueOutbox, isNetworkError, isOnline, OfflineQueuedError, outboxItems, removeOutboxItem, updateOutboxItem } from '@/lib/offline';
+import { assertWritable } from '@/lib/readonly';
 import type { Database } from '@/types/supabase';
 
 type Fns = Database['public']['Functions'];
@@ -68,6 +69,9 @@ export async function expectOk(query: PromiseLike<OkResult>): Promise<void> {
  * which toastError shows as "saved to the outbox". Business errors throw as usual.
  */
 export async function queuedRpc<N extends keyof Fns & string>(name: N, args: Fns[N]['Args'], label: string): Promise<Fns[N]['Returns']> {
+  // A lapsed licence must not reach the outbox either: queued, it would look
+  // to the shop like a bill that will go through once the connection is back.
+  assertWritable();
   const params = args as Record<string, unknown>;
   if (!isOnline()) {
     await enqueueOutbox({ fn: name, args: params, label });
@@ -136,7 +140,31 @@ export const isSupabaseConfigured = connection !== null;
  * Built once at module load: when the connection changes, the app reloads rather than
  * swapping the client under a live cache.
  */
-export const supabase = createClient<Database>(
+/**
+ * Every `supabase.from(x).insert/update/delete/upsert` in the app, gated in one
+ * place. The masters — items, customers, suppliers, rates — do not go through
+ * the document tables the database guards, so without this a frozen shop could
+ * still add products all day.
+ */
+function freezeWrites<T extends { from: (t: never) => unknown }>(client: T): T {
+  const original = client.from.bind(client) as (t: never) => Record<string, unknown>;
+  const guarded = (table: never) => {
+    const builder = original(table);
+    for (const method of ['insert', 'update', 'delete', 'upsert'] as const) {
+      const real = builder[method];
+      if (typeof real !== 'function') continue;
+      builder[method] = (...args: unknown[]) => {
+        assertWritable();
+        return (real as (...a: unknown[]) => unknown).apply(builder, args);
+      };
+    }
+    return builder;
+  };
+  (client as { from: unknown }).from = guarded;
+  return client;
+}
+
+export const supabase = freezeWrites(createClient<Database>(
   connection?.url ?? 'http://localhost:54321',
   connection?.anonKey ?? 'missing-anon-key',
   {
@@ -146,4 +174,4 @@ export const supabase = createClient<Database>(
       detectSessionInUrl: true,
     },
   },
-);
+));

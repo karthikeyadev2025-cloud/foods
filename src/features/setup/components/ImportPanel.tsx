@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CannotEdit } from '@/components/CannotEdit';
 import { usePermissions } from '@/features/auth/hooks';
 import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
@@ -275,7 +276,7 @@ export function ImportPanel({ compact }: { compact?: boolean }) {
               </div>
             )}
             {loadingFile && <Spinner label="Reading file…" />}
-            {!canEdit && <p className="text-sm text-muted-foreground">Your role cannot import data.</p>}
+            {!canEdit && <CannotEdit verb="import data" />}
           </div>
         </div>
       )}

@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CannotEdit } from '@/components/CannotEdit';
 import { useMe, usePermissions } from '@/features/auth/hooks';
 import { type CustomerRow } from '@/features/customers/api';
 import { getInvoiceLines, listOpenInvoices } from '@/features/invoices/api';
@@ -220,7 +221,7 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
     onError: (err) => toastError(err, editing ? 'Could not correct the return' : 'Could not save the return'),
   });
 
-  if (!perms.canEdit('returns')) return <p className="text-sm text-muted-foreground">Your role cannot record returns.</p>;
+  if (!perms.canEdit('returns')) return <CannotEdit verb="record returns" />;
   const info = RETURN_KINDS.find((k) => k.value === kind);
 
   return (
@@ -343,7 +344,7 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
 
 export function ReturnNewPage() {
   const perms = usePermissions();
-  if (!perms.canEdit('returns')) return <p className="text-sm text-muted-foreground">Your role cannot record returns.</p>;
+  if (!perms.canEdit('returns')) return <CannotEdit verb="record returns" />;
   return (
     <div className="space-y-4">
       <PageHeader title="New return" actions={<Button asChild variant="ghost" size="sm"><Link to="/returns">← Returns</Link></Button>} />
@@ -363,7 +364,7 @@ export function ReturnEditPage() {
   const ret = useQuery({ queryKey: ['returns', 'one', id], queryFn: () => getReturn(id ?? ''), enabled: Boolean(id) });
   const lines = useQuery({ queryKey: ['returns', 'lines', id], queryFn: () => getReturnLines(id ?? ''), enabled: Boolean(id) });
 
-  if (!perms.canEdit('returns')) return <p className="text-sm text-muted-foreground">Your role cannot change returns.</p>;
+  if (!perms.canEdit('returns')) return <CannotEdit verb="change returns" />;
   if (ret.isLoading || lines.isLoading) return <Spinner label="Loading return…" />;
   if (!ret.data || !lines.data) return <p role="alert" className="text-sm text-destructive">Return not found.</p>;
 

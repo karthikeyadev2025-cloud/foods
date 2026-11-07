@@ -1,5 +1,6 @@
 import { deviceInfo } from '@/lib/desktop';
 import type { FeatureKey, PlanKey } from '@/lib/permissions';
+import { setReadOnly } from '@/lib/readonly';
 import { expectRows, supabase } from '@/lib/supabase';
 import type { Database } from '@/types/supabase';
 
@@ -42,7 +43,12 @@ export async function getLicenseStatus(): Promise<LicenseStatus> {
   const d = await deviceInfo();
   const { data, error } = await supabase.rpc('license_status', { p_device_id: d.deviceId, p_app_version: d.version });
   if (error) throw error;
-  return data as unknown as LicenseStatus;
+  const status = data as unknown as LicenseStatus;
+  // The one place the answer arrives, so the one place the freeze is set. The
+  // app asks on start-up and every half hour, so a lock — or a payment — takes
+  // hold within the half hour with nobody signing out (src/lib/readonly.ts).
+  setReadOnly(Boolean(status.read_only));
+  return status;
 }
 
 export async function activateLicense(key: string): Promise<LicenseStatus> {

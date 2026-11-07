@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CannotEdit } from '@/components/CannotEdit';
 import { usePermissions } from '@/features/auth/hooks';
 import { type CustomerRow } from '@/features/customers/api';
 import { listOpenInvoices } from '@/features/invoices/api';
@@ -190,7 +191,7 @@ export function ReceiptNewPage() {
     onError: (err) => toastError(err, 'Could not save the receipt'),
   });
 
-  if (!perms.canEdit('receipts')) return <p className="text-sm text-muted-foreground">Your role cannot record receipts.</p>;
+  if (!perms.canEdit('receipts')) return <CannotEdit verb="record receipts" />;
 
   return (
     <div className="space-y-4">

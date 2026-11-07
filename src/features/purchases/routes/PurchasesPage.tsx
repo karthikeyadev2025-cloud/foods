@@ -10,6 +10,7 @@ import { Spinner } from '@/components/Spinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CannotEdit } from '@/components/CannotEdit';
 import { usePermissions } from '@/features/auth/hooks';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toastError } from '@/hooks/use-toast';
@@ -185,7 +186,7 @@ function SuppliersPanel({ canEdit, canDelete }: { canEdit: boolean; canDelete: b
 
 export function PurchaseNewPage() {
   const perms = usePermissions();
-  if (!perms.canEdit('purchases')) return <p className="text-sm text-muted-foreground">Your role cannot enter purchases.</p>;
+  if (!perms.canEdit('purchases')) return <CannotEdit verb="enter purchases" />;
   return (
     <div className="space-y-4">
       <PageHeader title="New purchase" actions={<Button asChild variant="ghost" size="sm"><Link to="/purchases">← Purchases</Link></Button>} />
@@ -279,7 +280,7 @@ export function PurchaseEditPage() {
   const purchase = useQuery({ queryKey: ['purchases', 'one', id], queryFn: () => getPurchase(id ?? ''), enabled: Boolean(id) });
   const lines = useQuery({ queryKey: ['purchases', 'lines', id], queryFn: () => getPurchaseLines(id ?? ''), enabled: Boolean(id) });
 
-  if (!perms.canEdit('purchases')) return <p className="text-sm text-muted-foreground">Your role cannot change purchases.</p>;
+  if (!perms.canEdit('purchases')) return <CannotEdit verb="change purchases" />;
   if (purchase.isLoading || lines.isLoading) return <Spinner label="Loading purchase…" />;
   if (!purchase.data || !lines.data) return <p role="alert" className="text-sm text-destructive">Purchase not found.</p>;
 

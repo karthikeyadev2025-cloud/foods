@@ -945,6 +945,153 @@ export type Database = {
           },
         ]
       }
+      credit_ledger: {
+        Row: {
+          created_at: string
+          delta: number
+          id: number
+          note: string | null
+          org_id: string
+          reason: string
+          ref_id: string | null
+          ref_table: string | null
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: number
+          note?: string | null
+          org_id: string
+          reason: string
+          ref_id?: string | null
+          ref_table?: string | null
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: number
+          note?: string | null
+          org_id?: string
+          reason?: string
+          ref_id?: string | null
+          ref_table?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_ledger_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      credit_payments_unmatched: {
+        Row: {
+          amount_paise: number
+          assigned_at: string | null
+          assigned_org: string | null
+          created_at: string
+          id: string
+          payload: Json | null
+          payment_id: string
+          provider: string
+        }
+        Insert: {
+          amount_paise: number
+          assigned_at?: string | null
+          assigned_org?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          payment_id: string
+          provider?: string
+        }
+        Update: {
+          amount_paise?: number
+          assigned_at?: string | null
+          assigned_org?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          payment_id?: string
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_payments_unmatched_assigned_org_fkey"
+            columns: ["assigned_org"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_payments_unmatched_assigned_org_fkey"
+            columns: ["assigned_org"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      credit_topups: {
+        Row: {
+          amount_paise: number
+          created_at: string
+          credits: number
+          id: string
+          note: string | null
+          order_id: string | null
+          org_id: string
+          payment_id: string | null
+          provider: string
+          rate_paise: number
+          status: string
+        }
+        Insert: {
+          amount_paise: number
+          created_at?: string
+          credits: number
+          id?: string
+          note?: string | null
+          order_id?: string | null
+          org_id: string
+          payment_id?: string | null
+          provider?: string
+          rate_paise: number
+          status?: string
+        }
+        Update: {
+          amount_paise?: number
+          created_at?: string
+          credits?: number
+          id?: string
+          note?: string | null
+          order_id?: string | null
+          org_id?: string
+          payment_id?: string | null
+          provider?: string
+          rate_paise?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_topups_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_topups_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -10206,6 +10353,18 @@ export type Database = {
         }
         Returns: Json
       }
+      add_credits: {
+        Args: {
+          p_amount_paise?: number
+          p_credits: number
+          p_note?: string
+          p_order_id?: string
+          p_org: string
+          p_payment_id?: string
+          p_provider?: string
+        }
+        Returns: Json
+      }
       apply_discount_schemes: { Args: { p_invoice: string }; Returns: Json }
       assign_price_list: {
         Args: { p_list: string; p_route?: string; p_town?: string }
@@ -10214,6 +10373,15 @@ export type Database = {
       assign_sales_exec: {
         Args: { p_customers?: string[]; p_route?: string; p_staff: string }
         Returns: number
+      }
+      assign_unmatched_payment: {
+        Args: {
+          p_org: string
+          p_payment_id: string
+          p_provider?: string
+          p_rate_paise?: number
+        }
+        Returns: Json
       }
       attendance_register: {
         Args: { p_from: string; p_staff?: string; p_to: string }
@@ -10496,6 +10664,7 @@ export type Database = {
       create_broadcast: { Args: { p: Json }; Returns: string }
       create_inbound_order: { Args: { p: Json }; Returns: string }
       create_trip: { Args: { p: Json }; Returns: string }
+      credit_balance: { Args: { p_org?: string }; Returns: number }
       customer_last_rates: {
         Args: { p_customer: string }
         Returns: {

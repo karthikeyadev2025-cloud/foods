@@ -148,8 +148,12 @@ begin
   perform set_config('request.jwt.claim.sub', '', true);
   select count(*) into n from message_log where org_id = v_org and status = 'queued';
   assert n >= 4, format('queued so far %s', n);
+  -- Sending spends a credit per message (db/70), so the shop needs a balance
+  -- before the sender will claim anything at all.
+  perform add_credits(v_org, 100, 9000, 'test_pay_1');
   select count(*) into q from claim_queued_messages(v_org, 2);
   assert q = 2, format('claim honours the limit: %s', q);
+  assert credit_balance(v_org) = 98, format('two claimed, two credits spent: %s', credit_balance(v_org));
   select id into v_id from message_log where org_id = v_org and status = 'queued' and attempts = 1 limit 1;
   update message_log set status = 'sent', provider_msg_id = 'wamid.1', sent_at = now() where id = v_id;
   assert mark_message_status('wamid.1', 'delivered'), 'known provider id';
@@ -232,7 +236,7 @@ begin
   exception when insufficient_privilege then null; end;
 
   reset role;
-  raise notice 'OK: messaging — masked settings, te/en templates, opt-out honoured, reminder ladder (firm beats gentle, no repeat in 7 days), invoice/receipt/order messages, new-stock broadcast to recent buyers, catalog to a town, sender cap + quiet hours + status webhook, inbound by mobile with STOP/START, matched lines, human convert';
+  raise notice 'OK: messaging — masked settings, te/en templates, opt-out honoured, reminder ladder (firm beats gentle, no repeat in 7 days), invoice/receipt/order messages, new-stock broadcast to recent buyers, catalog to a town, sender cap + quiet hours + status webhook, inbound by mobile with STOP/START, matched lines, human convert, one credit spent per message sent';
 end $$;
 
 rollback;

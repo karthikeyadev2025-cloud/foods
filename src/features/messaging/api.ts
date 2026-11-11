@@ -318,3 +318,43 @@ export async function createInboundOrder(input: { customer_id?: string; from?: s
   if (error) throw error;
   return data;
 }
+
+// ------------------------------------------------------------
+// Message credits (db/70)
+// ------------------------------------------------------------
+export type CreditRow = Tables['credit_ledger']['Row'];
+export type TopupRow = Tables['credit_topups']['Row'];
+
+/** What is left. The sum of the ledger — there is no separate number to drift. */
+export async function creditBalance(): Promise<number> {
+  const { data, error } = await supabase.rpc('credit_balance', {});
+  if (error) throw error;
+  return data ?? 0;
+}
+
+/**
+ * The ledger, newest first. Every credit bought and every credit spent, so
+ * "where did my credits go" is a question the shop can answer for itself
+ * instead of asking us.
+ */
+export async function listCreditLedger(q: PageQuery): Promise<Page<CreditRow>> {
+  const [from, to] = rangeFor(q.page, q.pageSize);
+  const { data, error, count } = await supabase
+    .from('credit_ledger')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(from, to);
+  if (error) throw error;
+  return { rows: data ?? [], total: count ?? 0, page: q.page, pageSize: q.pageSize };
+}
+
+/** Every top-up, so the shop can tie its credits back to what it paid. */
+export function listTopups(): Promise<TopupRow[]> {
+  return expectRows(supabase.from('credit_topups').select('*').order('created_at', { ascending: false }));
+}
+
+/** Everything the ledger is exported with. */
+export async function listAllCreditLedger(): Promise<CreditRow[]> {
+  return expectRows(supabase.from('credit_ledger').select('*').order('created_at', { ascending: false }).limit(10000));
+}

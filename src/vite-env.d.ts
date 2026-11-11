@@ -4,6 +4,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_SUPABASE_ANON_KEY: string;
   readonly VITE_NIKKI_API_URL: string;
+  /** Razorpay payment link for buying message credits; the Credits tab shows a button when it is set. */
+  readonly VITE_CREDITS_PAYMENT_URL: string;
 }
 
 interface ImportMeta {

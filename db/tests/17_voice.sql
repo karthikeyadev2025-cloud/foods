@@ -57,9 +57,14 @@ begin
 
   -- the sender: voice off → no calls claimed; on → claimed
   reset role; perform set_config('request.jwt.claim.sub', '', true);
+  -- Credits first (db/70), so 'voice off: nothing claimed' below proves the
+  -- voice switch is doing it and not an empty wallet.
+  perform add_credits(v_org, 100, 9000, 'test_voice_pay');
   select count(*) into n from claim_queued_messages(v_org, 50); assert n = 0, 'voice off: calls stay queued';
+  assert credit_balance(v_org) = 100, 'and nothing claimed costs nothing';
   update messaging_settings set voice_enabled = true where org_id = v_org;
   select count(*) into n from claim_queued_messages(v_org, 50); assert n = 2, 'voice on: both claimed';
+  assert credit_balance(v_org) = 98, format('two calls, two credits: %s', credit_balance(v_org));
   update message_log set status = 'sent', provider_msg_id = 'call-' || id::text, sent_at = now() where org_id = v_org;
   select id into v_msg from message_log where org_id = v_org and customer_id = v_cust;
 

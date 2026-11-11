@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { listInboundOrders } from '../api';
 import { BroadcastsPanel } from '../components/BroadcastsPanel';
 import { CatalogsPanel } from '../components/CatalogsPanel';
+import { CreditsPanel } from '../components/CreditsPanel';
 import { LogPanel } from '../components/LogPanel';
 import { NewStockPanel } from '../components/NewStockPanel';
 import { OrdersQueue } from '../components/OrdersQueue';
@@ -19,6 +20,7 @@ const TABS = [
   { key: 'catalogs', label: 'Catalogs' },
   { key: 'broadcasts', label: 'Broadcasts' },
   { key: 'log', label: 'Log' },
+  { key: 'credits', label: 'Credits' },
   { key: 'settings', label: 'Settings' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
@@ -48,6 +50,7 @@ export function MessagingPage() {
       {tab === 'catalogs' && <CatalogsPanel />}
       {tab === 'broadcasts' && <BroadcastsPanel />}
       {tab === 'log' && <LogPanel />}
+      {tab === 'credits' && <CreditsPanel />}
       {tab === 'settings' && <SettingsPanel />}
     </div>
   );

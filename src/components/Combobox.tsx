@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Input } from '@/components/ui/input';
 import { useDebounced } from '@/hooks/use-debounced';
 import { cn } from '@/lib/utils';
@@ -63,6 +64,23 @@ export function Combobox<T>({
   const [hi, setHi] = useState(0);
   const listId = useId();
   const wrap = useRef<HTMLDivElement>(null);
+  /*
+    Where to draw the list.
+
+    It used to be positioned `absolute` inside this wrapper, which put it
+    inside the line table — and every table in the app sits in a
+    `overflow-auto` scroller (components/ui/table.tsx). An absolutely
+    positioned child of a scroller is CLIPPED by it, so on the entry row at
+    the foot of a bill the list was cut off after a line or two, or vanished
+    entirely behind the table's edge. That is the "dropdown is hidden" the
+    shop reported, and no amount of z-index fixes it: the box is not behind
+    anything, it is being cut.
+
+    So it is drawn in a portal on <body>, positioned `fixed` against the
+    input's own rectangle, where nothing can clip it. It flips above the input
+    when there is no room below, and follows the input while scrolling.
+  */
+  const [box, setBox] = useState<{ top: number; left: number; width: number; above: boolean } | null>(null);
   const q = useDebounced(text, 150);
   const active = open && (eager || q.trim().length > 0);
 
@@ -82,11 +100,44 @@ export function Combobox<T>({
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (wrap.current?.contains(target)) return;
+      // The list is drawn on <body> now, so a click on an option is no longer
+      // "inside" this wrapper. Without this it would count as clicking away
+      // and close the list out from under the pick.
+      if (target instanceof Element && target.closest('[data-combobox-list]')) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
+
+  const place = useCallback(() => {
+    const input = wrap.current?.querySelector('input');
+    if (!input) return;
+    const r = input.getBoundingClientRect();
+    const below = window.innerHeight - r.bottom;
+    const above = below < 280 && r.top > below;
+    setBox({
+      top: above ? r.top : r.bottom,
+      left: r.left,
+      // Never narrower than the input, and wide enough for a product name.
+      width: Math.max(r.width, 320),
+      above,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open || !active) return;
+    place();
+    // `true` catches scrolling in the table's own scroller, not just the page.
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
+    return () => {
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
+    };
+  }, [open, active, place, options.length]);
 
   const pick = (t: T) => {
     onChange(t);
@@ -146,11 +197,19 @@ export function Combobox<T>({
         }}
         onKeyDown={onKey}
       />
-      {open && active && (
+      {open && active && box && createPortal(
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-40 mt-1 max-h-64 w-full min-w-[20rem] overflow-auto rounded-md border bg-popover p-1 text-sm shadow-md"
+          data-combobox-list
+          style={{
+            position: 'fixed',
+            top: box.above ? undefined : box.top + 4,
+            bottom: box.above ? window.innerHeight - box.top + 4 : undefined,
+            left: box.left,
+            width: box.width,
+          }}
+          className="z-[100] max-h-64 overflow-auto rounded-md border bg-popover p-1 text-sm shadow-lg"
         >
           {results.isLoading ? (
             <li className="px-2 py-1.5 text-muted-foreground">Searching…</li>
@@ -191,7 +250,8 @@ export function Combobox<T>({
               {text.trim() ? <span className="text-muted-foreground"> — “{text.trim()}”</span> : null}
             </li>
           )}
-        </ul>
+        </ul>,
+        document.body,
       )}
     </div>
   );

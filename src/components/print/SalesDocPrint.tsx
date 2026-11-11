@@ -38,6 +38,13 @@ export interface SalesDocPrintProps {
   lines: PrintLine[];
   /** Null on a challan: no money on the sheet. */
   totals: PrintTotals | null;
+  /**
+   * What the counter wrote on this one bill — "goods received in good
+   * condition", a delivery instruction, a note to the driver. Typed on the
+   * invoice and printed on it; the trade terms below are the org's and are a
+   * different thing.
+   */
+  message?: string | null;
   backTo?: string;
   backLabel?: string;
   /** Inside the designer: no toolbar, no page chrome. */
@@ -52,7 +59,7 @@ const PAPER: Record<string, PaperSpec> = {
   thermal_58: { width: '48mm', minHeight: '0', page: '58mm auto', pad: 0, font: '8.5px', thermal: true },
 };
 
-export function SalesDocPrint({ title, org, template, party, meta, lines, totals, backTo, backLabel, preview }: SalesDocPrintProps) {
+export function SalesDocPrint({ title, org, template, party, meta, lines, totals, message, backTo, backLabel, preview }: SalesDocPrintProps) {
   const paper = PAPER[template?.paper ?? 'A4'] ?? PAPER.A4!;
   const show = (k: string) => showField(template, k);
   const money = totals !== null;
@@ -176,6 +183,13 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
               Net Amount : <span className="ml-4 tabular-nums">{amount(totals.total)}</span>
             </div>
           </div>
+        </div>
+      )}
+
+      {message && message.trim() && (
+        <div className="mt-1 whitespace-pre-line border border-black p-1">
+          <span className="font-bold">Note : </span>
+          {message.trim()}
         </div>
       )}
 

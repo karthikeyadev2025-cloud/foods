@@ -502,10 +502,16 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
                 <SetupNeeded show={locations.isSuccess && liveLocations.length === 0} what="godowns" tab="locations" where="Locations" />
               </Field>
             )}
-            <Field label="Transport name" htmlFor="inv-transport" error={e.transport_name?.message}>
+            {/*
+              Driver and vehicle, not transporter and consignment note: this
+              shop sends its own vans out, and that is what the counter writes
+              down. The columns stay transport_name and lr_no — renaming them
+              would rewrite history for no gain — so only the words change.
+            */}
+            <Field label="Driver name" htmlFor="inv-transport" error={e.transport_name?.message}>
               <Input id="inv-transport" disabled={!canEdit} {...register('transport_name')} />
             </Field>
-            <Field label="L.R. no." htmlFor="inv-lr" error={e.lr_no?.message}>
+            <Field label="Vehicle number" htmlFor="inv-lr" error={e.lr_no?.message}>
               <Input id="inv-lr" disabled={!canEdit} {...register('lr_no')} />
             </Field>
             <Field label="L.R. date" htmlFor="inv-lrdate" error={e.lr_date?.message}>
@@ -611,11 +617,18 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
                     <TableRow className="bg-muted/30">
                       <TableCell className="num text-muted-foreground">{lines.length + 1}</TableCell>
                       <TableCell>
+                        {/*
+                          The picker searches everything the shop stocks, not
+                          only what it makes. It sells sugar, jaggery, rice
+                          flour and covers over the counter like anything
+                          else, and a bill that could not name them was being
+                          written on paper instead.
+                        */}
                         <div ref={codeWrapRef}>
                           <Combobox<ItemRow>
                             value={entryItem}
                             onChange={setEntryItem}
-                            search={(q) => searchItems(q, { finishedOnly: true })}
+                            search={(q) => searchItems(q)}
                             queryKey="items"
                             getKey={(it) => it.id ?? ''}
                             getLabel={(it) => it.item_code ?? ''}
@@ -712,7 +725,9 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
         <div className="grid gap-4 md:grid-cols-[1fr_20rem]">
           <Card>
             <CardContent className="grid grid-cols-2 gap-3 pt-4">
-              <Field label="Notes" htmlFor="inv-notes" className="col-span-2">
+              {/* Printed on the bill (SalesDocPrint), so it is a message to
+                  the customer, not a private note. */}
+              <Field label="Message on the bill" htmlFor="inv-notes" className="col-span-2">
                 <Input id="inv-notes" disabled={!canEdit} {...register('notes')} />
               </Field>
               <Field label="Discount (₹)" htmlFor="inv-discount" error={e.discount?.message}>

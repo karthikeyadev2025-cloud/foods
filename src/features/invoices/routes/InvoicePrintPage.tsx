@@ -45,8 +45,8 @@ export function InvoicePrintPage() {
       meta={[
         { label: 'Invoice Date', value: dateDMY(inv.invoice_date), bold: true },
         { label: 'Invoice No.', value: inv.invoice_no ?? '', bold: true },
-        { label: 'Transport Name', value: inv.transport_name ?? '', transport: true },
-        { label: 'L.R No.', value: inv.lr_no ?? '', transport: true },
+        { label: 'Driver Name', value: inv.transport_name ?? '', transport: true },
+        { label: 'Vehicle No.', value: inv.lr_no ?? '', transport: true },
         { label: 'L.R Date', value: inv.lr_date ? dateDMY(inv.lr_date) : '', transport: true },
         { label: 'Freight', value: toNumber(inv.freight) ? amount(inv.freight) : '', transport: true },
       ]}
@@ -61,6 +61,7 @@ export function InvoicePrintPage() {
         amount: toNumber(l.amount),
       }))}
       totals={{ discount: toNumber(inv.discount), freight: toNumber(inv.freight), round_off: toNumber(inv.round_off), total: toNumber(inv.total) }}
+      message={inv.notes}
       backTo={`/invoices/${inv.id}`}
       backLabel="Back to invoice"
     />

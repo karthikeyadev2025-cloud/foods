@@ -11406,6 +11406,35 @@ export type Database = {
           times_bought: number
         }[]
       }
+      supplier_ledger: {
+        Args: { p_from?: string; p_supplier: string; p_to?: string }
+        Returns: {
+          balance: number
+          credit: number
+          debit: number
+          doc: string
+          doc_id: string
+          doc_no: string
+          entry_date: string
+          particulars: string
+        }[]
+      }
+      supplier_report: {
+        Args: { p_from: string; p_org: string; p_to: string }
+        Returns: {
+          bills: number
+          closing: number
+          last_bill: string
+          mobile: string
+          opening: number
+          payments: number
+          purchases: number
+          returns: number
+          supplier: string
+          supplier_id: string
+          town: string
+        }[]
+      }
       to_base_qty: {
         Args: { p_item: string; p_qty: number; p_uom: string }
         Returns: number
@@ -11503,6 +11532,43 @@ export type Database = {
       van_unload: {
         Args: { p_lines?: Json; p_to_location: string; p_trip: string }
         Returns: number
+      }
+      vehicle_key: { Args: { p_text: string }; Returns: string }
+      vehicle_report: {
+        Args: {
+          p_from: string
+          p_org: string
+          p_to: string
+          p_vehicle?: string
+        }
+        Returns: {
+          amount: number
+          boxes: number
+          customer: string
+          driver: string
+          invoice_date: string
+          invoice_id: string
+          invoice_no: string
+          route_name: string
+          status: string
+          town: string
+          vehicle: string
+          vehicle_key: string
+        }[]
+      }
+      vehicle_summary: {
+        Args: { p_from: string; p_org: string; p_to: string }
+        Returns: {
+          amount: number
+          boxes: number
+          customers: number
+          drivers: string
+          first_run: string
+          last_run: string
+          trips: number
+          vehicle: string
+          vehicle_key: string
+        }[]
       }
     }
     Enums: {

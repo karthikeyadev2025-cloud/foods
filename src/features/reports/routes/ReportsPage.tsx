@@ -21,6 +21,7 @@ import { amount, dateDMY, int, qty, toISODate, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
   collectionByMode, customerLedger, incentiveStatement, outstandingAgeing, receiptsRegister, routeCollection, routeProfitability, salesSummary,
+  supplierLedger, supplierReport, vehicleReport, vehicleSummary,
   type LedgerRow, type RegisterRow, type SalesGroup,
 } from '../api';
 
@@ -31,10 +32,12 @@ const TABS: { key: string; label: string; feature?: FeatureKey }[] = [
   { key: 'modes', label: 'Collection by mode' },
   { key: 'routes', label: 'Route-wise' },
   { key: 'sales', label: 'Sales' },
+  { key: 'vehicles', label: 'Vehicle-wise' },
+  { key: 'suppliers', label: 'Supplier-wise' },
   { key: 'profit', label: 'Route profit', feature: 'insights' },
   { key: 'incentives', label: 'Incentives', feature: 'insights' },
 ];
-export type ReportTab = 'register' | 'ledger' | 'ageing' | 'modes' | 'routes' | 'sales' | 'profit' | 'incentives';
+export type ReportTab = 'register' | 'ledger' | 'ageing' | 'modes' | 'routes' | 'sales' | 'vehicles' | 'suppliers' | 'profit' | 'incentives';
 
 /** First of the current month — the client's registers are monthly by habit. */
 function monthStart(): string {
@@ -70,6 +73,8 @@ export function ReportsPage({ tab = 'register' }: { tab?: ReportTab }) {
       {tab === 'modes' && <ModesReport />}
       {tab === 'routes' && <RoutesReport />}
       {tab === 'sales' && <SalesReport />}
+      {tab === 'vehicles' && <VehicleReport />}
+      {tab === 'suppliers' && <SupplierReport />}
       {tab === 'profit' && <RouteProfitReport />}
       {tab === 'incentives' && <IncentivesReport />}
     </div>
@@ -658,6 +663,176 @@ function IncentivesReport() {
         </Table>
       </Status>
       <p className="text-xs text-muted-foreground">Sales are the invoices stamped with the salesman (the customer's salesman, else whoever made the bill), less returns against them. Collection is what they collected; a bounced cheque comes back as a negative. Pay the amount through Payments → staff as usual.</p>
+    </div>
+  );
+}
+
+/**
+ * Vehicle-wise. One line per van for the period, and the bills behind any one
+ * of them when it is picked.
+ *
+ * The van's number is typed on the bill by hand, so three people spell it
+ * three ways; the database groups on its letters and digits alone (db/65
+ * vehicle_key), which is the only thing that will ever hold a typed field
+ * together. The spelling shown is the one most recently typed.
+ */
+function VehicleReport() {
+  const me = useMe();
+  const orgId = me.data?.org_id ?? '';
+  const [from, setFrom] = useState(monthStart());
+  const [to, setTo] = useState(toISODate());
+  const [vehicle, setVehicle] = useState('');
+
+  const summary = useQuery({ queryKey: ['reports', 'vehicles', orgId, from, to], queryFn: () => vehicleSummary(orgId, from, to), enabled: Boolean(orgId && from && to) });
+  const detail = useQuery({ queryKey: ['reports', 'vehicle', orgId, from, to, vehicle], queryFn: () => vehicleReport(orgId, from, to, vehicle), enabled: Boolean(orgId && from && to && vehicle) });
+  const rows = summary.data ?? [];
+  const lines = detail.data ?? [];
+
+  const onExport = async () => {
+    // Both sheets in one book: the summary to read, the bills to check it
+    // against. Exporting one without the other always means a second export.
+    const all = vehicle ? lines : await vehicleReport(orgId, from, to);
+    exportToExcel(
+      `vehicles-${from}-to-${to}`,
+      rows.map((r) => ({ Vehicle: r.vehicle ?? '', Drivers: r.drivers ?? '', Trips: toNumber(r.trips), Customers: toNumber(r.customers), Boxes: toNumber(r.boxes), Amount: toNumber(r.amount), From: dateDMY(r.first_run), To: dateDMY(r.last_run) })),
+      'Vehicles',
+      [{ name: 'Bills', rows: all.map((l) => ({ Vehicle: l.vehicle ?? '', Driver: l.driver ?? '', Date: dateDMY(l.invoice_date), 'Bill no.': l.invoice_no ?? '', Customer: l.customer ?? '', Town: l.town ?? '', Route: l.route_name ?? '', Boxes: toNumber(l.boxes), Amount: toNumber(l.amount), Status: l.status ?? '' })) }],
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="no-print flex flex-wrap items-end gap-2">
+        <Field label="From" htmlFor="vh-from"><Input id="vh-from" type="date" className="h-8 w-40" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
+        <Field label="To" htmlFor="vh-to"><Input id="vh-to" type="date" className="h-8 w-40" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
+        <Actions onExport={() => void onExport()} disabled={!rows.length} />
+      </div>
+      <PrintTitle title="Vehicle-wise" range={`${dateDMY(from)} to ${dateDMY(to)}`} />
+      <p className="text-xs text-muted-foreground">Grouped on the vehicle number typed on the bill, ignoring spaces and hyphens — AP16 TC 1234 and ap16tc1234 are one van. Cancelled bills are left out.</p>
+      <Status isLoading={summary.isLoading} error={summary.error} empty={!rows.length} emptyText="No bill in this period names a vehicle.">
+        <Table>
+          <TableHeader><TableRow><TableHead>Vehicle</TableHead><TableHead>Driver(s)</TableHead><TableHead className="text-right">Trips</TableHead><TableHead className="text-right">Customers</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">Value</TableHead><TableHead>Ran</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow key={r.vehicle_key ?? ''} className={cn('cursor-pointer', vehicle === r.vehicle_key && 'bg-primary/5')} onClick={() => setVehicle(vehicle === r.vehicle_key ? '' : (r.vehicle_key ?? ''))}>
+                <TableCell className="font-medium">{r.vehicle}</TableCell>
+                <TableCell className="text-muted-foreground">{r.drivers}</TableCell>
+                <TableCell className="num">{toNumber(r.trips)}</TableCell>
+                <TableCell className="num">{toNumber(r.customers)}</TableCell>
+                <TableCell className="num">{qty(r.boxes)}</TableCell>
+                <TableCell className="num font-medium">{amount(r.amount)}</TableCell>
+                <TableCell className="text-muted-foreground">{dateDMY(r.first_run)} – {dateDMY(r.last_run)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Status>
+      {vehicle && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">Bills carried by {rows.find((r) => r.vehicle_key === vehicle)?.vehicle ?? vehicle}</h3>
+          <Status isLoading={detail.isLoading} error={detail.error} empty={!lines.length} emptyText="Nothing on this van.">
+            <Table>
+              <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Bill no.</TableHead><TableHead>Customer</TableHead><TableHead>Town</TableHead><TableHead>Driver</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {lines.map((l) => (
+                  <TableRow key={l.invoice_id ?? ''}>
+                    <TableCell>{dateDMY(l.invoice_date)}</TableCell>
+                    <TableCell><Link to={`/invoices/${l.invoice_id}`} className="font-medium hover:underline">{l.invoice_no}</Link></TableCell>
+                    <TableCell>{l.customer}</TableCell>
+                    <TableCell className="text-muted-foreground">{l.town}</TableCell>
+                    <TableCell className="text-muted-foreground">{l.driver}</TableCell>
+                    <TableCell className="num">{qty(l.boxes)}</TableCell>
+                    <TableCell className="num">{amount(l.amount)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Status>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Supplier-wise. Customers had a ledger, an ageing report and a statement;
+ * suppliers had a payable figure on a list and nothing else. Opening,
+ * bought, returned, paid and still owing for the period, and the
+ * transactions behind any one of them.
+ */
+function SupplierReport() {
+  const me = useMe();
+  const orgId = me.data?.org_id ?? '';
+  const [from, setFrom] = useState(monthStart());
+  const [to, setTo] = useState(toISODate());
+  const [supplier, setSupplier] = useState('');
+
+  const report = useQuery({ queryKey: ['reports', 'suppliers', orgId, from, to], queryFn: () => supplierReport(orgId, from, to), enabled: Boolean(orgId && from && to) });
+  const ledger = useQuery({ queryKey: ['reports', 'supplier-ledger', supplier, from, to], queryFn: () => supplierLedger(supplier, from, to), enabled: Boolean(supplier) });
+  const rows = report.data ?? [];
+  const entries = ledger.data ?? [];
+
+  const onExport = () => exportToExcel(
+    `suppliers-${from}-to-${to}`,
+    rows.map((r) => ({ Supplier: r.supplier ?? '', Town: r.town ?? '', Mobile: r.mobile ?? '', Opening: toNumber(r.opening), Purchases: toNumber(r.purchases), Returns: toNumber(r.returns), Payments: toNumber(r.payments), 'Still owing': toNumber(r.closing), Bills: toNumber(r.bills), 'Last bill': dateDMY(r.last_bill) })),
+    'Suppliers',
+    entries.length ? [{ name: 'Transactions', rows: entries.map((e) => ({ Date: e.entry_date ? dateDMY(e.entry_date) : 'Opening', Document: e.doc ?? '', 'No.': e.doc_no ?? '', Particulars: e.particulars ?? '', Paid: toNumber(e.debit), Billed: toNumber(e.credit), Balance: toNumber(e.balance) })) }] : [],
+  );
+
+  const owed = rows.reduce((s, r) => s + toNumber(r.closing), 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="no-print flex flex-wrap items-end gap-2">
+        <Field label="From" htmlFor="sp-from"><Input id="sp-from" type="date" className="h-8 w-40" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
+        <Field label="To" htmlFor="sp-to"><Input id="sp-to" type="date" className="h-8 w-40" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
+        <Actions onExport={onExport} disabled={!rows.length} />
+      </div>
+      <PrintTitle title="Supplier-wise" range={`${dateDMY(from)} to ${dateDMY(to)}`} />
+      <p className="text-xs text-muted-foreground">Opening is what was owed before {dateDMY(from)}. Still owing is opening + purchases − returns − payments. Pick a supplier for the transactions behind it.</p>
+      <Status isLoading={report.isLoading} error={report.error} empty={!rows.length} emptyText="No suppliers yet.">
+        <Table>
+          <TableHeader><TableRow><TableHead>Supplier</TableHead><TableHead>Town</TableHead><TableHead className="text-right">Opening</TableHead><TableHead className="text-right">Purchases</TableHead><TableHead className="text-right">Returns</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Still owing</TableHead><TableHead className="text-right">Bills</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow key={r.supplier_id ?? ''} className={cn('cursor-pointer', supplier === r.supplier_id && 'bg-primary/5')} onClick={() => setSupplier(supplier === r.supplier_id ? '' : (r.supplier_id ?? ''))}>
+                <TableCell className="font-medium">{r.supplier}</TableCell>
+                <TableCell className="text-muted-foreground">{r.town}</TableCell>
+                <TableCell className="num text-muted-foreground">{amount(r.opening)}</TableCell>
+                <TableCell className="num">{toNumber(r.purchases) ? amount(r.purchases) : ''}</TableCell>
+                <TableCell className="num">{toNumber(r.returns) ? amount(r.returns) : ''}</TableCell>
+                <TableCell className="num">{toNumber(r.payments) ? amount(r.payments) : ''}</TableCell>
+                <TableCell className={cn('num font-medium', toNumber(r.closing) > 0 && 'text-destructive')}>{amount(r.closing)}</TableCell>
+                <TableCell className="num text-muted-foreground">{toNumber(r.bills) || ''}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter><TableRow><TableCell colSpan={6} className="text-right font-semibold">Owed to all suppliers</TableCell><TableCell className="num font-semibold">{amount(owed)}</TableCell><TableCell /></TableRow></TableFooter>
+        </Table>
+      </Status>
+      {supplier && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">{rows.find((r) => r.supplier_id === supplier)?.supplier}</h3>
+          <Status isLoading={ledger.isLoading} error={ledger.error} empty={!entries.length} emptyText="Nothing in this period.">
+            <Table>
+              <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Document</TableHead><TableHead>No.</TableHead><TableHead>Particulars</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Billed</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {entries.map((e, i) => (
+                  <TableRow key={`${e.doc_id ?? 'open'}-${i}`}>
+                    <TableCell>{e.entry_date ? dateDMY(e.entry_date) : ''}</TableCell>
+                    <TableCell className="font-medium">{e.doc}</TableCell>
+                    <TableCell>{e.doc_no}</TableCell>
+                    <TableCell className="text-muted-foreground">{e.particulars}</TableCell>
+                    <TableCell className="num">{toNumber(e.debit) ? amount(e.debit) : ''}</TableCell>
+                    <TableCell className="num">{toNumber(e.credit) ? amount(e.credit) : ''}</TableCell>
+                    <TableCell className="num font-medium">{amount(e.balance)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Status>
+        </div>
+      )}
     </div>
   );
 }

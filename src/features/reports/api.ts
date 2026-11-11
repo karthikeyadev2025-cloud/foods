@@ -62,3 +62,34 @@ export async function salesSummary(orgId: string, from: string, to: string, grou
   if (error) throw error;
   return data ?? [];
 }
+
+export type VehicleSummaryRow = Fns['vehicle_summary']['Returns'][number];
+export type VehicleRow = Fns['vehicle_report']['Returns'][number];
+export type SupplierReportRow = Fns['supplier_report']['Returns'][number];
+export type SupplierLedgerRow = Fns['supplier_ledger']['Returns'][number];
+
+/** One line per vehicle for the period (db/65). */
+export async function vehicleSummary(orgId: string, from: string, to: string): Promise<VehicleSummaryRow[]> {
+  const { data, error } = await supabase.rpc('vehicle_summary', { p_org: orgId, p_from: from, p_to: to });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Every bill a vehicle carried; `vehicle` null means all of them. */
+export async function vehicleReport(orgId: string, from: string, to: string, vehicle?: string): Promise<VehicleRow[]> {
+  const { data, error } = await supabase.rpc('vehicle_report', { p_org: orgId, p_from: from, p_to: to, p_vehicle: vehicle || undefined });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function supplierReport(orgId: string, from: string, to: string): Promise<SupplierReportRow[]> {
+  const { data, error } = await supabase.rpc('supplier_report', { p_org: orgId, p_from: from, p_to: to });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function supplierLedger(supplierId: string, from?: string, to?: string): Promise<SupplierLedgerRow[]> {
+  const { data, error } = await supabase.rpc('supplier_ledger', { p_supplier: supplierId, p_from: from || undefined, p_to: to || undefined });
+  if (error) throw error;
+  return data ?? [];
+}

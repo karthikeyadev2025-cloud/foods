@@ -197,6 +197,8 @@ export const router = createRouter([
             { path: 'reports/modes', element: <ReportsPage tab="modes" /> },
             { path: 'reports/routes', element: <ReportsPage tab="routes" /> },
             { path: 'reports/sales', element: <ReportsPage tab="sales" /> },
+            { path: 'reports/vehicles', element: <ReportsPage tab="vehicles" /> },
+            { path: 'reports/suppliers', element: <ReportsPage tab="suppliers" /> },
             { path: 'reports/profit', element: <ReportsPage tab="profit" /> },
             { path: 'reports/incentives', element: <ReportsPage tab="incentives" /> },
           ]),

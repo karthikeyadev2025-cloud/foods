@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -21,7 +22,7 @@ import { amount, dateDMY, int, qty, toISODate, toNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
   collectionByMode, customerLedger, incentiveStatement, outstandingAgeing, receiptsRegister, routeCollection, routeProfitability, salesSummary,
-  supplierLedger, supplierReport, vehicleReport, vehicleSummary,
+  partyStatement, supplierLedger, supplierReport, vehicleReport, vehicleSummary,
   type LedgerRow, type RegisterRow, type SalesGroup,
 } from '../api';
 
@@ -238,11 +239,28 @@ function LedgerReport() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const customerId = customer?.id ?? '';
-  const ledger = useQuery({ queryKey: ['reports', 'ledger', customerId, from, to], queryFn: () => customerLedger(customerId, from, to), enabled: Boolean(customerId) });
-  const rows = ledger.data ?? [];
+  /*
+    Some parties sell to the shop as well as buy from it (db/67). For those,
+    the ledger can be read either way: the sales account on its own, or both
+    sides with a running net. Both are offered because they answer different
+    questions — "what is on his account" and "what is actually between us" —
+    and the shop needs the second one standing at the counter.
+  */
+  const linked = Boolean(customer?.supplier_id);
+  const [bothSides, setBothSides] = useState(false);
+  const net = linked && bothSides;
+  const ledger = useQuery({ queryKey: ['reports', 'ledger', customerId, from, to], queryFn: () => customerLedger(customerId, from, to), enabled: Boolean(customerId) && !net });
+  const party = useQuery({ queryKey: ['reports', 'party', customerId, from, to], queryFn: () => partyStatement(customerId, from, to), enabled: Boolean(customerId) && net });
+  const rows: LedgerRow[] = net
+    ? (party.data ?? []).map((r) => ({ entry_date: r.entry_date, doc: `${r.side === 'Opening' ? '' : r.side + ' · '}${r.doc}`, doc_no: r.doc_no, doc_id: r.doc_id, particulars: r.particulars, debit: r.owes_us, credit: r.we_owe, balance: r.balance }) as LedgerRow)
+    : (ledger.data ?? []);
   const closing = rows.length ? toNumber(rows[rows.length - 1]?.balance) : 0;
 
-  const onExport = () => exportToExcel(`ledger-${customer?.name ?? customerId}`, rows.map((l) => ({ Date: l.entry_date ? dateDMY(l.entry_date) : '', Document: l.doc, 'No.': l.doc_no ?? '', Particulars: l.particulars ?? '', Debit: toNumber(l.debit), Credit: toNumber(l.credit), Balance: toNumber(l.balance) })), 'Ledger');
+  const onExport = () => exportToExcel(
+    `${net ? 'statement' : 'ledger'}-${customer?.name ?? customerId}`,
+    rows.map((l) => ({ Date: l.entry_date ? dateDMY(l.entry_date) : '', Document: l.doc, 'No.': l.doc_no ?? '', Particulars: l.particulars ?? '', [net ? 'They owe' : 'Debit']: toNumber(l.debit), [net ? 'We owe' : 'Credit']: toNumber(l.credit), Balance: toNumber(l.balance) })),
+    net ? 'Sales & purchases' : 'Ledger',
+  );
   const link = (l: LedgerRow) => {
     if (!l.doc_id) return null;
     if (l.doc === 'Invoice') return `/invoices/${l.doc_id}`;
@@ -257,8 +275,13 @@ function LedgerReport() {
           <Combobox<CustomerRow> id="lg-cust" value={customer} onChange={setPicked} search={searchCustomers} queryKey="customers-pick" getKey={(c) => c.id ?? ''} getLabel={(c) => `${c.name}${c.town ? ` — ${c.town}` : ''}`} renderOption={(c) => <span><span className="font-medium">{c.name}</span> <span className="text-muted-foreground">{c.town} · {c.mobile1}</span></span>} placeholder="Name, mobile or town…" autoFocus eager />
         </Field>
         <DateRange from={from} to={to} setFrom={setFrom} setTo={setTo} prefix="lg" />
+        {linked && (
+          <label className="flex items-center gap-1 pb-1 text-sm" title={`Also a supplier: ${customer?.supplier_name ?? ''}`}>
+            <Checkbox checked={bothSides} onChange={(e) => setBothSides(e.target.checked)} /> Sales and purchases together
+          </label>
+        )}
         <Actions onExport={onExport} disabled={!rows.length}>
-          {rows.length > 0 && <Badge variant={closing > 0 ? 'default' : 'secondary'}>Balance {amount(closing)}</Badge>}
+          {rows.length > 0 && <Badge variant={closing > 0 ? 'default' : 'secondary'}>{net ? (closing < 0 ? `We owe ${amount(-closing)}` : `They owe ${amount(closing)}`) : `Balance ${amount(closing)}`}</Badge>}
         </Actions>
       </div>
       <PrintTitle title={`Ledger — ${customer?.name ?? ''}`} range={from || to ? `${from ? dateDMY(from) : 'start'} to ${to ? dateDMY(to) : 'today'}` : 'all dates'} />

@@ -363,6 +363,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          error: string | null
           file_path: string | null
           id: string
           is_auto: boolean
@@ -373,6 +374,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          error?: string | null
           file_path?: string | null
           id?: string
           is_auto?: boolean
@@ -383,6 +385,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          error?: string | null
           file_path?: string | null
           id?: string
           is_auto?: boolean
@@ -963,6 +966,7 @@ export type Database = {
           price_list_id: string | null
           route_id: string | null
           sales_exec_id: string | null
+          supplier_id: string | null
           town: string | null
           whatsapp_opt_in: boolean
         }
@@ -986,6 +990,7 @@ export type Database = {
           price_list_id?: string | null
           route_id?: string | null
           sales_exec_id?: string | null
+          supplier_id?: string | null
           town?: string | null
           whatsapp_opt_in?: boolean
         }
@@ -1009,6 +1014,7 @@ export type Database = {
           price_list_id?: string | null
           route_id?: string | null
           sales_exec_id?: string | null
+          supplier_id?: string | null
           town?: string | null
           whatsapp_opt_in?: boolean
         }
@@ -1054,6 +1060,18 @@ export type Database = {
             columns: ["sales_exec_id"]
             referencedRelation: "v_me"
             referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "customers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -6334,6 +6352,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           created_by_name: string | null
+          error: string | null
           file_path: string | null
           id: string | null
           is_auto: boolean | null
@@ -6985,10 +7004,12 @@ export type Database = {
           mobile2: string | null
           mobile3: string | null
           name: string | null
+          net_outstanding: number | null
           opening_balance: number | null
           opening_balance_remaining: number | null
           org_id: string | null
           outstanding: number | null
+          payable: number | null
           payment_promise_note: string | null
           payment_promise_on: string | null
           price_group: string | null
@@ -6997,6 +7018,8 @@ export type Database = {
           route_name: string | null
           sales_exec_id: string | null
           sales_exec_name: string | null
+          supplier_id: string | null
+          supplier_name: string | null
           town: string | null
           whatsapp_opt_in: boolean | null
         }
@@ -7042,6 +7065,18 @@ export type Database = {
             columns: ["sales_exec_id"]
             referencedRelation: "v_me"
             referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "customers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            referencedRelation: "v_supplier_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -10805,6 +10840,10 @@ export type Database = {
         Args: { p_app_version?: string; p_device_id?: string }
         Returns: Json
       }
+      link_party: {
+        Args: { p_customer: string; p_supplier?: string }
+        Returns: string
+      }
       link_punchly_staff: {
         Args: { p_staff: string; p_staff_code?: string; p_user_id: string }
         Returns: undefined
@@ -10954,6 +10993,20 @@ export type Database = {
           outstanding: number
           route_name: string
           town: string
+        }[]
+      }
+      party_statement: {
+        Args: { p_customer: string; p_from?: string; p_to?: string }
+        Returns: {
+          balance: number
+          doc: string
+          doc_id: string
+          doc_no: string
+          entry_date: string
+          owes_us: number
+          particulars: string
+          side: string
+          we_owe: number
         }[]
       }
       pick_template: {
@@ -11423,6 +11476,7 @@ export type Database = {
           particulars: string
         }[]
       }
+      supplier_payable: { Args: { p_supplier: string }; Returns: number }
       supplier_report: {
         Args: { p_from: string; p_org: string; p_to: string }
         Returns: {

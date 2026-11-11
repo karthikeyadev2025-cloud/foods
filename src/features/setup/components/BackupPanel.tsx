@@ -150,6 +150,11 @@ export function BackupPanel({ compact }: { compact?: boolean }) {
                   <TableCell className="num">{b.size_bytes ? size(b.size_bytes) : '—'}</TableCell>
                   <TableCell>
                     <Badge variant={b.status === 'ready' ? 'secondary' : b.status === 'failed' ? 'destructive' : b.status === 'restored' ? 'default' : 'outline'}>{b.status}</Badge>
+                    {b.status === 'failed' && b.error && (
+                      // The reason, on the row, whether or not anybody was
+                      // watching when it failed (db/68).
+                      <div className="mt-1 max-w-md text-xs text-destructive">{b.error}</div>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     {isOwner && (b.status === 'ready' || b.status === 'restored') && (

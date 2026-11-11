@@ -71,8 +71,129 @@
   }
 }
 
+/*
+  Printing a report used to print the SCREEN: the sidebar down the left, grey
+  cards, rounded borders, a table squeezed into whatever width was left, and
+  the column headings only on page one. It came out looking like a screenshot
+  of a computer, which is what the shop said, because that is what it was.
+
+  A printed report is a different document from a screen. It is on paper, in
+  black, the full width of the sheet, with its headings repeated on every page
+  so page four can still be read on its own, and no row broken across a page
+  break. The app's chrome is not part of it.
+
+  `.print-sheet` (invoices, quotations, challans) is a designed sheet and sets
+  its own page size and margins, so nothing here touches it.
+*/
 @media print {
   .no-print {
     display: none !important;
+  }
+
+  /* The app's furniture: the sidebar, the top bar, anything sticky. */
+  aside,
+  nav[aria-label='Main'],
+  header {
+    display: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 12mm 10mm;
+  }
+
+  html,
+  body {
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 10pt;
+  }
+
+  /* The screen holds the page in a fixed-height flex shell that scrolls
+     inside itself; on paper that crops everything below the fold. */
+  body *,
+  main,
+  main > div {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  main {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Cards and panels are a screen idea. On paper they are just the content. */
+  .rounded-md,
+  .rounded-lg,
+  .border {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 9pt;
+  }
+
+  /* Repeat the column headings on every sheet, and never split a row. */
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  tr,
+  img {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  th,
+  td {
+    border: 1px solid #999 !important;
+    padding: 3px 5px !important;
+    color: #000 !important;
+    background: transparent !important;
+  }
+
+  th {
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 1.5px solid #000 !important;
+  }
+
+  /* Row striping and status tints are ink the shop pays for and cannot read
+     in black and white anyway. */
+  tbody tr {
+    background: transparent !important;
+  }
+
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+    color: #000 !important;
+  }
+
+  /* A designed sheet looks after itself. */
+  .print-sheet,
+  .print-sheet * {
+    overflow: visible !important;
   }
 }

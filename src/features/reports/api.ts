@@ -93,3 +93,23 @@ export async function supplierLedger(supplierId: string, from?: string, to?: str
   if (error) throw error;
   return data ?? [];
 }
+
+export type PartyStatementRow = Fns['party_statement']['Returns'][number];
+
+/**
+ * Every transaction of a party, both sides of the book, with a running net
+ * balance (db/67). Sales and collections push it up; purchases and payments
+ * push it down.
+ */
+export async function partyStatement(customerId: string, from?: string, to?: string): Promise<PartyStatementRow[]> {
+  const { data, error } = await supabase.rpc('party_statement', { p_customer: customerId, p_from: from || undefined, p_to: to || undefined });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Tie a customer row to its supplier row, or pass null to untie. Owner only. */
+export async function linkParty(customerId: string, supplierId: string | null): Promise<string> {
+  const { data, error } = await supabase.rpc('link_party', { p_customer: customerId, p_supplier: supplierId ?? undefined });
+  if (error) throw error;
+  return data ?? '';
+}

@@ -18,6 +18,7 @@ import { routesApi } from '@/features/setup/api';
 import { useDebounced } from '@/hooks/use-debounced';
 import { toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
+import { cn } from '@/lib/utils';
 import { amount, money } from '@/lib/format';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { listAllCustomers, listCustomers, updateCustomer, type CustomerRow } from '../api';
@@ -61,6 +62,9 @@ export function CustomersPage() {
           'Credit limit': Number(r.credit_limit ?? 0),
           'Opening balance': Number(r.opening_balance ?? 0),
           Outstanding: Number(r.outstanding ?? 0),
+          'We owe them': Number(r.payable ?? 0),
+          'Net outstanding': Number(r.net_outstanding ?? 0),
+          'Also a supplier': r.supplier_name ?? '',
           WhatsApp: r.whatsapp_opt_in,
           Active: r.is_active,
         })),
@@ -160,6 +164,10 @@ export function CustomersPage() {
                 <TableHead>Price group</TableHead>
                 <TableHead className="text-right">Credit limit</TableHead>
                 <TableHead className="text-right">Outstanding</TableHead>
+                {/* db/67: a party the shop also BUYS from. Both figures are
+                    shown, so the net can always be taken apart again. */}
+                <TableHead className="text-right" title="What the shop owes this party as a supplier">We owe</TableHead>
+                <TableHead className="text-right" title="What they owe minus what the shop owes them">Net</TableHead>
                 {perms.canDelete('customers') && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
@@ -187,6 +195,12 @@ export function CustomersPage() {
                   <TableCell>{r.price_group}</TableCell>
                   <TableCell className="num">{amount(r.credit_limit)}</TableCell>
                   <TableCell className={Number(r.outstanding ?? 0) > 0 ? 'num font-medium' : 'num'}>{money(r.outstanding)}</TableCell>
+                  <TableCell className="num text-muted-foreground" title={r.supplier_name ? `as supplier: ${r.supplier_name}` : undefined}>
+                    {Number(r.payable ?? 0) ? money(r.payable) : ''}
+                  </TableCell>
+                  <TableCell className={cn('num font-medium', Number(r.net_outstanding ?? 0) < 0 && 'text-destructive')}>
+                    {money(r.net_outstanding)}
+                  </TableCell>
                   {perms.canDelete('customers') && (
                     // stopPropagation, or the row's own click opens the edit dialog behind this one.
                     <TableCell onClick={(e) => e.stopPropagation()}>

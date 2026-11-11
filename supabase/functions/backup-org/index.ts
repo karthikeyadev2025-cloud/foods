@@ -47,7 +47,10 @@ async function backupOrg(admin: SupabaseClient, orgId: string, isAuto: boolean, 
     return { org_id: orgId, backup_id: backupId, file_path: filePath, size_bytes: size, pruned };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    await admin.from('backups').update({ status: 'failed' }).eq('id', backupId);
+    // Keep the reason (db/68). A red badge with nothing behind it is what
+    // made "there are errors during backup" impossible to answer — the
+    // nightly ones fail at 2am with nobody watching.
+    await admin.from('backups').update({ status: 'failed', error: message.slice(0, 2000) }).eq('id', backupId);
     return { org_id: orgId, backup_id: backupId, error: message };
   }
 }

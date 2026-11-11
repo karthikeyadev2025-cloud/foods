@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -10,6 +11,10 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { listPriceLists } from '@/features/documents/api';
 import { listStaff, routesApi } from '@/features/setup/api';
+import { Combobox } from '@/components/Combobox';
+import { usePermissions } from '@/features/auth/hooks';
+import { searchSuppliers, type SupplierRow } from '@/features/purchases/api';
+import { linkParty } from '@/features/reports/api';
 import { toast, toastError } from '@/hooks/use-toast';
 import { createCustomer, findByMobile, updateCustomer, type CustomerRow } from '../api';
 import { CUSTOMER_DEFAULTS, customerSchema, digits, type CustomerInput } from '../schema';
@@ -162,6 +167,15 @@ export function CustomerDialog({ customer, onClose }: { customer?: CustomerRow; 
               Active
             </label>
           </div>
+          {/*
+            db/67: the same party on both sides of the book. Linking changes no
+            figure on its own — it says that this customer row and that supplier
+            row are one person, and the net outstanding follows from that. It
+            sits outside the form because it saves on its own, immediately, and
+            must not be lost if the form is cancelled.
+          */}
+          {customer?.id && <AlsoASupplier customer={customer} />}
+
           <DialogFooter className="col-span-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
@@ -173,5 +187,58 @@ export function CustomerDialog({ customer, onClose }: { customer?: CustomerRow; 
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Ties this customer to the supplier row that is the same party.
+ *
+ * Only shown on a customer that already exists, because the link is stored on
+ * the customer row and there is nothing to hang it off until it is saved.
+ */
+function AlsoASupplier({ customer }: { customer: CustomerRow }) {
+  const queryClient = useQueryClient();
+  const perms = usePermissions();
+  const [supplier, setSupplier] = useState<SupplierRow | null>(
+    customer.supplier_id ? ({ id: customer.supplier_id, name: customer.supplier_name } as SupplierRow) : null,
+  );
+  const link = useMutation({
+    mutationFn: (s: SupplierRow | null) => linkParty(customer.id ?? '', s?.id ?? null),
+    onSuccess: async (msg) => {
+      await queryClient.invalidateQueries({ queryKey: ['customers'] });
+      await queryClient.invalidateQueries({ queryKey: ['reports'] });
+      toast({ title: msg });
+    },
+    onError: (err) => toastError(err, 'Could not link'),
+  });
+
+  if (!perms.isOwner) {
+    return customer.supplier_id ? (
+      <p className="col-span-3 text-xs text-muted-foreground">Also a supplier: {customer.supplier_name}. Only the owner can change this.</p>
+    ) : null;
+  }
+
+  return (
+    <div className="col-span-3 space-y-1 rounded-md border bg-muted/30 p-2">
+      <Field label="Also a supplier (the shop buys from this party too)" htmlFor="cu-supplier">
+        <Combobox<SupplierRow>
+          id="cu-supplier"
+          value={supplier}
+          onChange={(v) => { setSupplier(v); link.mutate(v); }}
+          search={searchSuppliers}
+          queryKey="suppliers-link"
+          getKey={(x) => x.id ?? ''}
+          getLabel={(x) => x.name ?? ''}
+          renderOption={(x) => <span><span className="font-medium">{x.name}</span> <span className="text-muted-foreground">{x.town}</span></span>}
+          placeholder="Supplier name…"
+          eager
+        />
+      </Field>
+      <p className="text-xs text-muted-foreground">
+        {supplier
+          ? 'Their outstanding now shows what they owe, what the shop owes them, and the net of the two. Clearing this box puts both ledgers back exactly as they were.'
+          : 'Leave blank unless the shop also buys from this party. Nothing is merged — the two ledgers stay separate and a third figure is shown from both.'}
+      </p>
+    </div>
   );
 }

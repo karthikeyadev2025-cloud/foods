@@ -33,15 +33,35 @@ Deno.serve(async (req) => {
   if (!me || !me.is_active || !me.org_id) return json({ error: 'Not a member of any organisation' }, 403);
   if (me.role !== 'owner') return json({ error: 'Only the owner can restore' }, 403);
 
-  let body: { backup_id?: string };
+  let body: { backup_id?: string; snapshot?: { org_id?: string } };
   try {
     body = await req.json();
   } catch {
     return json({ error: 'Invalid JSON body' }, 400);
   }
-  if (!body.backup_id) return json({ error: 'backup_id is required' }, 400);
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
+
+  /*
+    A file from the owner's own machine, rather than one of ours in storage.
+
+    The shop keeps its backups on its own computer — that is the whole point of
+    downloading them — so the way back has to accept a file off that computer,
+    not only a row we still happen to have. Everything after this point is the
+    same path a stored backup takes, including the check that the snapshot
+    belongs to this organisation.
+  */
+  if (body.snapshot && !body.backup_id) {
+    const uploaded = body.snapshot;
+    if (!uploaded || typeof uploaded !== 'object') return json({ error: 'That file is not a backup' }, 400);
+    if (!('tables' in uploaded)) return json({ error: 'That file is not a backup — it has no tables in it' }, 400);
+    if (uploaded.org_id !== me.org_id) return json({ error: 'That backup belongs to another organisation' }, 403);
+    const { data: restored, error: restoreError } = await caller.rpc('restore_org_snapshot', { p: uploaded });
+    if (restoreError) return json({ error: restoreError.message }, 500);
+    return json(restored);
+  }
+
+  if (!body.backup_id) return json({ error: 'backup_id or snapshot is required' }, 400);
   const { data: backup } = await admin.from('backups').select('id, org_id, file_path, status').eq('id', body.backup_id).maybeSingle();
   if (!backup || backup.org_id !== me.org_id) return json({ error: 'Backup not found' }, 404);
   if (backup.status !== 'ready' && backup.status !== 'restored') return json({ error: `Backup is ${backup.status}` }, 400);

@@ -291,6 +291,30 @@ export async function backupDownloadUrl(filePath: string): Promise<string> {
   return data.signedUrl;
 }
 export type RestoreResult = { org_id: string; restored: Record<string, number>; taken_at: string | null };
+/**
+ * Put the org back to a backup file the shop has on its own computer.
+ *
+ * The file is read in the browser and sent as the snapshot itself, so a copy
+ * kept on a pen drive for a year still works even though the row that made it
+ * is long pruned. It is checked for being a backup, and for being THIS
+ * organisation's, before anything is touched.
+ */
+export async function restoreFromFile(file: File): Promise<RestoreResult> {
+  let snapshot: unknown;
+  try {
+    snapshot = JSON.parse(await file.text());
+  } catch {
+    throw new Error(`"${file.name}" is not a backup file — it is not readable as one.`);
+  }
+  if (!snapshot || typeof snapshot !== 'object' || !('tables' in snapshot)) {
+    throw new Error(`"${file.name}" is not a backup file. Choose the .json file that was downloaded from Backup.`);
+  }
+  const { data, error } = await supabase.functions.invoke<RestoreResult | { error: string }>('restore-backup', { body: { snapshot } });
+  if (error) throw error;
+  if (!data || 'error' in data) throw new Error(data?.error ?? 'restore-backup returned nothing');
+  return data;
+}
+
 export async function restoreBackup(backupId: string): Promise<RestoreResult> {
   const { data, error } = await supabase.functions.invoke<RestoreResult | { error: string }>('restore-backup', { body: { backup_id: backupId } });
   if (error) throw error;

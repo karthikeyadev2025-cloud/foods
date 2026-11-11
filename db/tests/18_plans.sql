@@ -72,9 +72,11 @@ begin
     perform save_stock_transfer(jsonb_build_object('from_location', v_loc, 'to_location', (select id from stock_locations where org_id = v_org and name = 'Shop'), 'txn_date', current_date), jsonb_build_array(jsonb_build_object('item_id', v_item, 'boxes', 1)));
     raise exception 'should fail';
   exception when others then assert sqlerrm like '%row-level security%' or sqlerrm like '%policy%', sqlerrm; end;
-  begin
-    perform org_snapshot(); raise exception 'should fail';
-  exception when others then assert sqlerrm like 'Owner control is not part of your Starter licence%' and sqlerrm like '%Full plan%', sqlerrm; end;
+  -- Backup is deliberately NOT capped (db/69). A licence decides what a shop
+  -- may DO with the software; it must not decide whether they can have a copy
+  -- of their own invoices, least of all on the day the account is in dispute.
+  j := org_snapshot();
+  assert (j->>'org_id')::uuid = v_org, 'a Starter shop can still back up its own books';
   begin
     perform route_profitability(v_org, current_date, current_date); raise exception 'should fail';
   exception when others then assert sqlerrm like 'Profit & incentives is not part of your Starter licence%', sqlerrm; end;
@@ -104,9 +106,8 @@ begin
   perform save_quotation(jsonb_build_object('customer_id', v_cust, 'quote_date', current_date), jsonb_build_array(jsonb_build_object('item_id', v_item, 'boxes', 1, 'rate', 42)));
   -- but the automatic half is still shut
   assert not can_view('messaging') and not has_feature('inventory') and not has_feature('owner') and not has_feature('insights') and not has_feature('mobile');
-  begin
-    perform org_snapshot(); raise exception 'should fail';
-  exception when others then assert sqlerrm like 'Owner control is not part of your Growth licence%', sqlerrm; end;
+  j := org_snapshot();
+  assert (j->>'org_id')::uuid = v_org, 'a Growth shop can still back up its own books (db/69)';
   begin
     perform save_stock_transfer(jsonb_build_object('from_location', v_loc, 'to_location', (select id from stock_locations where org_id = v_org and name = 'Shop'), 'txn_date', current_date), jsonb_build_array(jsonb_build_object('item_id', v_item, 'boxes', 1)));
     raise exception 'should fail';
@@ -136,7 +137,7 @@ begin
     perform issue_license(v_org, current_date + 365, null, null, 'platinum'); raise exception 'should fail';
   exception when others then assert sqlerrm like 'Plan must be starter, growth or full', sqlerrm; end;
 
-  raise notice 'OK: plans — a trial org is Full, an issued key sets the plan, Starter keeps billing and collection and the database itself refuses purchases, quotations, transfers, backup, route profit, the driver''s phone and messaging; trial data stays readable; Growth opens buying, paying, production, vans and documents but not the automatic half; Full opens everything including voice; only the vendor sets a plan';
+  raise notice 'OK: plans — a trial org is Full, an issued key sets the plan, Starter keeps billing and collection and the database itself refuses purchases, quotations, transfers, route profit, the driver''s phone and messaging — but never a backup of the shop''s own books; trial data stays readable; Growth opens buying, paying, production, vans and documents but not the automatic half; Full opens everything including voice; only the vendor sets a plan';
 end $$;
 
 rollback;

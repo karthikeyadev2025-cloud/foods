@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useMe, usePermissions } from '@/features/auth/hooks';
 import { toast, toastError } from '@/hooks/use-toast';
 import { dateTimeDMY } from '@/lib/format';
-import { backupDownloadUrl, getBackupSettings, listBackups, restoreBackup, runBackupNow, saveBackupSettings, type BackupRow } from '../api';
+import { backupDownloadUrl, getBackupSettings, listBackups, restoreBackup, restoreFromFile, runBackupNow, saveBackupSettings, type BackupRow } from '../api';
 
 const SETTINGS_KEY = ['setup', 'backup_settings'] as const;
 const LIST_KEY = ['setup', 'backups'] as const;
@@ -175,6 +175,7 @@ export function BackupPanel({ compact }: { compact?: boolean }) {
         </div>
       )}
 
+      {isOwner && <RestoreFromFile orgName={me.data?.org_name ?? ''} />}
       {restoring && <RestoreDialog backup={restoring} orgName={me.data?.org_name ?? ''} onClose={() => setRestoring(null)} />}
     </section>
   );
@@ -217,5 +218,62 @@ function RestoreDialog({ backup, orgName, onClose }: { backup: BackupRow; orgNam
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Putting back a backup file the shop keeps on its own computer.
+ *
+ * Downloading a copy is only half of it: a copy you cannot put back is a
+ * souvenir. This takes the .json file straight off their machine, so a backup
+ * from a pen drive a year old still works even though the row that produced
+ * it was pruned long ago.
+ *
+ * Guarded the same way a stored restore is — the org's own name, typed —
+ * because it replaces everything and cannot be undone.
+ */
+function RestoreFromFile({ orgName }: { orgName: string }) {
+  const queryClient = useQueryClient();
+  const [file, setFile] = useState<File | null>(null);
+  const [typed, setTyped] = useState('');
+  const go = useMutation({
+    mutationFn: () => restoreFromFile(file as File),
+    onSuccess: async (r) => {
+      await queryClient.invalidateQueries();
+      const n = Object.values(r.restored ?? {}).reduce((a, b) => a + Number(b), 0);
+      toast({ title: `Restored ${n} rows from the file`, description: r.taken_at ? `Backup taken ${dateTimeDMY(r.taken_at)}` : undefined });
+      setFile(null);
+      setTyped('');
+    },
+    onError: (err) => toastError(err, 'Could not restore from that file — nothing was changed'),
+  });
+  const ready = Boolean(file) && typed.trim() === orgName.trim() && orgName.trim() !== '';
+
+  return (
+    <div className="max-w-2xl space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+      <h3 className="text-sm font-semibold">Restore from a file on this computer</h3>
+      <p className="text-xs text-muted-foreground">
+        Choose a backup <code>.json</code> that was downloaded from here — including one from a pen drive or another
+        machine. It replaces everything in the system with what is in that file, and it cannot be undone. Staff logins
+        are left alone.
+      </p>
+      <Input
+        type="file"
+        accept="application/json,.json"
+        aria-label="Backup file"
+        onChange={(e) => { setFile(e.target.files?.[0] ?? null); setTyped(''); }}
+      />
+      {file && (
+        <>
+          <p className="text-xs">
+            Type <strong>{orgName}</strong> to confirm you mean to replace everything with “{file.name}”.
+          </p>
+          <Input aria-label="Type the business name to confirm" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={orgName} />
+        </>
+      )}
+      <Button variant="destructive" size="sm" disabled={!ready || go.isPending} onClick={() => go.mutate()}>
+        {go.isPending ? 'Restoring…' : 'Replace everything with this file'}
+      </Button>
+    </div>
   );
 }

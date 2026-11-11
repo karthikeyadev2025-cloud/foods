@@ -110,10 +110,12 @@ export const SETUP_STEPS: SetupStep[] = [
     Component: PrintDesigner,
   },
   {
+    // Deliberately NOT behind a licence feature (db/69). A shop can always
+    // take a copy of its own books, whatever it is paying for — and the day
+    // it most wants one is the day the plan is capped.
     slug: 'backup',
-    feature: 'owner',
     label: 'Backup',
-    why: 'A copy of everything, on a schedule and on demand, and the way back if something goes badly wrong.',
+    why: 'A copy of everything, on a schedule and on demand, saved to this computer, and the way back if something goes badly wrong.',
     Component: BackupPanel,
   },
   {

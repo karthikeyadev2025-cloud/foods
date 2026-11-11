@@ -5149,6 +5149,7 @@ export type Database = {
           old_rate: number | null
           qty: number
           qty_base: number
+          recovery_pct: number | null
           return_id: string
           uom_id: string | null
         }
@@ -5161,6 +5162,7 @@ export type Database = {
           old_rate?: number | null
           qty?: number
           qty_base?: number
+          recovery_pct?: number | null
           return_id: string
           uom_id?: string | null
         }
@@ -5173,6 +5175,7 @@ export type Database = {
           old_rate?: number | null
           qty?: number
           qty_base?: number
+          recovery_pct?: number | null
           return_id?: string
           uom_id?: string | null
         }
@@ -9500,6 +9503,7 @@ export type Database = {
           old_rate: number | null
           qty: number | null
           qty_base: number | null
+          recovery_pct: number | null
           return_id: string | null
           units_per_box: number | null
           uom_id: string | null

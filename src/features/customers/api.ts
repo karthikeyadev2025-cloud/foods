@@ -11,12 +11,19 @@ export type Customer = Tables['customers']['Row'];
 export interface CustomerListQuery extends PageQuery {
   routeId?: string;
   includeInactive?: boolean;
+  /** Only customers on this price list, or '' for those on none. */
+  priceListId?: string;
+  town?: string;
 }
 
 function applyFilters(q: CustomerListQuery) {
   let query = supabase.from('v_customer_list').select('*', { count: 'exact' });
   query = orIlike(query, ['name', 'mobile1', 'town', 'code'], q.search);
   if (q.routeId) query = query.eq('route_id', q.routeId);
+  if (q.town) query = query.eq('town', q.town);
+  if (q.priceListId !== undefined) {
+    query = q.priceListId ? query.eq('price_list_id', q.priceListId) : query.is('price_list_id', null);
+  }
   if (!q.includeInactive) query = query.eq('is_active', true);
   return query.order('town').order('name');
 }

@@ -72,6 +72,12 @@ export interface ReturnLineInput {
   boxes: number;
   rate: number;
   new_rate?: number | null;
+  /**
+   * Damage returns only: what this lot is worth as a percentage of what it was
+   * billed at (db/66). Null or absent takes the shop's own breakage figure, so
+   * a return typed without touching it behaves exactly as it always did.
+   */
+  recovery_pct?: number | null;
 }
 
 export function saveSalesReturn(header: ReturnHeaderInput, lines: ReturnLineInput[]): Promise<string> {

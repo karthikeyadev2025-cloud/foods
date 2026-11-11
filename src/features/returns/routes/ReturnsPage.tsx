@@ -118,7 +118,7 @@ export function ReturnsPage() {
   );
 }
 
-interface DraftLine { key: string; item_id: string; item_code: string; item_name: string; units_per_box: number; boxes: number; rate: number; new_rate: number }
+interface DraftLine { key: string; item_id: string; item_code: string; item_name: string; units_per_box: number; boxes: number; rate: number; new_rate: number; recovery_pct: number }
 let seq = 0;
 
 /**
@@ -158,6 +158,9 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
       boxes: toNumber(l.boxes),
       rate: toNumber(l.old_rate),
       new_rate: toNumber(l.new_rate),
+      // What this lot was actually credited at, not the shop's default: a
+      // return re-opened must come back at the figures it was saved with.
+      recovery_pct: l.recovery_pct === null || l.recovery_pct === undefined ? pct : toNumber(l.recovery_pct),
     })),
   );
   const [entryItem, setEntryItem] = useState<ItemRow | null>(null);
@@ -181,14 +184,14 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
   const credit = (l: DraftLine) => {
     const q = l.boxes * l.units_per_box;
     if (kind === 'fresh_return') return round(q * l.rate, 2);
-    if (kind === 'damage_return') return round((q * l.rate * pct) / 100, 2);
+    if (kind === 'damage_return') return round((q * l.rate * l.recovery_pct) / 100, 2);
     return round(q * (l.rate - l.new_rate), 2);
   };
   const total = useMemo(() => round(lines.reduce((s, l) => s + credit(l), 0), 2), [lines, kind, pct]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addLine = (item: { id: string; code: string; name: string; upb: number }, boxes: number, rate: number, newRate: number) => {
     if (boxes <= 0) return;
-    setLines((p) => [...p, { key: `r${++seq}`, item_id: item.id, item_code: item.code, item_name: item.name, units_per_box: item.upb, boxes, rate, new_rate: newRate }]);
+    setLines((p) => [...p, { key: `r${++seq}`, item_id: item.id, item_code: item.code, item_name: item.name, units_per_box: item.upb, boxes, rate, new_rate: newRate, recovery_pct: pct }]);
   };
   const addEntry = () => {
     if (!entryItem?.id) return;
@@ -205,7 +208,7 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
       if (kind === 'rate_difference' && lines.some((l) => l.new_rate <= 0)) throw new Error('Every rate-difference line needs the new rate');
       return saveSalesReturn(
         { ...(ret?.id ? { id: ret.id } : {}), customer_id: customer.id, invoice_id: invoiceId || null, kind, return_date: date, location_id: kind === 'rate_difference' ? null : locationId, notes: notes || null },
-        lines.map((l) => ({ item_id: l.item_id, boxes: l.boxes, rate: l.rate, new_rate: kind === 'rate_difference' ? l.new_rate : null })),
+        lines.map((l) => ({ item_id: l.item_id, boxes: l.boxes, rate: l.rate, new_rate: kind === 'rate_difference' ? l.new_rate : null, recovery_pct: kind === 'damage_return' ? l.recovery_pct : null })),
       );
     },
     onSuccess: async (id) => {
@@ -242,7 +245,7 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
                 <input type="radio" name="kind" className="mt-1 accent-primary" checked={kind === k.value} onChange={() => setKind(k.value)} />
                 <span>
                   <span className="font-medium">{k.label}</span>
-                  <span className="block text-xs text-muted-foreground">Money: {k.value === 'damage_return' ? `${pct}% of value` : k.money}. Stock: {k.stock}.</span>
+                  <span className="block text-xs text-muted-foreground">Money: {k.value === 'damage_return' ? `${pct}% of value by default, per item` : k.money}. Stock: {k.stock}.</span>
                 </span>
               </label>
             ))}
@@ -288,6 +291,9 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
             <TableRow>
               <TableHead className="w-36">CODE</TableHead><TableHead>Item</TableHead><TableHead className="w-20 text-right">Jars</TableHead><TableHead className="w-24 text-right">Boxes</TableHead><TableHead className="w-24 text-right">Qty</TableHead><TableHead className="w-28 text-right">Billed rate</TableHead>
               {kind === 'rate_difference' && <TableHead className="w-28 text-right">New rate</TableHead>}
+              {/* Per line, because a crushed box and a cracked lid are not the
+                  same loss (db/66). It starts at the shop's own figure. */}
+              {kind === 'damage_return' && <TableHead className="w-24 text-right" title="What this lot is worth, as a percentage of what it was billed at">Credit %</TableHead>}
               <TableHead className="w-32 text-right">Credit</TableHead><TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -301,6 +307,7 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
                 <TableCell className="num text-muted-foreground">{qty(l.boxes * l.units_per_box)}</TableCell>
                 <TableCell className="num"><Input type="number" step="0.01" className="num h-8" aria-label={`Rate ${l.item_code}`} value={l.rate} onChange={(ev) => setLines((p) => p.map((x) => x.key === l.key ? { ...x, rate: toNumber(ev.target.value) } : x))} /></TableCell>
                 {kind === 'rate_difference' && <TableCell className="num"><Input type="number" step="0.01" className="num h-8" aria-label={`New rate ${l.item_code}`} value={l.new_rate} onChange={(ev) => setLines((p) => p.map((x) => x.key === l.key ? { ...x, new_rate: toNumber(ev.target.value) } : x))} /></TableCell>}
+                {kind === 'damage_return' && <TableCell className="num"><Input type="number" step="1" min="0" max="100" className="num h-8" aria-label={`Credit percent ${l.item_code}`} value={l.recovery_pct} onChange={(ev) => setLines((p) => p.map((x) => x.key === l.key ? { ...x, recovery_pct: toNumber(ev.target.value) } : x))} /></TableCell>}
                 <TableCell className="num font-medium">{amount(credit(l))}</TableCell>
                 <TableCell><Button type="button" variant="ghost" size="icon" aria-label={`Remove ${l.item_code}`} onClick={() => setLines((p) => p.filter((x) => x.key !== l.key))}><Trash2 className="text-destructive" /></Button></TableCell>
               </TableRow>
@@ -318,13 +325,14 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
               <TableCell className="num text-muted-foreground">{entryItem && entryBoxes ? qty(toNumber(entryBoxes) * (entryItem.units_per_box ?? 0)) : ''}</TableCell>
               <TableCell><Input type="number" step="0.01" className="num h-8" aria-label="Billed rate" value={entryRate} onChange={(ev) => setEntryRate(ev.target.value)} disabled={!entryItem} onKeyDown={(ev) => ev.key === 'Enter' && (ev.preventDefault(), addEntry())} /></TableCell>
               {kind === 'rate_difference' && <TableCell><Input type="number" step="0.01" className="num h-8" aria-label="New rate" value={entryNew} onChange={(ev) => setEntryNew(ev.target.value)} disabled={!entryItem} onKeyDown={(ev) => ev.key === 'Enter' && (ev.preventDefault(), addEntry())} /></TableCell>}
+              {kind === 'damage_return' && <TableCell className="num text-muted-foreground">{pct}%</TableCell>}
               <TableCell />
               <TableCell><Button type="button" size="sm" variant="secondary" onClick={addEntry} disabled={!entryItem}>Add</Button></TableCell>
             </TableRow>
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={kind === 'rate_difference' ? 7 : 6} className="text-right font-semibold">Credit to customer ({info?.label})</TableCell>
+              <TableCell colSpan={kind === 'fresh_return' ? 6 : 7} className="text-right font-semibold">Credit to customer ({info?.label})</TableCell>
               <TableCell className="num font-semibold">{amount(total)}</TableCell>
               <TableCell />
             </TableRow>
@@ -401,18 +409,19 @@ export function ReturnViewPage() {
       />
       <div className="rounded-md border">
         <Table>
-          <TableHeader><TableRow><TableHead>CODE</TableHead><TableHead>Item</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Billed rate</TableHead>{r.kind === 'rate_difference' && <TableHead className="text-right">New rate</TableHead>}<TableHead className="text-right">Credit</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>CODE</TableHead><TableHead>Item</TableHead><TableHead className="text-right">Boxes</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Billed rate</TableHead>{r.kind === 'rate_difference' && <TableHead className="text-right">New rate</TableHead>}{r.kind === 'damage_return' && <TableHead className="text-right">Credit %</TableHead>}<TableHead className="text-right">Credit</TableHead></TableRow></TableHeader>
           <TableBody>
             {lines.data.map((l) => (
               <TableRow key={l.id}>
                 <TableCell className="font-medium">{l.item_code}</TableCell><TableCell>{l.item_name}</TableCell>
                 <TableCell className="num">{qty(l.boxes)}</TableCell><TableCell className="num">{qty(l.qty)}</TableCell><TableCell className="num">{amount(l.old_rate)}</TableCell>
                 {r.kind === 'rate_difference' && <TableCell className="num">{amount(l.new_rate)}</TableCell>}
+                {r.kind === 'damage_return' && <TableCell className="num">{l.recovery_pct === null ? '' : `${toNumber(l.recovery_pct)}%`}</TableCell>}
                 <TableCell className="num">{amount(l.amount)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
-          <TableFooter><TableRow><TableCell colSpan={r.kind === 'rate_difference' ? 6 : 5} className="text-right font-semibold">Credit</TableCell><TableCell className="num font-semibold">{amount(r.total)}</TableCell></TableRow></TableFooter>
+          <TableFooter><TableRow><TableCell colSpan={r.kind === 'fresh_return' ? 5 : 6} className="text-right font-semibold">Credit</TableCell><TableCell className="num font-semibold">{amount(r.total)}</TableCell></TableRow></TableFooter>
         </Table>
       </div>
       <p className="text-xs text-muted-foreground">

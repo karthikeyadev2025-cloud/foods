@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { NavLink, useParams } from 'react-router-dom';
 import { z } from 'zod';
+import { listCustomers } from '@/features/customers/api';
 import { Combobox } from '@/components/Combobox';
 import { Field } from '@/components/Field';
 import { PageHeader } from '@/components/PageHeader';
@@ -112,6 +113,23 @@ function RatesGrid({ list, canEdit }: { list: PriceListRow; canEdit: boolean }) 
     if (next === current) return;
     set.mutate({ itemId, rate: next });
   };
+  /*
+    Rates saved on blur and nowhere else, with no button and no count: type a
+    rate, click the tab, and whether it went in was anybody's guess — which is
+    why the shop asked for a Save button. It saves everything still typed but
+    not yet committed, and says how many that is, so the answer is on the
+    screen rather than a matter of faith.
+  */
+  const pending = Object.keys(drafts).filter((itemId) => {
+    const raw = drafts[itemId];
+    const current = rates.data?.find((r) => r.item_id === itemId)?.list_rate ?? null;
+    const next = raw === undefined || raw.trim() === '' ? null : toNumber(raw);
+    return next !== current;
+  });
+  const saveAll = () => {
+    for (const itemId of Object.keys(drafts)) commit(itemId);
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -119,6 +137,16 @@ function RatesGrid({ list, canEdit }: { list: PriceListRow; canEdit: boolean }) 
         <label className="flex items-center gap-1 text-sm"><Checkbox checked={onlySet} onChange={(e) => setOnlySet(e.target.checked)} /> Only items with a rate on this list</label>
         <Button size="sm" variant="outline" className="ml-auto" onClick={() => exportToExcel(`price-list-${list.name}`, rows.map((r) => ({ Code: r.item_code, Item: r.item_name, Section: r.section_name, 'Units/box': r.units_per_box, 'Master rate': toNumber(r.master_rate), 'List rate': r.list_rate === null ? '' : toNumber(r.list_rate), 'Box rate': r.list_box_rate === null ? '' : toNumber(r.list_box_rate) })), list.name ?? 'Rates')} disabled={!rows.length}><Download /> Excel</Button>
       </div>
+      {canEdit && (
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={saveAll} disabled={pending.length === 0 || set.isPending}>
+            {set.isPending ? 'Saving…' : pending.length ? `Save ${pending.length} rate${pending.length === 1 ? '' : 's'}` : 'Saved'}
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {pending.length ? 'Typed but not yet saved. Enter or Tab saves one; this saves them all.' : 'Every rate on this list is saved.'}
+          </span>
+        </div>
+      )}
       {rates.isLoading ? <Spinner /> : (
         <div className="max-h-[60vh] overflow-auto rounded-md border">
           <Table>
@@ -204,13 +232,44 @@ function AssignDialog({ list, onClose }: { list: PriceListRow; onClose: () => vo
     onSuccess: async (n) => { toast({ title: `${n} customer${n === 1 ? '' : 's'} moved to ${list.name}` }); await qc.invalidateQueries({ queryKey: ['pricing'] }); await qc.invalidateQueries({ queryKey: ['customers'] }); onClose(); },
     onError: (e) => toastError(e, 'Could not assign'),
   });
+
+  /*
+    Who this actually moves, by name.
+
+    The dialog used to take a route and a town and move whoever matched, named
+    nobody, and reported a count afterwards — so the shop pressed Assign and
+    hoped. "Customer names are not visible" was the complaint, and it was the
+    whole dialog, not a missing field: these are the names, before the button
+    is pressed rather than after.
+  */
+  const who = useQuery({
+    queryKey: ['customers', 'assign-preview', routeId, town],
+    queryFn: () => listCustomers({ page: 1, pageSize: 500, search: '', routeId: routeId || undefined, town: town || undefined }),
+  });
+  const matched = who.data?.total ?? 0;
+  const names = who.data?.rows ?? [];
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle>Put customers on {list.name}</DialogTitle><DialogDescription>Single customers are set on their own form. This moves everyone matching the filter; leave both blank for all active customers.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>Put customers on {list.name}</DialogTitle><DialogDescription>Everyone matching the filter moves. Leave both blank for all active customers — the names below are exactly who that is.</DialogDescription></DialogHeader>
         <Field label="Route" htmlFor="as-route"><NativeSelect id="as-route" value={routeId} onChange={(e) => setRouteId(e.target.value)}><option value="">Any route</option>{(routes.data ?? []).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</NativeSelect></Field>
         <Field label="Town" htmlFor="as-town"><Input id="as-town" value={town} onChange={(e) => setTown(e.target.value)} placeholder="any" /></Field>
-        <DialogFooter><Button variant="outline" onClick={onClose}>Cancel</Button><Button onClick={() => run.mutate()} disabled={run.isPending}>{run.isPending ? 'Assigning…' : 'Assign'}</Button></DialogFooter>
+        <div className="rounded-md border bg-muted/30 p-2">
+          <div className="mb-1 text-xs font-medium">
+            {who.isLoading ? 'Checking…' : matched === 0 ? 'Nobody matches this filter.' : `${matched} customer${matched === 1 ? '' : 's'} will move to ${list.name}:`}
+          </div>
+          <div className="max-h-40 overflow-auto text-xs text-muted-foreground">
+            {names.map((c) => (
+              <div key={c.id ?? c.name} className="flex justify-between gap-2 py-0.5">
+                <span className={cn(c.price_list_id === list.id && 'text-muted-foreground/60')}>{c.name}</span>
+                <span className="shrink-0">{c.town}{c.price_list_id === list.id ? ' · already on it' : ''}</span>
+              </div>
+            ))}
+            {matched > names.length && <div className="pt-1">…and {matched - names.length} more.</div>}
+          </div>
+        </div>
+        <DialogFooter><Button variant="outline" onClick={onClose}>Cancel</Button><Button onClick={() => run.mutate()} disabled={run.isPending || matched === 0}>{run.isPending ? 'Assigning…' : matched === 0 ? 'Nobody matches' : `Move ${matched} customer${matched === 1 ? '' : 's'}`}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

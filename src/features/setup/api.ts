@@ -126,12 +126,24 @@ export function updateOrg(id: string, values: Tables['orgs']['Update']): Promise
 export type Staff = Tables['staff']['Row'];
 export type StaffRole = Database['public']['Enums']['staff_role'];
 
-export function listStaff(): Promise<Staff[]> {
-  return expectRows(supabase.from('staff').select('*').order('full_name'));
+/**
+ * staff.daily_wage is not readable from the table by anyone signed in (db/71),
+ * so `select *` on staff fails — for the owner too. These go through definer
+ * functions that hand the wage back only to a role that runs attendance or
+ * setup, on the same row as the name.
+ */
+export async function listStaff(): Promise<Staff[]> {
+  const { data, error } = await supabase.rpc('staff_list');
+  if (error) throw error;
+  return (data ?? []) as Staff[];
 }
 
-export function updateStaff(id: string, values: Tables['staff']['Update']): Promise<Staff> {
-  return expectOne(supabase.from('staff').update(values).eq('id', id).select('*').single());
+export async function updateStaff(id: string, values: Tables['staff']['Update']): Promise<Staff> {
+  const { error } = await supabase.rpc('save_staff', { p: { ...values, id } as never });
+  if (error) throw error;
+  const row = (await listStaff()).find((s) => s.id === id);
+  if (!row) throw new Error('Staff member not found after saving');
+  return row;
 }
 
 export interface CreateUserInput {
@@ -157,20 +169,19 @@ export interface CreateUserInput {
  */
 export async function createUser(input: CreateUserInput): Promise<Staff> {
   if (!input.email.trim()) {
-    return expectOne(
-      supabase
-        .from('staff')
-        .insert({
-          org_id: await currentOrgId(),
-          full_name: input.full_name,
-          phone: input.phone,
-          role: input.role,
-          is_mestry: input.is_mestry,
-          daily_wage: input.daily_wage,
-        })
-        .select('*')
-        .single(),
-    );
+    const { data: id, error } = await supabase.rpc('save_staff', {
+      p: {
+        full_name: input.full_name,
+        phone: input.phone,
+        role: input.role,
+        is_mestry: input.is_mestry,
+        daily_wage: input.daily_wage,
+      } as never,
+    });
+    if (error) throw error;
+    const row = (await listStaff()).find((s) => s.id === id);
+    if (!row) throw new Error('Staff member not found after saving');
+    return row;
   }
   const { data, error } = await supabase.functions.invoke<{ staff: Staff } | { error: string }>('create-user', {
     body: input,

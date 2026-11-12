@@ -10530,6 +10530,7 @@ export type Database = {
       }
       can_delete: { Args: { p_module: string }; Returns: boolean }
       can_edit: { Args: { p_module: string }; Returns: boolean }
+      can_see_cost: { Args: Record<PropertyKey, never>; Returns: boolean }
       can_view: { Args: { p_module: string }; Returns: boolean }
       cancel_challan: { Args: { p_challan: string }; Returns: undefined }
       cancel_order: { Args: { p_order: string }; Returns: undefined }
@@ -10946,6 +10947,7 @@ export type Database = {
           level: string
         }[]
       }
+      item_cost: { Args: { p_item: string }; Returns: number }
       item_data_problems: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -11020,6 +11022,10 @@ export type Database = {
       location_stock_base: {
         Args: { p_date?: string; p_item: string; p_location: string }
         Returns: number
+      }
+      lock_cost_and_wage_columns: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       mark_call_result: {
         Args: {
@@ -11521,6 +11527,7 @@ export type Database = {
         Args: { p_header: Json; p_lines: Json }
         Returns: string
       }
+      save_staff: { Args: { p: Json }; Returns: string }
       save_stock_transfer: {
         Args: { p_header: Json; p_lines: Json }
         Returns: string
@@ -11589,6 +11596,25 @@ export type Database = {
         Returns: undefined
       }
       snapshot_tables: { Args: Record<PropertyKey, never>; Returns: string[] }
+      staff_list: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          auth_uid: string
+          created_at: string
+          daily_wage: number
+          designation: string
+          full_name: string
+          id: string
+          is_active: boolean
+          is_mestry: boolean
+          org_id: string
+          phone: string
+          punchly_staff_id: string
+          punchly_user_id: string
+          role: Database["public"]["Enums"]["staff_role"]
+        }[]
+      }
+      staff_wage: { Args: { p_staff: string }; Returns: number }
       start_plan_trial: {
         Args: { p_days?: number; p_org: string }
         Returns: string

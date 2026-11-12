@@ -3,6 +3,7 @@ import { expectOk, expectOne, expectRows, supabase } from '@/lib/supabase';
 import type { Database } from '@/types/supabase';
 
 type Tables = Database['public']['Tables'];
+type Fns = Database['public']['Functions'];
 
 /** Lookup tables the Setup screens manage with the same list / create / update / delete shape. */
 export type MasterTable =
@@ -123,7 +124,12 @@ export function updateOrg(id: string, values: Tables['orgs']['Update']): Promise
 // ------------------------------------------------------------------
 // Staff / users
 // ------------------------------------------------------------------
-export type Staff = Tables['staff']['Row'];
+/**
+ * A staff row as the screens get it: staff_list()'s shape, which is the table
+ * plus the shop's own role name, and with the wage masked for a role that may
+ * not see wages (db/71, db/72).
+ */
+export type Staff = Fns['staff_list']['Returns'][number];
 export type StaffRole = Database['public']['Enums']['staff_role'];
 
 /**
@@ -151,7 +157,8 @@ export interface CreateUserInput {
   password: string;
   full_name: string;
   phone: string | null;
-  role: StaffRole;
+  /** The shop's own role, by id (db/72). */
+  role_id: string;
   is_mestry: boolean;
   daily_wage: number;
 }
@@ -173,7 +180,7 @@ export async function createUser(input: CreateUserInput): Promise<Staff> {
       p: {
         full_name: input.full_name,
         phone: input.phone,
-        role: input.role,
+        role_id: input.role_id,
         is_mestry: input.is_mestry,
         daily_wage: input.daily_wage,
       } as never,
@@ -183,12 +190,17 @@ export async function createUser(input: CreateUserInput): Promise<Staff> {
     if (!row) throw new Error('Staff member not found after saving');
     return row;
   }
-  const { data, error } = await supabase.functions.invoke<{ staff: Staff } | { error: string }>('create-user', {
+  const { data, error } = await supabase.functions.invoke<{ staff: { id: string } } | { error: string }>('create-user', {
     body: input,
   });
   if (error) throw error;
   if (!data || 'error' in data) throw new Error(data?.error ?? 'create-user returned nothing');
-  return data.staff;
+  // The function hands back the staff row as the table has it; the screens
+  // want it as staff_list() gives it — role name included, wage masked by the
+  // reader's own rights — so it is read back rather than passed through.
+  const row = (await listStaff()).find((s) => s.id === data.staff.id);
+  if (!row) throw new Error('The login was created but the staff record could not be read back');
+  return row;
 }
 
 /** New password for another user's login (reset-password edge function; owner, or admin for non-admins). */
@@ -539,6 +551,9 @@ export function listRolePermissions(): Promise<RolePermission[]> {
 }
 
 export interface PermissionCell {
+  /** The role ROW this applies to (db/72) — two roles can share a built-in. */
+  role_id: string;
+  /** The built-in it is based on. Still on the row, still not null. */
   role: StaffRole;
   module: string;
   can_view: boolean;
@@ -551,9 +566,43 @@ export async function saveRolePermissions(cells: PermissionCell[]): Promise<void
   await expectOk(
     supabase.from('role_permissions').upsert(
       cells.map((c) => ({ ...c, org_id: orgId })),
-      { onConflict: 'org_id,role,module' },
+      // One row per role ROW per module since db/72, not per built-in: a shop
+      // can have two roles based on sales_exec with different rights.
+      { onConflict: 'role_id,module' },
     ),
   );
+}
+
+// ------------------------------------------------------------------
+// The shop's own job roles (db/72)
+// ------------------------------------------------------------------
+export type RoleRow = Fns['role_list']['Returns'][number];
+
+/** Every role in the shop, with how many people hold it. */
+export async function listRoles(): Promise<RoleRow[]> {
+  const { data, error } = await supabase.rpc('role_list');
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Add a role, or rename one. Owner only, and `based_on` is fixed once set:
+ * changing it would move people between hard-wired rights behind their backs.
+ */
+export async function saveRole(input: { id?: string; name: string; based_on?: StaffRole; sort_order?: number; is_active?: boolean }): Promise<string> {
+  const { data, error } = await supabase.rpc('save_role', { p: { ...input } as never });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function deleteRole(id: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_role', { p_role: id });
+  if (error) throw error;
+}
+
+export async function setStaffRole(staffId: string, roleId: string): Promise<void> {
+  const { error } = await supabase.rpc('set_staff_role', { p_staff: staffId, p_role: roleId });
+  if (error) throw error;
 }
 
 /** Wipe and re-seed the matrix from db/06_setup.sql defaults. Owner only (delete on setup). */

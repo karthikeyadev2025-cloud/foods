@@ -8,7 +8,7 @@ import { LicencePanel } from './components/LicencePanel';
 import { PrintDesigner } from './components/PrintDesigner';
 import { PunchlyPanel } from './components/PunchlyPanel';
 import { OrgProfileForm } from './components/OrgProfileForm';
-import { PermissionsMatrix } from './components/PermissionsMatrix';
+import { RolesAndPermissions } from './components/RolesAndPermissions';
 import { UsersPanel } from './components/UsersPanel';
 import {
   ExpenseHeadsPanel,
@@ -98,9 +98,9 @@ export const SETUP_STEPS: SetupStep[] = [
   },
   {
     slug: 'permissions',
-    label: 'Permissions',
-    why: 'What each role can view, edit and delete. Enforced by the database.',
-    Component: PermissionsMatrix,
+    label: 'Roles & permissions',
+    why: 'The jobs this shop has, and what each one can view, edit and delete. Enforced by the database.',
+    Component: RolesAndPermissions,
   },
   {
     slug: 'print',

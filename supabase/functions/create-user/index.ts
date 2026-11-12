@@ -7,6 +7,12 @@
 //
 // Gate: caller must be an active owner/admin (read through v_me under the
 // caller's own JWT, so RLS decides). Admins may not create owners or admins.
+//
+// Since db/72 the role is the shop's OWN role row, passed as role_id, and the
+// built-in it is based on comes from that row — so "Packing in-charge" works
+// here without this function knowing the name. A bare `role` is still accepted
+// for anything that has not been updated, and resolves to that built-in's
+// system role.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const ROLES = ['owner', 'admin', 'accountant', 'store_keeper', 'production_head', 'chief', 'driver', 'sales_exec'];
@@ -51,13 +57,22 @@ Deno.serve(async (req) => {
   const password = String(body.password ?? '');
   const full_name = String(body.full_name ?? '').trim();
   const phone = body.phone ? String(body.phone).trim() : null;
-  const role = String(body.role ?? '');
+  const role_id = String(body.role_id ?? '').trim();
+  let role = String(body.role ?? '');
   const is_mestry = Boolean(body.is_mestry);
   const daily_wage = Number(body.daily_wage ?? 0);
 
   if (!email || !email.includes('@')) return json({ error: 'A valid email is required' }, 400);
   if (password.length < 8) return json({ error: 'Password must be at least 8 characters' }, 400);
   if (!full_name) return json({ error: 'Full name is required' }, 400);
+
+  // A role row decides the built-in; look it up as the CALLER so a role from
+  // another organisation is invisible rather than merely refused.
+  if (role_id) {
+    const { data: roleRow } = await caller.from('roles').select('based_on').eq('id', role_id).maybeSingle();
+    if (!roleRow) return json({ error: 'That role does not exist in this organisation' }, 400);
+    role = String(roleRow.based_on);
+  }
   if (!ROLES.includes(role)) return json({ error: `Unknown role ${role}` }, 400);
   if (me.role === 'admin' && (role === 'owner' || role === 'admin')) {
     return json({ error: 'An admin cannot create owners or admins' }, 403);
@@ -82,10 +97,13 @@ Deno.serve(async (req) => {
       full_name,
       phone,
       role,
+      ...(role_id ? { role_id } : {}),
       is_mestry,
       daily_wage,
     })
-    .select('*')
+    // staff.daily_wage is not readable from the table (db/71) and `select *`
+    // would be refused, service role or not — so the columns are named.
+    .select('id, org_id, auth_uid, full_name, phone, role, role_id, is_mestry, is_active, created_at, designation')
     .single();
 
   if (staffError) {

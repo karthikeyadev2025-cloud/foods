@@ -236,7 +236,8 @@ export const newUserSchema = z
     email: z.string().trim().max(120),
     password: z.string().max(72),
     phone: optionalText,
-    role: z.enum(STAFF_ROLES),
+    /** The shop's own role, by id (db/72). The built-in it is based on comes from the row. */
+    role_id: z.string().uuid('Pick a role'),
     is_mestry: z.boolean(),
     daily_wage: z.coerce.number().min(0),
   })
@@ -264,7 +265,7 @@ export type NewUserInput = z.infer<typeof newUserSchema>;
 export const editUserSchema = z.object({
   full_name: name,
   phone: optionalText,
-  role: z.enum(STAFF_ROLES),
+  role_id: z.string().uuid('Pick a role'),
   is_mestry: z.boolean(),
   daily_wage: z.coerce.number().min(0),
   is_active: z.boolean(),
@@ -273,3 +274,14 @@ export type EditUserInput = z.infer<typeof editUserSchema>;
 
 /** '' → null for nullable text columns. */
 export const orNull = (s: string): string | null => (s.trim() === '' ? null : s.trim());
+
+/**
+ * A job role (db/72). `based_on` is only read when the role is created — it is
+ * fixed afterwards, so renaming never moves people between hard-wired rights.
+ */
+export const roleFormSchema = z.object({
+  name: z.string().trim().min(2, 'Give the role a name').max(40),
+  based_on: z.enum(STAFF_ROLES),
+  is_active: z.boolean(),
+});
+export type RoleFormInput = z.infer<typeof roleFormSchema>;

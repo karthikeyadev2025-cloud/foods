@@ -27,7 +27,12 @@ begin
   select count(*) into n from v_me;
   assert n = 1, 'v_me should return the caller';
   select count(*) into n from role_permissions;
-  assert n = 7 * 15, format('seed should create 7 roles × 15 modules = 105 rows, got %s', n);
+  -- Since db/72 the owner is a role row like the rest, so it gets permission
+  -- rows too. They are never read — can_view() answers true for the owner
+  -- before it looks — but role_permissions.role_id references roles and is not
+  -- null, so every role having its rows is the consistent shape, and it lets
+  -- the matrix screen draw the owner's line as ticked and locked.
+  assert n = 8 * 15, format('seed should create 8 roles × 15 modules = 120 rows, got %s', n);
 
   begin
     perform bootstrap_org('SECOND ORG', 'Owner again');

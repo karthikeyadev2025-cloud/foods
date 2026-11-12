@@ -5233,6 +5233,7 @@ export type Database = {
           module: string
           org_id: string
           role: Database["public"]["Enums"]["staff_role"]
+          role_id: string
         }
         Insert: {
           can_delete?: boolean
@@ -5242,6 +5243,7 @@ export type Database = {
           module: string
           org_id: string
           role: Database["public"]["Enums"]["staff_role"]
+          role_id: string
         }
         Update: {
           can_delete?: boolean
@@ -5251,6 +5253,7 @@ export type Database = {
           module?: string
           org_id?: string
           role?: Database["public"]["Enums"]["staff_role"]
+          role_id?: string
         }
         Relationships: [
           {
@@ -5261,6 +5264,58 @@ export type Database = {
           },
           {
             foreignKeyName: "role_permissions_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          based_on: Database["public"]["Enums"]["staff_role"]
+          created_at: string
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          org_id: string
+          sort_order: number
+        }
+        Insert: {
+          based_on: Database["public"]["Enums"]["staff_role"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          org_id: string
+          sort_order?: number
+        }
+        Update: {
+          based_on?: Database["public"]["Enums"]["staff_role"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          org_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roles_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roles_org_id_fkey"
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
@@ -5571,6 +5626,7 @@ export type Database = {
           punchly_staff_id: string | null
           punchly_user_id: string | null
           role: Database["public"]["Enums"]["staff_role"]
+          role_id: string | null
         }
         Insert: {
           auth_uid?: string | null
@@ -5586,6 +5642,7 @@ export type Database = {
           punchly_staff_id?: string | null
           punchly_user_id?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
+          role_id?: string | null
         }
         Update: {
           auth_uid?: string | null
@@ -5601,6 +5658,7 @@ export type Database = {
           punchly_staff_id?: string | null
           punchly_user_id?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
+          role_id?: string | null
         }
         Relationships: [
           {
@@ -5614,6 +5672,12 @@ export type Database = {
             columns: ["org_id"]
             referencedRelation: "v_me"
             referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "staff_role_id_fkey"
+            columns: ["role_id"]
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -10518,6 +10582,10 @@ export type Database = {
           town: string
         }[]
       }
+      builtin_role_label: {
+        Args: { p_role: Database["public"]["Enums"]["staff_role"] }
+        Returns: string
+      }
       bulk_update_price_list: {
         Args: {
           p_list: string
@@ -10739,6 +10807,7 @@ export type Database = {
         Returns: string
       }
       delete_master: { Args: { p_id: string; p_kind: string }; Returns: string }
+      delete_role: { Args: { p_role: string }; Returns: undefined }
       delete_staff: { Args: { p_id: string }; Returns: string }
       delete_stock_row: { Args: { p_id: number }; Returns: string }
       deposit_cheque: {
@@ -11110,6 +11179,7 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["staff_role"]
       }
+      my_role_id: { Args: Record<PropertyKey, never>; Returns: string }
       my_staff_id: { Args: Record<PropertyKey, never>; Returns: string }
       negative_stock: {
         Args: Record<PropertyKey, never>
@@ -11439,6 +11509,18 @@ export type Database = {
         Args: { p_date?: string; p_entry: string }
         Returns: string
       }
+      role_list: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          based_on: Database["public"]["Enums"]["staff_role"]
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          sort_order: number
+          staff_count: number
+        }[]
+      }
       rotate_webhook_secret: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -11523,6 +11605,7 @@ export type Database = {
         Args: { p_header: Json; p_ingredients: Json }
         Returns: string
       }
+      save_role: { Args: { p: Json }; Returns: string }
       save_sales_return: {
         Args: { p_header: Json; p_lines: Json }
         Returns: string
@@ -11546,7 +11629,9 @@ export type Database = {
           town: string
         }[]
       }
+      seed_role_defaults: { Args: { p_role: string }; Returns: undefined }
       seed_role_permissions: { Args: { p_org: string }; Returns: undefined }
+      seed_system_roles: { Args: { p_org: string }; Returns: undefined }
       send_custom_message: {
         Args: { p_body: string; p_customer: string; p_media_url?: string }
         Returns: string
@@ -11575,6 +11660,10 @@ export type Database = {
           p_quote: string
           p_state: Database["public"]["Enums"]["doc_state"]
         }
+        Returns: undefined
+      }
+      set_staff_role: {
+        Args: { p_role: string; p_staff: string }
         Returns: undefined
       }
       set_stock_delete_window: { Args: { p_days?: number }; Returns: string }
@@ -11612,6 +11701,8 @@ export type Database = {
           punchly_staff_id: string
           punchly_user_id: string
           role: Database["public"]["Enums"]["staff_role"]
+          role_id: string
+          role_name: string
         }[]
       }
       staff_wage: { Args: { p_staff: string }; Returns: number }

@@ -7,11 +7,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { usePermissions } from '@/features/auth/hooks';
 import { toast, toastError } from '@/hooks/use-toast';
-import { MODULES, ROLES, type StaffRole } from '@/lib/permissions';
-import { listRolePermissions, resetRolePermissions, saveRolePermissions, type PermissionCell } from '../api';
+import { MODULES } from '@/lib/permissions';
+import { listRolePermissions, listRoles, resetRolePermissions, saveRolePermissions, type PermissionCell } from '../api';
 
 const PERMS_KEY = ['setup', 'role_permissions'] as const;
-const EDITABLE_ROLES = ROLES.filter((r) => r.key !== 'owner');
+const ROLES_KEY = ['setup', 'roles'] as const;
 type Flag = 'can_view' | 'can_edit' | 'can_delete';
 const FLAGS: { key: Flag; label: string; title: string }[] = [
   { key: 'can_view', label: 'V', title: 'View' },
@@ -19,28 +19,39 @@ const FLAGS: { key: Flag; label: string; title: string }[] = [
   { key: 'can_delete', label: 'D', title: 'Delete' },
 ];
 
-const cellKey = (role: string, module: string) => `${role}:${module}`;
+const cellKey = (roleId: string, module: string) => `${roleId}:${module}`;
 
 /**
  * Module × role matrix of view / edit / delete. This table is what
  * `can_view()` / `can_edit()` in RLS read, so a change here changes what the
  * database returns — not just what the sidebar shows.
+ *
+ * The columns are the shop's OWN roles since db/72, read from the database
+ * rather than from a list in the code: "Packing in-charge" and "Night godown"
+ * can both be based on the store keeper and carry different rights, so the
+ * matrix is keyed on the role's id, not on the built-in it came from.
+ *
+ * The owner's column is left out. can_view() answers true for an owner before
+ * it looks at any row, so ticking boxes for it would be theatre.
  */
 export function PermissionsMatrix({ compact }: { compact?: boolean }) {
   const perms = usePermissions();
   const queryClient = useQueryClient();
   const rows = useQuery({ queryKey: PERMS_KEY, queryFn: listRolePermissions });
+  const roles = useQuery({ queryKey: ROLES_KEY, queryFn: listRoles });
+  const columns = useMemo(() => (roles.data ?? []).filter((r) => r.based_on !== 'owner' && r.is_active), [roles.data]);
   const [draft, setDraft] = useState<Map<string, PermissionCell>>(new Map());
   const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
-    if (!rows.data) return;
+    if (!rows.data || !columns.length) return;
     const m = new Map<string, PermissionCell>();
-    for (const role of EDITABLE_ROLES) {
+    for (const role of columns) {
       for (const mod of MODULES) {
-        const found = rows.data.find((r) => r.role === role.key && r.module === mod.key);
-        m.set(cellKey(role.key, mod.key), {
-          role: role.key,
+        const found = rows.data.find((r) => r.role_id === role.id && r.module === mod.key);
+        m.set(cellKey(role.id, mod.key), {
+          role_id: role.id,
+          role: role.based_on,
           module: mod.key,
           can_view: found?.can_view ?? false,
           can_edit: found?.can_edit ?? false,
@@ -49,12 +60,12 @@ export function PermissionsMatrix({ compact }: { compact?: boolean }) {
       }
     }
     setDraft(m);
-  }, [rows.data]);
+  }, [rows.data, columns]);
 
   const dirty = useMemo(() => {
     if (!rows.data) return false;
     for (const cell of draft.values()) {
-      const found = rows.data.find((r) => r.role === cell.role && r.module === cell.module);
+      const found = rows.data.find((r) => r.role_id === cell.role_id && r.module === cell.module);
       if (
         (found?.can_view ?? false) !== cell.can_view ||
         (found?.can_edit ?? false) !== cell.can_edit ||
@@ -65,10 +76,10 @@ export function PermissionsMatrix({ compact }: { compact?: boolean }) {
     return false;
   }, [draft, rows.data]);
 
-  const toggle = (role: StaffRole, module: string, flag: Flag, value: boolean) => {
+  const toggle = (roleId: string, module: string, flag: Flag, value: boolean) => {
     setDraft((prev) => {
       const next = new Map(prev);
-      const k = cellKey(role, module);
+      const k = cellKey(roleId, module);
       const cell = next.get(k);
       if (!cell) return prev;
       const updated = { ...cell, [flag]: value };
@@ -102,6 +113,7 @@ export function PermissionsMatrix({ compact }: { compact?: boolean }) {
     mutationFn: resetRolePermissions,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: PERMS_KEY });
+      await queryClient.invalidateQueries({ queryKey: ROLES_KEY });
       await queryClient.invalidateQueries({ queryKey: ['permissions'] });
       setConfirmReset(false);
       toast({ title: 'Permissions reset to defaults' });
@@ -117,8 +129,9 @@ export function PermissionsMatrix({ compact }: { compact?: boolean }) {
         <div>
           <h2 className={compact ? 'text-base font-semibold' : 'text-lg font-semibold'}>Role permissions</h2>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            V = view, E = edit, D = delete, per module. The owner always has everything. This is enforced by the
-            database: a role without View on Production gets no production rows even by URL.
+            V = view, E = edit, D = delete, per module, for every job role this shop has. The owner always has
+            everything, so it has no column. This is enforced by the database: a role without View on Production gets
+            no production rows even by URL.
           </p>
         </div>
         {canEdit && (
@@ -135,7 +148,7 @@ export function PermissionsMatrix({ compact }: { compact?: boolean }) {
         )}
       </div>
 
-      {rows.isLoading ? (
+      {rows.isLoading || roles.isLoading ? (
         <Spinner />
       ) : rows.error ? (
         <p role="alert" className="text-sm text-destructive">
@@ -149,18 +162,24 @@ export function PermissionsMatrix({ compact }: { compact?: boolean }) {
                 <th scope="col" className="sticky left-0 bg-muted/40 px-2 py-1.5 text-left font-medium">
                   Module
                 </th>
-                {EDITABLE_ROLES.map((r) => (
-                  <th key={r.key} scope="col" colSpan={3} className="border-l px-1 py-1.5 text-center font-medium" title={r.hint}>
-                    {r.label}
+                {columns.map((r) => (
+                  <th
+                    key={r.id}
+                    scope="col"
+                    colSpan={3}
+                    className="border-l px-1 py-1.5 text-center font-medium"
+                    title={r.is_system ? 'A built-in role' : `Based on ${r.based_on.replace(/_/g, ' ')}`}
+                  >
+                    {r.name}
                   </th>
                 ))}
               </tr>
               <tr className="border-b">
                 <th scope="col" className="sticky left-0 bg-card px-2 py-1" />
-                {EDITABLE_ROLES.map((r) =>
+                {columns.map((r) =>
                   FLAGS.map((f) => (
                     <th
-                      key={`${r.key}-${f.key}`}
+                      key={`${r.id}-${f.key}`}
                       scope="col"
                       className={`px-1 py-1 text-center font-normal text-muted-foreground ${f.key === 'can_view' ? 'border-l' : ''}`}
                       title={f.title}
@@ -177,15 +196,15 @@ export function PermissionsMatrix({ compact }: { compact?: boolean }) {
                   <th scope="row" className="sticky left-0 bg-card px-2 py-1 text-left font-medium">
                     {mod.label}
                   </th>
-                  {EDITABLE_ROLES.map((r) => {
-                    const cell = draft.get(cellKey(r.key, mod.key));
+                  {columns.map((r) => {
+                    const cell = draft.get(cellKey(r.id, mod.key));
                     return FLAGS.map((f) => (
-                      <td key={`${r.key}-${f.key}`} className={`px-1 py-1 text-center ${f.key === 'can_view' ? 'border-l' : ''}`}>
+                      <td key={`${r.id}-${f.key}`} className={`px-1 py-1 text-center ${f.key === 'can_view' ? 'border-l' : ''}`}>
                         <Checkbox
-                          aria-label={`${r.label}: ${f.title} ${mod.label}`}
+                          aria-label={`${r.name}: ${f.title} ${mod.label}`}
                           checked={cell?.[f.key] ?? false}
                           disabled={!canEdit}
-                          onChange={(e) => toggle(r.key, mod.key, f.key, e.target.checked)}
+                          onChange={(e) => toggle(r.id, mod.key, f.key, e.target.checked)}
                         />
                       </td>
                     ));

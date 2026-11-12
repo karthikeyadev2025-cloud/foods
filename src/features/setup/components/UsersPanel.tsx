@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, Pencil, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Field } from '@/components/Field';
 import { Spinner } from '@/components/Spinner';
@@ -18,8 +18,8 @@ import { toast, toastError } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/export';
 import { money } from '@/lib/format';
 import { deleteStaff } from '@/features/search/deletes';
-import { ROLES, roleLabel } from '@/lib/permissions';
-import { createUser, listStaff, resetPassword, updateStaff, type Staff } from '../api';
+import { roleLabel } from '@/lib/permissions';
+import { createUser, listRoles, listStaff, resetPassword, updateStaff, type Staff } from '../api';
 import { editUserSchema, newUserSchema, orNull, resetPasswordSchema, type EditUserInput, type NewUserInput, type ResetPasswordInput } from '../schema';
 
 const STAFF_KEY = ['setup', 'staff'] as const;
@@ -39,7 +39,7 @@ export function UsersPanel({ compact }: { compact?: boolean }) {
       (staff.data ?? []).map((s) => ({
         Name: s.full_name,
         Phone: s.phone,
-        Role: roleLabel(s.role),
+        Role: s.role_name ?? roleLabel(s.role),
         Mestri: s.is_mestry,
         'Daily wage': Number(s.daily_wage ?? 0),
         Active: s.is_active,
@@ -99,7 +99,7 @@ export function UsersPanel({ compact }: { compact?: boolean }) {
                   </TableCell>
                   <TableCell>{s.phone ?? '—'}</TableCell>
                   <TableCell>
-                    <Badge variant={s.role === 'owner' ? 'default' : 'secondary'}>{roleLabel(s.role)}</Badge>
+                    <Badge variant={s.role === 'owner' ? 'default' : 'secondary'}>{s.role_name ?? roleLabel(s.role)}</Badge>
                   </TableCell>
                   <TableCell>{s.is_mestry ? 'Yes' : '—'}</TableCell>
                   <TableCell className="num">{money(s.daily_wage)}</TableCell>
@@ -160,16 +160,31 @@ export function UsersPanel({ compact }: { compact?: boolean }) {
   );
 }
 
-function roleOptions(isOwner: boolean) {
-  // An admin may not hand out owner/admin (mirrors the edge function).
-  return ROLES.filter((r) => isOwner || (r.key !== 'owner' && r.key !== 'admin'));
+const ROLES_KEY = ['setup', 'roles'] as const;
+
+/**
+ * The shop's own roles (db/72), not our eight.
+ *
+ * An admin may not hand out an owner- or manager-level role — the same rule
+ * set_staff_role() and the create-user function enforce, so the dropdown shows
+ * only what the signed-in person is actually allowed to give.
+ */
+function useRoleOptions(isOwner: boolean) {
+  const roles = useQuery({ queryKey: ROLES_KEY, queryFn: listRoles });
+  return useMemo(
+    () =>
+      (roles.data ?? []).filter(
+        (r) => r.is_active && (isOwner || (r.based_on !== 'owner' && r.based_on !== 'admin')),
+      ),
+    [roles.data, isOwner],
+  );
 }
 
 function NewUserDialog({ isOwner, onClose }: { isOwner: boolean; onClose: () => void }) {
   const queryClient = useQueryClient();
   const form = useForm<NewUserInput>({
     resolver: zodResolver(newUserSchema),
-    defaultValues: { full_name: '', email: '', password: '', phone: '', role: 'sales_exec', is_mestry: false, daily_wage: 0 },
+    defaultValues: { full_name: '', email: '', password: '', phone: '', role_id: '', is_mestry: false, daily_wage: 0 },
   });
   const create = useMutation({
     mutationFn: (v: NewUserInput) =>
@@ -178,7 +193,7 @@ function NewUserDialog({ isOwner, onClose }: { isOwner: boolean; onClose: () => 
         password: v.password,
         full_name: v.full_name,
         phone: orNull(v.phone),
-        role: v.role,
+        role_id: v.role_id,
         is_mestry: v.is_mestry,
         daily_wage: v.daily_wage,
       }),
@@ -190,7 +205,13 @@ function NewUserDialog({ isOwner, onClose }: { isOwner: boolean; onClose: () => 
     onError: (err) => toastError(err, 'Could not create the user'),
   });
   const e = form.formState.errors;
-  const role = form.watch('role');
+  const options = useRoleOptions(isOwner);
+  const roleId = form.watch('role_id');
+  const picked = options.find((r) => r.id === roleId);
+  // Default to the first role the dropdown offers once they have loaded.
+  useEffect(() => {
+    if (!roleId && options[0]) form.setValue('role_id', options[0].id);
+  }, [roleId, options, form]);
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -215,13 +236,13 @@ function NewUserDialog({ isOwner, onClose }: { isOwner: boolean; onClose: () => 
           <Field
             label="Role"
             htmlFor="nu-role"
-            error={e.role?.message}
-            help={ROLES.find((r) => r.key === role)?.hint}
+            error={e.role_id?.message}
+            help={picked && !picked.is_system ? `Based on ${roleLabel(picked.based_on)}` : undefined}
           >
-            <NativeSelect id="nu-role" {...form.register('role')}>
-              {roleOptions(isOwner).map((r) => (
-                <option key={r.key} value={r.key}>
-                  {r.label}
+            <NativeSelect id="nu-role" {...form.register('role_id')}>
+              {options.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
                 </option>
               ))}
             </NativeSelect>
@@ -264,7 +285,7 @@ function EditUserDialog({
     defaultValues: {
       full_name: staff.full_name,
       phone: staff.phone ?? '',
-      role: staff.role,
+      role_id: staff.role_id ?? '',
       is_mestry: staff.is_mestry,
       daily_wage: Number(staff.daily_wage ?? 0),
       is_active: staff.is_active,
@@ -275,7 +296,7 @@ function EditUserDialog({
       updateStaff(staff.id, {
         full_name: v.full_name,
         phone: orNull(v.phone),
-        role: v.role,
+        role_id: v.role_id,
         is_mestry: v.is_mestry,
         daily_wage: v.daily_wage,
         is_active: v.is_active,
@@ -289,6 +310,7 @@ function EditUserDialog({
     onError: (err) => toastError(err, 'Could not save the user'),
   });
   const e = form.formState.errors;
+  const options = useRoleOptions(isOwner);
   const lockRole = isSelf || (!isOwner && (staff.role === 'owner' || staff.role === 'admin'));
   const [resetting, setResetting] = useState(false);
   const canReset = !isSelf && Boolean(staff.auth_uid) && (isOwner || (staff.role !== 'owner' && staff.role !== 'admin'));
@@ -318,11 +340,16 @@ function EditUserDialog({
           <Field label="Phone" htmlFor="eu-phone" error={e.phone?.message}>
             <Input id="eu-phone" inputMode="tel" {...form.register('phone')} />
           </Field>
-          <Field label="Role" htmlFor="eu-role" error={e.role?.message}>
-            <NativeSelect id="eu-role" disabled={lockRole} {...form.register('role')}>
-              {ROLES.filter((r) => isOwner || lockRole || (r.key !== 'owner' && r.key !== 'admin')).map((r) => (
-                <option key={r.key} value={r.key}>
-                  {r.label}
+          <Field label="Role" htmlFor="eu-role" error={e.role_id?.message}>
+            <NativeSelect id="eu-role" disabled={lockRole} {...form.register('role_id')}>
+              {/* While the role is locked the person's own role has to stay in
+                  the list, or the select would show somebody else's. */}
+              {(lockRole && staff.role_id && !options.some((r) => r.id === staff.role_id)
+                ? [{ id: staff.role_id, name: staff.role_name ?? roleLabel(staff.role) }, ...options]
+                : options
+              ).map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
                 </option>
               ))}
             </NativeSelect>

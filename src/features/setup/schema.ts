@@ -239,7 +239,12 @@ export const newUserSchema = z
     /** The shop's own role, by id (db/72). The built-in it is based on comes from the row. */
     role_id: z.string().uuid('Pick a role'),
     is_mestry: z.boolean(),
+    /** Daily hand or on a monthly salary (db/73). */
+    pay_type: z.enum(['daily', 'monthly']),
     daily_wage: z.coerce.number().min(0),
+    monthly_salary: z.coerce.number().min(0),
+    /** Blank means work it out: the day's rate over a full day's hours. */
+    ot_rate: z.coerce.number().min(0).nullable(),
   })
   /**
    * A login is optional. Most of the people on this list never sign in — a
@@ -267,7 +272,10 @@ export const editUserSchema = z.object({
   phone: optionalText,
   role_id: z.string().uuid('Pick a role'),
   is_mestry: z.boolean(),
+  pay_type: z.enum(['daily', 'monthly']),
   daily_wage: z.coerce.number().min(0),
+  monthly_salary: z.coerce.number().min(0),
+  ot_rate: z.coerce.number().min(0).nullable(),
   is_active: z.boolean(),
 });
 export type EditUserInput = z.infer<typeof editUserSchema>;

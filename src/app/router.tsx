@@ -162,6 +162,7 @@ export const router = createRouter([
           guarded('attendance', [
             { path: 'attendance', element: <AttendancePage /> },
             { path: 'attendance/wages', element: <AttendancePage tab="wages" /> },
+            { path: 'attendance/advances', element: <AttendancePage tab="advances" /> },
           ]),
           guarded('stock', [
             { path: 'stock', element: <StockPage /> },

@@ -41,7 +41,9 @@ export function UsersPanel({ compact }: { compact?: boolean }) {
         Phone: s.phone,
         Role: s.role_name ?? roleLabel(s.role),
         Mestri: s.is_mestry,
+        Paid: s.pay_type === 'monthly' ? 'monthly' : 'daily',
         'Daily wage': Number(s.daily_wage ?? 0),
+        'Monthly salary': Number(s.monthly_salary ?? 0),
         Active: s.is_active,
         'Can sign in': Boolean(s.auth_uid),
       })),
@@ -102,7 +104,9 @@ export function UsersPanel({ compact }: { compact?: boolean }) {
                     <Badge variant={s.role === 'owner' ? 'default' : 'secondary'}>{s.role_name ?? roleLabel(s.role)}</Badge>
                   </TableCell>
                   <TableCell>{s.is_mestry ? 'Yes' : '—'}</TableCell>
-                  <TableCell className="num">{money(s.daily_wage)}</TableCell>
+                  <TableCell className="num">
+                    {s.pay_type === 'monthly' ? `${money(s.monthly_salary)} / month` : money(s.daily_wage)}
+                  </TableCell>
                   <TableCell>
                     {!s.is_active ? (
                       <Badge variant="outline">Inactive</Badge>
@@ -184,7 +188,7 @@ function NewUserDialog({ isOwner, onClose }: { isOwner: boolean; onClose: () => 
   const queryClient = useQueryClient();
   const form = useForm<NewUserInput>({
     resolver: zodResolver(newUserSchema),
-    defaultValues: { full_name: '', email: '', password: '', phone: '', role_id: '', is_mestry: false, daily_wage: 0 },
+    defaultValues: { full_name: '', email: '', password: '', phone: '', role_id: '', is_mestry: false, pay_type: 'daily', daily_wage: 0, monthly_salary: 0, ot_rate: null },
   });
   const create = useMutation({
     mutationFn: (v: NewUserInput) =>
@@ -195,7 +199,10 @@ function NewUserDialog({ isOwner, onClose }: { isOwner: boolean; onClose: () => 
         phone: orNull(v.phone),
         role_id: v.role_id,
         is_mestry: v.is_mestry,
+        pay_type: v.pay_type,
         daily_wage: v.daily_wage,
+        monthly_salary: v.monthly_salary,
+        ot_rate: v.ot_rate,
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: STAFF_KEY });
@@ -247,8 +254,23 @@ function NewUserDialog({ isOwner, onClose }: { isOwner: boolean; onClose: () => 
               ))}
             </NativeSelect>
           </Field>
-          <Field label="Daily wage (₹)" htmlFor="nu-wage" error={e.daily_wage?.message}>
-            <Input id="nu-wage" type="number" step="0.01" className="num" {...form.register('daily_wage')} />
+          <Field label="Paid" htmlFor="nu-paytype" error={e.pay_type?.message}>
+            <NativeSelect id="nu-paytype" {...form.register('pay_type')}>
+              <option value="daily">By the day</option>
+              <option value="monthly">A monthly salary</option>
+            </NativeSelect>
+          </Field>
+          {form.watch('pay_type') === 'monthly' ? (
+            <Field label="Monthly salary (₹)" htmlFor="nu-salary" error={e.monthly_salary?.message} help="Divided by the real length of each month on the wage sheet.">
+              <Input id="nu-salary" type="number" step="0.01" className="num" {...form.register('monthly_salary')} />
+            </Field>
+          ) : (
+            <Field label="Daily wage (₹)" htmlFor="nu-wage" error={e.daily_wage?.message}>
+              <Input id="nu-wage" type="number" step="0.01" className="num" {...form.register('daily_wage')} />
+            </Field>
+          )}
+          <Field label="Overtime rate (₹/hour)" htmlFor="nu-ot" error={e.ot_rate?.message} help="Leave blank to work it out from the day's rate and the shop's overtime setting.">
+            <Input id="nu-ot" type="number" step="0.01" className="num" {...form.register('ot_rate', { setValueAs: (v) => (v === '' || v === null ? null : Number(v)) })} />
           </Field>
           <label htmlFor="nu-mestri" className="flex items-center gap-2 pt-5 text-sm">
             <Checkbox id="nu-mestri" {...form.register('is_mestry')} />
@@ -286,6 +308,9 @@ function EditUserDialog({
       full_name: staff.full_name,
       phone: staff.phone ?? '',
       role_id: staff.role_id ?? '',
+      pay_type: (staff.pay_type === 'monthly' ? 'monthly' : 'daily') as 'daily' | 'monthly',
+      monthly_salary: Number(staff.monthly_salary ?? 0),
+      ot_rate: staff.ot_rate === null || staff.ot_rate === undefined ? null : Number(staff.ot_rate),
       is_mestry: staff.is_mestry,
       daily_wage: Number(staff.daily_wage ?? 0),
       is_active: staff.is_active,
@@ -298,7 +323,10 @@ function EditUserDialog({
         phone: orNull(v.phone),
         role_id: v.role_id,
         is_mestry: v.is_mestry,
+        pay_type: v.pay_type,
         daily_wage: v.daily_wage,
+        monthly_salary: v.monthly_salary,
+        ot_rate: v.ot_rate,
         is_active: v.is_active,
       }),
     onSuccess: async () => {
@@ -354,8 +382,23 @@ function EditUserDialog({
               ))}
             </NativeSelect>
           </Field>
-          <Field label="Daily wage (₹)" htmlFor="eu-wage" error={e.daily_wage?.message}>
-            <Input id="eu-wage" type="number" step="0.01" className="num" {...form.register('daily_wage')} />
+          <Field label="Paid" htmlFor="eu-paytype" error={e.pay_type?.message}>
+            <NativeSelect id="eu-paytype" {...form.register('pay_type')}>
+              <option value="daily">By the day</option>
+              <option value="monthly">A monthly salary</option>
+            </NativeSelect>
+          </Field>
+          {form.watch('pay_type') === 'monthly' ? (
+            <Field label="Monthly salary (₹)" htmlFor="eu-salary" error={e.monthly_salary?.message} help="Divided by the real length of each month on the wage sheet.">
+              <Input id="eu-salary" type="number" step="0.01" className="num" {...form.register('monthly_salary')} />
+            </Field>
+          ) : (
+            <Field label="Daily wage (₹)" htmlFor="eu-wage" error={e.daily_wage?.message}>
+              <Input id="eu-wage" type="number" step="0.01" className="num" {...form.register('daily_wage')} />
+            </Field>
+          )}
+          <Field label="Overtime rate (₹/hour)" htmlFor="eu-ot" error={e.ot_rate?.message} help="Leave blank to work it out from the day's rate and the shop's overtime setting.">
+            <Input id="eu-ot" type="number" step="0.01" className="num" {...form.register('ot_rate', { setValueAs: (v) => (v === '' || v === null ? null : Number(v)) })} />
           </Field>
           <div className="flex flex-col gap-2 pt-5 text-sm">
             <label htmlFor="eu-mestri" className="flex items-center gap-2">

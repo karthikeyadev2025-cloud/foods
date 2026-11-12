@@ -160,7 +160,11 @@ export interface CreateUserInput {
   /** The shop's own role, by id (db/72). */
   role_id: string;
   is_mestry: boolean;
+  /** Daily hand or monthly salary (db/73). */
+  pay_type: 'daily' | 'monthly';
   daily_wage: number;
+  monthly_salary: number;
+  ot_rate: number | null;
 }
 
 /**
@@ -182,7 +186,10 @@ export async function createUser(input: CreateUserInput): Promise<Staff> {
         phone: input.phone,
         role_id: input.role_id,
         is_mestry: input.is_mestry,
+        pay_type: input.pay_type,
         daily_wage: input.daily_wage,
+        monthly_salary: input.monthly_salary,
+        ot_rate: input.ot_rate,
       } as never,
     });
     if (error) throw error;

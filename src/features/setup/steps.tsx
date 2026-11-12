@@ -6,7 +6,7 @@ import { ImportPanel } from './components/ImportPanel';
 import { IncentivesPanel } from './components/IncentivesPanel';
 import { LicencePanel } from './components/LicencePanel';
 import { PrintDesigner } from './components/PrintDesigner';
-import { PunchlyPanel } from './components/PunchlyPanel';
+import { AttendanceSetup } from './components/AttendanceSetup';
 import { OrgProfileForm } from './components/OrgProfileForm';
 import { RolesAndPermissions } from './components/RolesAndPermissions';
 import { UsersPanel } from './components/UsersPanel';
@@ -128,9 +128,9 @@ export const SETUP_STEPS: SetupStep[] = [
   {
     slug: 'attendance',
     feature: 'attendance',
-    label: 'Attendance',
-    why: 'The Punchly key, what counts as a full day, whether wages fill themselves in — and which Punchly person is which staff member.',
-    Component: PunchlyPanel,
+    label: 'Attendance & wages',
+    why: 'What counts as a full day, whether overtime is paid and at what rate, the weekly off and the festival list, the kinds of leave — and the Punchly key with which phone-app person is which staff member.',
+    Component: AttendanceSetup,
   },
   {
     slug: 'incentives',

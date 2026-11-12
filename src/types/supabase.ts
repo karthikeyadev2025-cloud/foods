@@ -197,10 +197,12 @@ export type Database = {
           in_time: string | null
           last_out_at: string | null
           latitude: number | null
+          leave_type_id: string | null
           longitude: number | null
           needs_review: boolean
           notes: string | null
           org_id: string
+          ot_amount: number
           ot_hours: number | null
           out_time: string | null
           punches: number
@@ -220,10 +222,12 @@ export type Database = {
           in_time?: string | null
           last_out_at?: string | null
           latitude?: number | null
+          leave_type_id?: string | null
           longitude?: number | null
           needs_review?: boolean
           notes?: string | null
           org_id: string
+          ot_amount?: number
           ot_hours?: number | null
           out_time?: string | null
           punches?: number
@@ -243,10 +247,12 @@ export type Database = {
           in_time?: string | null
           last_out_at?: string | null
           latitude?: number | null
+          leave_type_id?: string | null
           longitude?: number | null
           needs_review?: boolean
           notes?: string | null
           org_id?: string
+          ot_amount?: number
           ot_hours?: number | null
           out_time?: string | null
           punches?: number
@@ -260,6 +266,12 @@ export type Database = {
           worked_hours?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "attendance_leave_type_fk"
+            columns: ["leave_type_id"]
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "attendance_org_id_fkey"
             columns: ["org_id"]
@@ -1486,6 +1498,46 @@ export type Database = {
           },
         ]
       }
+      holidays: {
+        Row: {
+          created_at: string
+          holiday_date: string
+          id: string
+          is_paid: boolean | null
+          name: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string
+          holiday_date: string
+          id?: string
+          is_paid?: boolean | null
+          name: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          holiday_date?: string
+          id?: string
+          is_paid?: boolean | null
+          name?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holidays_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "holidays_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       import_jobs: {
         Row: {
           column_map: Json | null
@@ -2596,6 +2648,52 @@ export type Database = {
             columns: ["entry_id"]
             referencedRelation: "v_journal_entries"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_types: {
+        Row: {
+          code: string
+          created_at: string
+          days_per_year: number
+          id: string
+          is_active: boolean
+          is_paid: boolean
+          name: string
+          org_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          days_per_year?: number
+          id?: string
+          is_active?: boolean
+          is_paid?: boolean
+          name: string
+          org_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          days_per_year?: number
+          id?: string
+          is_active?: boolean
+          is_paid?: boolean
+          name?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_types_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_types_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -4068,9 +4166,14 @@ export type Database = {
           last_sync_at: string | null
           last_sync_note: string | null
           org_id: string
+          ot_multiplier: number
+          paid_holidays: boolean
+          paid_week_off: boolean
+          pay_ot: boolean
           reconcile_days: number
           store_location: boolean
           updated_at: string
+          week_off_dow: number | null
         }
         Insert: {
           api_key?: string | null
@@ -4084,9 +4187,14 @@ export type Database = {
           last_sync_at?: string | null
           last_sync_note?: string | null
           org_id: string
+          ot_multiplier?: number
+          paid_holidays?: boolean
+          paid_week_off?: boolean
+          pay_ot?: boolean
           reconcile_days?: number
           store_location?: boolean
           updated_at?: string
+          week_off_dow?: number | null
         }
         Update: {
           api_key?: string | null
@@ -4100,9 +4208,14 @@ export type Database = {
           last_sync_at?: string | null
           last_sync_note?: string | null
           org_id?: string
+          ot_multiplier?: number
+          paid_holidays?: boolean
+          paid_week_off?: boolean
+          pay_ot?: boolean
           reconcile_days?: number
           store_location?: boolean
           updated_at?: string
+          week_off_dow?: number | null
         }
         Relationships: [
           {
@@ -5621,7 +5734,10 @@ export type Database = {
           id: string
           is_active: boolean
           is_mestry: boolean
+          monthly_salary: number
           org_id: string
+          ot_rate: number | null
+          pay_type: string
           phone: string | null
           punchly_staff_id: string | null
           punchly_user_id: string | null
@@ -5637,7 +5753,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_mestry?: boolean
+          monthly_salary?: number
           org_id: string
+          ot_rate?: number | null
+          pay_type?: string
           phone?: string | null
           punchly_staff_id?: string | null
           punchly_user_id?: string | null
@@ -5653,7 +5772,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_mestry?: boolean
+          monthly_salary?: number
           org_id?: string
+          ot_rate?: number | null
+          pay_type?: string
           phone?: string | null
           punchly_staff_id?: string | null
           punchly_user_id?: string | null
@@ -5678,6 +5800,88 @@ export type Database = {
             columns: ["role_id"]
             referencedRelation: "roles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_advances: {
+        Row: {
+          advance_date: string
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          mode_id: string | null
+          notes: string | null
+          org_id: string
+          recovered: number
+          staff_id: string
+        }
+        Insert: {
+          advance_date?: string
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mode_id?: string | null
+          notes?: string | null
+          org_id: string
+          recovered?: number
+          staff_id: string
+        }
+        Update: {
+          advance_date?: string
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mode_id?: string | null
+          notes?: string | null
+          org_id?: string
+          recovered?: number
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_advances_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_advances_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "staff_advances_mode_id_fkey"
+            columns: ["mode_id"]
+            referencedRelation: "receipt_modes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_advances_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_advances_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "staff_advances_staff_id_fkey"
+            columns: ["staff_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_advances_staff_id_fkey"
+            columns: ["staff_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
           },
         ]
       }
@@ -6436,6 +6640,149 @@ export type Database = {
             columns: ["route_id"]
             referencedRelation: "routes"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      wage_payment_lines: {
+        Row: {
+          advance_cut: number
+          basic: number
+          days: number
+          id: string
+          net_paid: number
+          ot_amount: number
+          ot_hours: number
+          payment_id: string | null
+          run_id: string
+          staff_id: string
+        }
+        Insert: {
+          advance_cut?: number
+          basic?: number
+          days?: number
+          id?: string
+          net_paid?: number
+          ot_amount?: number
+          ot_hours?: number
+          payment_id?: string | null
+          run_id: string
+          staff_id: string
+        }
+        Update: {
+          advance_cut?: number
+          basic?: number
+          days?: number
+          id?: string
+          net_paid?: number
+          ot_amount?: number
+          ot_hours?: number
+          payment_id?: string | null
+          run_id?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wage_payment_lines_payment_id_fkey"
+            columns: ["payment_id"]
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wage_payment_lines_payment_id_fkey"
+            columns: ["payment_id"]
+            referencedRelation: "v_payment_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wage_payment_lines_run_id_fkey"
+            columns: ["run_id"]
+            referencedRelation: "wage_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wage_payment_lines_staff_id_fkey"
+            columns: ["staff_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wage_payment_lines_staff_id_fkey"
+            columns: ["staff_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+        ]
+      }
+      wage_payments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          paid_on: string
+          period_from: string
+          period_to: string
+          staff_count: number
+          total_advance: number
+          total_basic: number
+          total_net: number
+          total_ot: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          paid_on?: string
+          period_from: string
+          period_to: string
+          staff_count?: number
+          total_advance?: number
+          total_basic?: number
+          total_net?: number
+          total_ot?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          paid_on?: string
+          period_from?: string
+          period_to?: string
+          staff_count?: number
+          total_advance?: number
+          total_basic?: number
+          total_net?: number
+          total_ot?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wage_payments_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wage_payments_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_me"
+            referencedColumns: ["staff_id"]
+          },
+          {
+            foreignKeyName: "wage_payments_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wage_payments_org_id_fkey"
+            columns: ["org_id"]
+            referencedRelation: "v_me"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -10429,6 +10776,7 @@ export type Database = {
         }
         Returns: Json
       }
+      advance_balance: { Args: { p_staff: string }; Returns: number }
       apply_discount_schemes: { Args: { p_invoice: string }; Returns: Json }
       assign_price_list: {
         Args: { p_list: string; p_route?: string; p_town?: string }
@@ -10871,6 +11219,7 @@ export type Database = {
         Returns: number
       }
       ensure_default_accounts: { Args: { p_org: string }; Returns: undefined }
+      ensure_payroll_accounts: { Args: { p_org: string }; Returns: undefined }
       ensure_system_accounts: { Args: { p_org: string }; Returns: undefined }
       expiry_report: {
         Args: { p_days?: number; p_org: string }
@@ -10998,6 +11347,10 @@ export type Database = {
         }[]
       }
       invoice_message_vars: { Args: { p_invoice: string }; Returns: Json }
+      is_non_working: {
+        Args: { p_date: string; p_org: string }
+        Returns: boolean
+      }
       is_service_call: { Args: Record<PropertyKey, never>; Returns: boolean }
       issue_license: {
         Args: {
@@ -11047,6 +11400,17 @@ export type Database = {
           name: string
           problem: string
           section_name: string
+        }[]
+      }
+      leave_balance: {
+        Args: { p_staff: string; p_year?: number }
+        Returns: {
+          code: string
+          days_per_year: number
+          leave_type_id: string
+          name: string
+          remaining: number
+          taken: number
         }[]
       }
       ledger_account_book: {
@@ -11252,6 +11616,20 @@ export type Database = {
           particulars: string
           side: string
           we_owe: number
+        }[]
+      }
+      pay_wages: { Args: { p: Json }; Returns: Json }
+      payroll_rules: {
+        Args: { p_org: string }
+        Returns: {
+          auto_wage: boolean
+          full_day_hours: number
+          half_day_hours: number
+          ot_multiplier: number
+          paid_holidays: boolean
+          paid_week_off: boolean
+          pay_ot: boolean
+          week_off_dow: number
         }[]
       }
       pick_template: {
@@ -11611,6 +11989,7 @@ export type Database = {
         Returns: string
       }
       save_staff: { Args: { p: Json }; Returns: string }
+      save_staff_advance: { Args: { p: Json }; Returns: string }
       save_stock_transfer: {
         Args: { p_header: Json; p_lines: Json }
         Returns: string
@@ -11685,6 +12064,10 @@ export type Database = {
         Returns: undefined
       }
       snapshot_tables: { Args: Record<PropertyKey, never>; Returns: string[] }
+      staff_day_rate: {
+        Args: { p_date?: string; p_staff: string }
+        Returns: number
+      }
       staff_list: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -11696,7 +12079,10 @@ export type Database = {
           id: string
           is_active: boolean
           is_mestry: boolean
+          monthly_salary: number
           org_id: string
+          ot_rate: number
+          pay_type: string
           phone: string
           punchly_staff_id: string
           punchly_user_id: string
@@ -11704,6 +12090,10 @@ export type Database = {
           role_id: string
           role_name: string
         }[]
+      }
+      staff_ot_rate: {
+        Args: { p_date?: string; p_staff: string }
+        Returns: number
       }
       staff_wage: { Args: { p_staff: string }; Returns: number }
       start_plan_trial: {
@@ -11912,6 +12302,49 @@ export type Database = {
           trips: number
           vehicle: string
           vehicle_key: string
+        }[]
+      }
+      wage_runs: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_by_name: string
+          id: string
+          paid_on: string
+          period_from: string
+          period_to: string
+          staff_count: number
+          total_advance: number
+          total_basic: number
+          total_net: number
+          total_ot: number
+        }[]
+      }
+      wage_sheet: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          absent: number
+          advance_due: number
+          basic: number
+          day_rate: number
+          days_paid: number
+          full_name: string
+          gross: number
+          half_days: number
+          holidays: number
+          needs_review: number
+          net: number
+          ot_amount: number
+          ot_hours: number
+          ot_rate: number
+          paid_leave: number
+          pay_type: string
+          present: number
+          role: Database["public"]["Enums"]["staff_role"]
+          role_name: string
+          staff_id: string
+          unpaid_leave: number
+          week_offs: number
+          worked_hours: number
         }[]
       }
     }

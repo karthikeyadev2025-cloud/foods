@@ -118,13 +118,29 @@ Which functions may be called without a login is declared in
 blanket one, which is the simplest way to push everything after a change:
 
 ```bash
-supabase login                              # opens a browser, once per machine
-supabase link --project-ref <project-ref>   # the ref is in the dashboard URL
-supabase functions deploy                   # all of them, with the right JWT settings
+supabase login
+supabase link --project-ref PROJECT_REF
+supabase functions deploy
 ```
 
-One at a time if preferred — `supabase functions deploy create-user backup-org`.
-The flag `--no-verify-jwt` is no longer needed anywhere: config.toml carries it.
+Put the real project ref in place of `PROJECT_REF` — in PowerShell, angle brackets
+are a parse error, so there is nothing to leave behind by accident. One at a time if
+preferred: `supabase functions deploy create-user backup-org`. The flag
+`--no-verify-jwt` is not needed anywhere; config.toml carries it.
+
+Installing the CLI on Windows: **not** `npm install -g supabase`, which Supabase
+does not support. Use Scoop:
+
+```powershell
+scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+scoop install supabase
+```
+
+Or skip the CLI: every function here is deployable by pasting its files into
+**Dashboard → Edge Functions**. Each function's files are all inside its own
+folder for exactly that reason — `razorpay-credits` keeps its `razorpay.ts`
+beside its `index.ts` rather than in `_shared/`, because the dashboard editor
+cannot reach a folder one level up.
 
 `create-user` has to be deployed before users can be added from Setup.
 

@@ -44,7 +44,10 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
-import { creditsFor, notesOf, paymentOf, sameDigest, signBody } from '../_shared/razorpay.ts';
+// A sibling file rather than ../_shared/, so this function can also be
+// deployed by pasting its two files into the Supabase dashboard — a shared
+// folder one level up is outside what that editor can reach.
+import { creditsFor, notesOf, paymentOf, sameDigest, signBody } from './razorpay.ts';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

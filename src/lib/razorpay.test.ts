@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { creditsFor, notesOf, paymentOf, sameDigest, signBody } from '../../supabase/functions/_shared/razorpay.ts';
+import { creditsFor, notesOf, paymentOf, sameDigest, signBody } from '../../supabase/functions/razorpay-credits/razorpay.ts';
 
 /**
  * The credits webhook hands out money from a request anyone can send. These

@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useMe, usePermissions } from '@/features/auth/hooks';
 import { toast, toastError } from '@/hooks/use-toast';
 import { dateTimeDMY } from '@/lib/format';
-import { backupDownloadUrl, getBackupSettings, listBackups, restoreBackup, restoreFromFile, runBackupNow, saveBackupSettings, type BackupRow } from '../api';
+import { backupDownloadUrl, downloadSnapshot, getBackupSettings, listBackups, restoreBackup, restoreFromFile, runBackupNow, saveBackupSettings, type BackupRow } from '../api';
 
 const SETTINGS_KEY = ['setup', 'backup_settings'] as const;
 const LIST_KEY = ['setup', 'backups'] as const;
@@ -56,6 +56,24 @@ export function BackupPanel({ compact }: { compact?: boolean }) {
       toastError(err, 'Backup failed');
     },
   });
+  /**
+   * The copy that cannot be stopped by anything in the middle.
+   *
+   * "Back up now" goes through an edge function into a storage bucket and
+   * comes back down a signed link; any one of those can be the thing that is
+   * broken, and then the shop has no copy at all. This asks the database and
+   * writes the file. Same JSON, same restore.
+   */
+  const saveToThisDevice = useMutation({
+    mutationFn: () => downloadSnapshot(me.data?.org_name ?? 'backup'),
+    onSuccess: (bytes) =>
+      toast({
+        title: 'Saved to this device',
+        description: `${size(bytes)} — look in your Downloads folder. Keep it somewhere that is not this computer too.`,
+      }),
+    onError: (err) => toastError(err, 'Could not save a copy'),
+  });
+
   const download = useMutation({
     mutationFn: async (b: BackupRow) => {
       if (!b.file_path) throw new Error('No file');
@@ -74,8 +92,9 @@ export function BackupPanel({ compact }: { compact?: boolean }) {
         <h2 className={compact ? 'text-base font-semibold' : 'text-lg font-semibold'}>Backup & restore</h2>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Every backup is one file with all your masters, documents, stock and accounts. Automatic copies run at the hour
-          you set; keep a downloaded copy somewhere else too. Restore is the emergency exit — it replaces everything with
-          the chosen copy. {!isOwner && 'Only the owner can take or restore a backup.'}
+          you set and are kept on the server; <strong>Save a copy to this device</strong> writes the same file straight to
+          this computer, which works even when the server copy will not. Restore is the emergency exit — it replaces
+          everything with the chosen copy. {!isOwner && 'Only the owner can take or restore a backup.'}
         </p>
       </div>
 
@@ -117,6 +136,9 @@ export function BackupPanel({ compact }: { compact?: boolean }) {
             <div className="col-span-2 flex justify-end gap-2 md:col-span-4">
               <Button type="submit" variant="outline" disabled={save.isPending}>
                 {save.isPending ? 'Saving…' : 'Save settings'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => saveToThisDevice.mutate()} disabled={saveToThisDevice.isPending}>
+                <Download /> {saveToThisDevice.isPending ? 'Saving…' : 'Save a copy to this device'}
               </Button>
               <Button type="button" onClick={() => run.mutate()} disabled={run.isPending}>
                 <DatabaseBackup /> {run.isPending ? 'Backing up…' : 'Back up now'}

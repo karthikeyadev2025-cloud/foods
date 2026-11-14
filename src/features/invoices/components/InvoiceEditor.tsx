@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Printer, Trash2 } from 'lucide-react';
+import { MessageCircle, Pencil, Printer, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMe, usePermissions } from '@/features/auth/hooks';
+import { billMessage, waLink, waNumber } from '@/lib/whatsapp';
 import { CustomerHistoryDialog } from '@/features/customers/components/CustomerHistoryDialog';
 import { getCustomer, searchCustomers, type CustomerRow } from '@/features/customers/api';
 import { NewCustomerDialog } from '@/features/customers/components/NewCustomerDialog';
@@ -401,6 +402,7 @@ export function InvoiceEditor({ invoice, lineRows }: { invoice?: InvoiceRow; lin
                 </Link>
               </Button>
             )}
+            {invoice.status !== 'cancelled' && <SendOnWhatsApp invoice={invoice} lines={lines} org={me.data} />}
             {perms.canEdit('invoices') && invoice.status === 'confirmed' && (
               <Button size="sm" variant="secondary" onClick={() => status.mutate('dispatched')} disabled={status.isPending}>
                 Mark dispatched
@@ -858,5 +860,76 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-muted-foreground">{label}</span>
       <span className="tabular-nums">{value}</span>
     </div>
+  );
+}
+
+/**
+ * "After done invoice they directly send invoice through WhatsApp" — the
+ * counter's own words for this button.
+ *
+ * It opens WhatsApp on whatever the biller is holding, with the bill already
+ * typed, addressed to the customer's mobile. He presses send. Nothing is
+ * queued, nothing is charged, no plan is needed and the customer does not have
+ * to have opted in to anything, because it is his own WhatsApp and not the
+ * shop's automated sender.
+ *
+ * The automated route — a bill copy that goes out by itself when the invoice
+ * is dispatched — is the messaging module, set up under Messaging, and is a
+ * different thing with different costs. This is the one for the man at the
+ * counter with the shopkeeper in front of him.
+ */
+function SendOnWhatsApp({
+  invoice,
+  lines,
+  org,
+}: {
+  invoice: InvoiceRow;
+  lines: DraftLine[];
+  org: { org_name?: string | null; org_phone?: string | null } | null | undefined;
+}) {
+  const number = waNumber(invoice.customer_mobile);
+
+  // No number, no chat. Saying so is better than a button that opens WhatsApp
+  // on an empty conversation and leaves him wondering what he did wrong.
+  if (!number) {
+    return (
+      <Button variant="outline" size="sm" disabled title={`${invoice.customer_name ?? 'This customer'} has no mobile number on record`}>
+        <MessageCircle /> WhatsApp
+      </Button>
+    );
+  }
+
+  const text = billMessage({
+    orgName: org?.org_name ?? 'Bill',
+    orgPhone: org?.org_phone ?? null,
+    customerName: invoice.customer_name ?? '',
+    invoiceNo: invoice.invoice_no ?? '',
+    invoiceDate: dateDMY(invoice.invoice_date),
+    isProforma: invoice.status === 'draft',
+    // invoiceLine, the same function the bill itself totals with, so the
+    // message can never quote a figure the printed bill disagrees with.
+    lines: lines
+      .filter((l) => l.units_per_box > 0)
+      .map((l) => ({
+        code: l.item_code,
+        name: l.item_name,
+        boxes: toNumber(l.boxes),
+        rate: toNumber(l.rate),
+        amount: invoiceLine({ boxes: toNumber(l.boxes), rate: toNumber(l.rate), unitsPerBox: l.units_per_box }).total,
+      })),
+    total: toNumber(invoice.total),
+    received: toNumber(invoice.received),
+    balance: toNumber(invoice.balance),
+    note: invoice.notes,
+  });
+
+  return (
+    <Button asChild variant="outline" size="sm">
+      {/* noreferrer as well as noopener: wa.me has no business knowing which
+          screen of the ERP the bill was sent from. */}
+      <a href={waLink(number, text)} target="_blank" rel="noopener noreferrer">
+        <MessageCircle /> WhatsApp
+      </a>
+    </Button>
   );
 }

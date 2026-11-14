@@ -118,6 +118,9 @@ export function ReturnsPage() {
   );
 }
 
+/** The trade rule: a damaged lot is credited at half the billed value. */
+const DEFAULT_DAMAGE_PCT = 50;
+
 interface DraftLine { key: string; item_id: string; item_code: string; item_name: string; units_per_box: number; boxes: number; rate: number; new_rate: number; recovery_pct: number }
 let seq = 0;
 
@@ -137,7 +140,18 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const editing = Boolean(ret?.id);
-  const pct = toNumber(me.data?.breakage_recovery_pct);
+  /**
+   * What a damage return credits, as a percentage of the billed value.
+   *
+   * The trade rule is half — "damage or breakage only 50% recovery" — and that
+   * is what orgs.breakage_recovery_pct is created with. It is read from the
+   * org so a shop can change it, but a MISSING value falls back to 50 rather
+   * than to zero: toNumber(undefined) is 0, and a new damage line silently
+   * crediting nothing is the worst possible way for that to show up. A
+   * deliberate 0 is still honoured — only an absent value falls back.
+   */
+  const orgPct = me.data?.breakage_recovery_pct;
+  const pct = orgPct === null || orgPct === undefined ? DEFAULT_DAMAGE_PCT : toNumber(orgPct);
   const [kind, setKind] = useState<ReturnKind>((ret?.kind as ReturnKind | null) ?? 'fresh_return');
   const [customer, setCustomer] = useState<CustomerRow | null>(
     ret?.customer_id ? ({ id: ret.customer_id, name: ret.customer_name } as CustomerRow) : null,
@@ -293,7 +307,14 @@ function ReturnEditor({ ret, lines: existing }: { ret?: ReturnRow; lines?: Retur
               {kind === 'rate_difference' && <TableHead className="w-28 text-right">New rate</TableHead>}
               {/* Per line, because a crushed box and a cracked lid are not the
                   same loss (db/66). It starts at the shop's own figure. */}
-              {kind === 'damage_return' && <TableHead className="w-24 text-right" title="What this lot is worth, as a percentage of what it was billed at">Credit %</TableHead>}
+              {kind === 'damage_return' && (
+                <TableHead className="w-24 text-right" title="What this lot is worth, as a percentage of what it was billed at">
+                  Credit %
+                  {/* Said out loud, so a line that is not on the shop's own
+                      figure is obvious rather than something to notice later. */}
+                  <span className="block text-[10px] font-normal text-muted-foreground">{pct}% default</span>
+                </TableHead>
+              )}
               <TableHead className="w-32 text-right">Credit</TableHead><TableHead className="w-10" />
             </TableRow>
           </TableHeader>

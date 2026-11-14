@@ -329,6 +329,43 @@ export type RestoreResult = { org_id: string; restored: Record<string, number>; 
  * is long pruned. It is checked for being a backup, and for being THIS
  * organisation's, before anything is touched.
  */
+/**
+ * A copy on their own machine, straight from the database.
+ *
+ * The ordinary backup goes through an edge function into a storage bucket and
+ * then back down a signed link. Every one of those can be the thing that is
+ * broken — a bucket nobody created, a function not deployed, a storage
+ * permission — and when it is, the shop has NO copy of its books and a red
+ * badge that (before db/68) did not say why.
+ *
+ * This asks the database for the snapshot and writes it to a file. No
+ * function, no bucket, no cron, no signed URL: if the shop can see its
+ * invoices it can get this file. It is the same JSON the stored backups hold,
+ * so "Restore from a file" takes it back, and it works on any plan (db/69).
+ */
+export async function downloadSnapshot(orgName: string): Promise<number> {
+  const { data, error } = await supabase.rpc('org_snapshot');
+  if (error) throw error;
+  if (!data || typeof data !== 'object' || !('tables' in data)) {
+    throw new Error('The database did not return a backup');
+  }
+  const body = JSON.stringify(data);
+  const slug = (orgName || 'backup').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const stamp = new Date().toISOString().slice(0, 10);
+  const url = URL.createObjectURL(new Blob([body], { type: 'application/json' }));
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${slug}-backup-${stamp}.json`;
+    a.click();
+  } finally {
+    // Revoked on the next tick: Safari has not started reading the blob by the
+    // time click() returns, and revoking immediately gives an empty file.
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  }
+  return new TextEncoder().encode(body).length;
+}
+
 export async function restoreFromFile(file: File): Promise<RestoreResult> {
   let snapshot: unknown;
   try {

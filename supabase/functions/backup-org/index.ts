@@ -21,6 +21,28 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 
 interface Result { org_id: string; backup_id?: string; file_path?: string; size_bytes?: number; pruned?: number; error?: string }
 
+/**
+ * Make sure the private `backups` bucket exists.
+ *
+ * It was never created by anything: this function has always uploaded into it
+ * and assumed somebody had made it by hand in the Supabase dashboard. In a
+ * project where nobody had, EVERY backup failed on the upload — and until
+ * db/68 the reason was thrown away, so the screen showed a red badge against a
+ * timestamp and there was no way to find out why. "Backup not working", for
+ * want of one bucket.
+ *
+ * Creating it is idempotent and costs one call: a bucket that already exists
+ * comes back as an error naming that, which is not a failure. It is private,
+ * because a shop's entire books must never be reachable by URL — the download
+ * goes through a signed link that lasts five minutes.
+ */
+async function ensureBucket(admin: SupabaseClient): Promise<void> {
+  const { error } = await admin.storage.createBucket('backups', { public: false });
+  if (!error) return;
+  const already = /exist/i.test(error.message);
+  if (!already) throw new Error(`Could not create the backups storage bucket: ${error.message}`);
+}
+
 async function backupOrg(admin: SupabaseClient, orgId: string, isAuto: boolean, keepCopies: number, createdBy: string | null): Promise<Result> {
   const { data: row, error: rowError } = await admin.from('backups').insert({ org_id: orgId, is_auto: isAuto, status: 'running', created_by: createdBy }).select('id').single();
   if (rowError || !row) return { org_id: orgId, error: rowError?.message ?? 'Could not record the backup' };
@@ -31,8 +53,9 @@ async function backupOrg(admin: SupabaseClient, orgId: string, isAuto: boolean, 
     const body = JSON.stringify(snapshot);
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filePath = `${orgId}/${stamp}.json`;
+    await ensureBucket(admin);
     const { error: upError } = await admin.storage.from('backups').upload(filePath, new Blob([body], { type: 'application/json' }), { contentType: 'application/json', upsert: false });
-    if (upError) throw new Error(upError.message);
+    if (upError) throw new Error(`Could not write the backup file: ${upError.message}`);
     const size = new TextEncoder().encode(body).length;
     await admin.from('backups').update({ status: 'ready', file_path: filePath, size_bytes: size }).eq('id', backupId);
 

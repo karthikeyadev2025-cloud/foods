@@ -111,11 +111,22 @@ src/
 `seed/unmatched_items.csv` with a blank `units_per_box`, the four duplicated stock-sheet rows resolved,
 and the rate list. Each is a re-run of the importer, not a developer task.
 
-Deploy the `create-user` edge function before adding users from Setup:
+## Deploying the edge functions
+
+Which functions may be called without a login is declared in
+`supabase/config.toml`, so any deploy command gets it right — including the
+blanket one, which is the simplest way to push everything after a change:
 
 ```bash
-supabase functions deploy create-user
+supabase login                              # opens a browser, once per machine
+supabase link --project-ref <project-ref>   # the ref is in the dashboard URL
+supabase functions deploy                   # all of them, with the right JWT settings
 ```
+
+One at a time if preferred — `supabase functions deploy create-user backup-org`.
+The flag `--no-verify-jwt` is no longer needed anywhere: config.toml carries it.
+
+`create-user` has to be deployed before users can be added from Setup.
 
 For Hey Nikki messaging (T6): deploy the four functions, create a public storage bucket named
 `catalogs`, then run `db/cron/schedule.sql` in the SQL Editor (it needs the service-role key in
@@ -123,8 +134,7 @@ Vault; the file says how). Paste the two webhook addresses and the secret from M
 Settings into the Hey Nikki console, and the API key from Hey Nikki into the same screen.
 
 ```bash
-supabase functions deploy nikki-send run-reminders
-supabase functions deploy nikki-inbound nikki-status --no-verify-jwt
+supabase functions deploy nikki-send run-reminders nikki-inbound nikki-status
 ```
 
 For attendance (T13): deploy `punchly-sync`, then paste the Punchly API key into Setup → Attendance

@@ -1,0 +1,28 @@
+# Supabase CLI settings for this project.
+#
+# The only thing in here is which functions are called by somebody who has no
+# login — and that is here rather than in a flag because of how easily the flag
+# is lost. `supabase functions deploy nikki-status --no-verify-jwt` is correct;
+# `supabase functions deploy` on its own, which is the obvious way to push
+# everything after a change, would redeploy that same function WITH JWT
+# verification and silently break the webhook. The provider then gets 401s,
+# nothing arrives, and nothing in the app says why.
+#
+# Declared per function, it cannot be forgotten: every deploy, by any command,
+# gets it right.
+#
+# `project_id` is written here by `supabase link --project-ref <ref>`.
+
+# Hey Nikki posts delivery receipts here. Authenticated by the org's own
+# webhook secret (Messaging → Settings), not by a JWT.
+[functions.nikki-status]
+verify_jwt = false
+
+# Hey Nikki posts inbound customer orders here. Same webhook secret.
+[functions.nikki-inbound]
+verify_jwt = false
+
+# Razorpay posts captured payments here. Authenticated by an HMAC signature
+# over the raw request body, checked before anything in it is parsed (db/70).
+[functions.razorpay-credits]
+verify_jwt = false

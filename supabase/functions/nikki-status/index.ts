@@ -8,7 +8,11 @@
 //   { call_id, event: ringing|answered|completed|no_answer|busy|failed, duration?, dtmf?,
 //     transcript?, recording_url?, promised_on?, error? }
 //
-//   supabase functions deploy nikki-status --no-verify-jwt
+//   supabase functions deploy nikki-status
+//
+// Called without a login, so verify_jwt is off for it in
+// supabase/config.toml — declared there rather than passed as a flag, which
+// a later blanket deploy would drop.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });

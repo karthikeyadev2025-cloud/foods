@@ -10,7 +10,11 @@
 //     provider_ref?: "wamid..." }
 // Auth: X-Nikki-Secret header (or `secret` in the body) = the org's webhook secret.
 //
-//   supabase functions deploy nikki-inbound --no-verify-jwt
+//   supabase functions deploy nikki-inbound
+//
+// Called without a login, so verify_jwt is off for it in
+// supabase/config.toml — declared there rather than passed as a flag, which
+// a later blanket deploy would drop.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });

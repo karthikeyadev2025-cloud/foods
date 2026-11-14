@@ -34,7 +34,11 @@
 //   RAZORPAY_WEBHOOK_SECRET    the secret set on the webhook in the Razorpay dashboard
 //   RAZORPAY_PAISE_PER_CREDIT  what one credit costs, in paise (90 = 90 paise)
 //
-//   supabase functions deploy razorpay-credits --no-verify-jwt
+//   supabase functions deploy razorpay-credits
+//
+// Called without a login, so verify_jwt is off for it in
+// supabase/config.toml — declared there rather than passed as a flag, which
+// a later blanket deploy would drop.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const json = (body: unknown, status = 200) =>

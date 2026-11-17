@@ -1,7 +1,9 @@
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { amount, qty } from '@/lib/format';
 import { amountInWords } from '@/lib/money';
+import { ShareOnWhatsApp } from './ShareOnWhatsApp';
 import { fillTerms, showField, type PrintOrg, type PrintTemplateLike } from './template';
 
 /**
@@ -49,6 +51,21 @@ export interface SalesDocPrintProps {
   backLabel?: string;
   /** Inside the designer: no toolbar, no page chrome. */
   preview?: boolean;
+  /**
+   * What is needed to send THIS sheet on WhatsApp. Given it, the toolbar grows
+   * a WhatsApp button beside Print; left out, it does not — the print designer
+   * has nothing real to send.
+   */
+  share?: {
+    /** 'invoice', 'quotation', 'delivery challan' — used in the filename. */
+    kind: string;
+    number?: string | null;
+    date?: string | null;
+    /** The party's mobile as it is stored. Normalised here. */
+    mobile?: string | null;
+    /** The message that goes with the file. */
+    text: string;
+  };
 }
 
 type PaperSpec = { width: string; minHeight: string; page: string; pad: number; font: string; thermal: boolean };
@@ -59,7 +76,8 @@ const PAPER: Record<string, PaperSpec> = {
   thermal_58: { width: '48mm', minHeight: '0', page: '58mm auto', pad: 0, font: '8.5px', thermal: true },
 };
 
-export function SalesDocPrint({ title, org, template, party, meta, lines, totals, message, backTo, backLabel, preview }: SalesDocPrintProps) {
+export function SalesDocPrint({ title, org, template, party, meta, lines, totals, message, backTo, backLabel, preview, share }: SalesDocPrintProps) {
+  const sheetRef = useRef<HTMLDivElement>(null);
   const paper = PAPER[template?.paper ?? 'A4'] ?? PAPER.A4!;
   const show = (k: string) => showField(template, k);
   const money = totals !== null;
@@ -88,6 +106,7 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
 
   const sheet = (
     <div
+      ref={sheetRef}
       className={`print-sheet ${preview ? '' : 'mx-auto my-4 print:my-0'} bg-white leading-tight text-black`}
       style={{ width: paper.width, minHeight: paper.minHeight, fontSize: paper.font, padding: paper.thermal ? '2mm' : preview ? '8mm' : '10mm' }}
     >
@@ -240,9 +259,12 @@ export function SalesDocPrint({ title, org, template, party, meta, lines, totals
           <span />
         )}
         <span className="text-xs text-muted-foreground">{PAPER[template?.paper ?? 'A4'] ? (template?.paper ?? 'A4').replace('_', ' ') : 'A4'}</span>
-        <Button size="sm" onClick={() => window.print()}>
-          Print
-        </Button>
+        <span className="flex items-center gap-2">
+          {share && <ShareOnWhatsApp sheet={sheetRef} shop={org?.org_name ?? null} {...share} />}
+          <Button size="sm" onClick={() => window.print()}>
+            Print
+          </Button>
+        </span>
       </div>
       {sheet}
       <style>{`

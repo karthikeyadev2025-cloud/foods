@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { billMessage, waLink, waNumber, type BillLine } from './whatsapp';
+import { billMessage, docMessage, firstPhone, waLink, waNumber, type BillLine } from './whatsapp';
 
 const LINES: BillLine[] = [
   { code: '8', name: 'MYSOOR PAK', boxes: 5, rate: 100, amount: 500 },
@@ -105,5 +105,45 @@ describe('the link', () => {
     const link = waLink('919849686746', 'Lot #4 & #5');
     expect(link).not.toContain('#');
     expect(decodeURIComponent(link.split('?text=')[1] ?? '')).toBe('Lot #4 & #5');
+  });
+});
+
+describe('the short message that goes with a PDF', () => {
+  it('says which document and what it comes to, and stops', () => {
+    const m = docMessage({
+      orgName: 'JYOTHI FOODS', orgPhone: '79894 28599', label: 'Invoice', number: '0041',
+      date: '17-11-2026', partyName: 'RAVI STORES', total: 2980, balance: 1980,
+    });
+    expect(m).toBe(
+      'JYOTHI FOODS\nInvoice 0041 dated 17-11-2026\n\nTotal Rs 2,980.00\nBalance Rs 1,980.00\n\nThank you, RAVI STORES.\nJYOTHI FOODS - 79894 28599',
+    );
+    // the items are in the attached PDF, not repeated here
+    expect(m).not.toContain('box x');
+  });
+
+  it('leaves the money out of a challan, which has none', () => {
+    const m = docMessage({ orgName: 'JYOTHI FOODS', label: 'Delivery challan', number: 'DC-9', date: '17-11-2026' });
+    expect(m).toContain('Delivery challan DC-9 dated 17-11-2026');
+    expect(m).not.toContain('Total');
+    expect(m).toContain('Thank you.');
+  });
+
+  it('says nothing about a balance that is settled', () => {
+    const m = docMessage({ orgName: 'X', label: 'Invoice', number: '1', date: '17-11-2026', total: 500, balance: 0 });
+    expect(m).toContain('Total Rs 500.00');
+    expect(m).not.toContain('Balance');
+  });
+});
+
+describe('the party phone', () => {
+  it('takes the first of the numbers the sheet already lists', () => {
+    expect(firstPhone('9849686746,9000000002,9000000003')).toBe('9849686746');
+    expect(firstPhone('9849686746')).toBe('9849686746');
+  });
+
+  it('is null when there is none', () => {
+    expect(firstPhone('')).toBeNull();
+    expect(firstPhone(null)).toBeNull();
+    expect(firstPhone(undefined)).toBeNull();
   });
 });

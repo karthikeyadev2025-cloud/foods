@@ -27,6 +27,7 @@ import { exportToExcel } from '@/lib/export';
 import { deleteDocument } from '@/features/search/deletes';
 import { CustomerPicker } from '@/features/customers/components/CustomerPicker';
 import { amount, dateDMY, qty, round, toISODate, toNumber } from '@/lib/format';
+import { docMessage, firstPhone } from '@/lib/whatsapp';
 import { amountInWords } from '@/lib/money';
 import { DEFAULT_PAGE_SIZE } from '@/lib/paging';
 import { invoiceLine } from '@/lib/units';
@@ -252,6 +253,21 @@ export function QuotationPrintPage() {
       totals={{ discount: toNumber(q.discount), freight: toNumber(q.freight), round_off: toNumber(q.round_off), total: toNumber(q.total) }}
       backTo={`/quotations/${q.id}`}
       backLabel="Back to quotation"
+      share={{
+        kind: 'quotation',
+        number: q.quote_no,
+        date: q.quote_date,
+        mobile: firstPhone(phones),
+        text: docMessage({
+          orgName: me.data?.org_name ?? 'Quotation',
+          orgPhone: me.data?.org_phone ?? null,
+          label: 'Quotation',
+          number: q.quote_no,
+          date: dateDMY(q.quote_date),
+          partyName: q.customer_name,
+          total: toNumber(q.total),
+        }),
+      }}
     />
   );
 }

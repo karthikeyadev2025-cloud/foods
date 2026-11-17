@@ -7,6 +7,7 @@ import { Spinner } from '@/components/Spinner';
 import { useMe } from '@/features/auth/hooks';
 import { getPrintTemplate } from '@/features/setup/api';
 import { dateDMY, toNumber } from '@/lib/format';
+import { docMessage, firstPhone } from '@/lib/whatsapp';
 import { supabase } from '@/lib/supabase';
 import { getPurchase, getPurchaseLines } from '../api';
 
@@ -104,6 +105,21 @@ export function PurchasePrintPage() {
       totals={{ discount: 0, freight: toNumber(p.other_charges), round_off: 0, total: toNumber(p.total) }}
       backTo={`/purchases/${p.id}`}
       backLabel="Back to purchase"
+      share={{
+        kind: 'purchase bill',
+        number: p.bill_no,
+        date: p.bill_date,
+        mobile: firstPhone(phones),
+        text: docMessage({
+          orgName: me.data?.org_name ?? 'Purchase bill',
+          orgPhone: me.data?.org_phone ?? null,
+          label: 'Purchase bill',
+          number: p.bill_no,
+          date: dateDMY(p.bill_date),
+          partyName: p.supplier_name,
+          total: toNumber(p.total),
+        }),
+      }}
     />
   );
 }

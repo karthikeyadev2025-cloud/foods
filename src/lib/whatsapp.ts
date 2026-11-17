@@ -120,3 +120,44 @@ export function billMessage(b: BillMessage): string {
 export function waLink(number: string, text: string): string {
   return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
 }
+
+/**
+ * The short message that goes WITH a PDF.
+ *
+ * billMessage() above lists every item, because there it IS the bill — a
+ * wa.me link carries nothing else. Here the sheet is attached, so repeating
+ * the lines in the text would be the same bill twice, once badly. This says
+ * which document it is and what it comes to, and stops.
+ */
+export function docMessage(d: {
+  orgName: string;
+  orgPhone?: string | null;
+  /** 'Invoice', 'Quotation', 'Delivery challan', 'Purchase bill'. */
+  label: string;
+  number?: string | null;
+  date: string;
+  partyName?: string | null;
+  /** Left out on a challan, which carries no money. */
+  total?: number | null;
+  balance?: number | null;
+}): string {
+  const out: string[] = [d.orgName];
+  out.push([d.label, d.number].filter(Boolean).join(' ') + ` dated ${d.date}`);
+  if (d.total !== undefined && d.total !== null) {
+    out.push('');
+    out.push(`Total Rs ${rupees(d.total)}`);
+    if (d.balance !== undefined && d.balance !== null && d.balance > 0) {
+      out.push(`Balance Rs ${rupees(d.balance)}`);
+    }
+  }
+  out.push('');
+  out.push(d.partyName ? `Thank you, ${d.partyName}.` : 'Thank you.');
+  if (d.orgPhone) out.push(`${d.orgName} - ${d.orgPhone}`);
+  return out.join('\n');
+}
+
+/** The first of the comma-joined phone numbers a print page already built. */
+export function firstPhone(phones: string | null | undefined): string | null {
+  const first = (phones ?? '').split(',')[0]?.trim();
+  return first || null;
+}

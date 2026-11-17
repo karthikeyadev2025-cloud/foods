@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, FileCheck, Plus, Printer } from 'lucide-react';
 import { DeleteButton } from '@/components/DeleteButton';
 import { SalesDocPrint } from '@/components/print/SalesDocPrint';
+import { docMessage, firstPhone } from '@/lib/whatsapp';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Field } from '@/components/Field';
@@ -191,6 +192,21 @@ export function ChallanPrintPage() {
       totals={null}
       backTo={`/challans/${c.id}`}
       backLabel="Back to challan"
+      share={{
+        kind: 'delivery challan',
+        number: c.challan_no,
+        date: c.challan_date,
+        mobile: firstPhone(phones),
+        // No total: a challan carries goods, not money.
+        text: docMessage({
+          orgName: me.data?.org_name ?? 'Delivery challan',
+          orgPhone: me.data?.org_phone ?? null,
+          label: 'Delivery challan',
+          number: c.challan_no,
+          date: dateDMY(c.challan_date),
+          partyName: c.customer_name,
+        }),
+      }}
     />
   );
 }

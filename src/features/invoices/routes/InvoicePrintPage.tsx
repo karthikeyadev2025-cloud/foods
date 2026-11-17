@@ -7,6 +7,7 @@ import { useMe } from '@/features/auth/hooks';
 import { getCustomer } from '@/features/customers/api';
 import { getPrintTemplate } from '@/features/setup/api';
 import { amount, dateDMY, toNumber } from '@/lib/format';
+import { docMessage, firstPhone } from '@/lib/whatsapp';
 import { getInvoice, getInvoiceLines } from '../api';
 
 /**
@@ -64,6 +65,22 @@ export function InvoicePrintPage() {
       message={inv.notes}
       backTo={`/invoices/${inv.id}`}
       backLabel="Back to invoice"
+      share={{
+        kind: inv.status === 'draft' ? 'estimate' : 'invoice',
+        number: inv.invoice_no,
+        date: inv.invoice_date,
+        mobile: firstPhone(phones) ?? inv.customer_mobile,
+        text: docMessage({
+          orgName: me.data?.org_name ?? 'Bill',
+          orgPhone: me.data?.org_phone ?? null,
+          label: inv.status === 'draft' ? 'Estimate' : 'Invoice',
+          number: inv.invoice_no,
+          date: dateDMY(inv.invoice_date),
+          partyName: inv.customer_name,
+          total: toNumber(inv.total),
+          balance: toNumber(inv.balance),
+        }),
+      }}
     />
   );
 }
